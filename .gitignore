@@ -1,0 +1,9 @@
+.vscode
+__pycache__
+.mypy_cache
+.pytest_cache
+src/client/data/*
+!src/client/data/reduced
+notebook
+src/client/results
+example_logs*.txt

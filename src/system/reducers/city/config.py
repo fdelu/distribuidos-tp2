@@ -6,6 +6,6 @@ NAME = "city"
 class Config(ConfigBase):
     min_distance_km: float
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(NAME)
         self.min_distance_km = self.get_float("MinDistanceKm")

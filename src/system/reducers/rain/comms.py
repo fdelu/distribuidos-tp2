@@ -14,9 +14,9 @@ class SystemCommunication(
     INPUT_QUEUE = "rain_aggregated"
     OUT_QUEUE = "stats"
 
-    def _load_definitions(self):
+    def _load_definitions(self) -> None:
         # in
         self._start_consuming_from(self.INPUT_QUEUE)
 
-    def _get_routing_details(self, record: StatsRecord):
+    def _get_routing_details(self, record: StatsRecord) -> tuple[str, str]:
         return "", self.OUT_QUEUE

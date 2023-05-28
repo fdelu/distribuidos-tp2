@@ -13,9 +13,9 @@ class JoinerComms(
     Protocol[GenericJoinedTrip],
 ):
     @abstractmethod
-    def set_all_trips_done_callback(self, callback: Callable[[], None]):
+    def set_all_trips_done_callback(self, callback: Callable[[], None]) -> None:
         ...
 
     @abstractmethod
-    def start_consuming_trips(self):
+    def start_consuming_trips(self) -> None:
         ...

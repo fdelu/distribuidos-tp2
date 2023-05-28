@@ -11,7 +11,7 @@ class Stats:
     city_averages: CityAverages | None = None
     lock: Lock = Lock()
 
-    def all_done(self):
+    def all_done(self) -> bool:
         return (
             self.rain_averages is not None
             and self.year_counts is not None

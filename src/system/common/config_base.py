@@ -17,7 +17,7 @@ class ConfigBase:
 
     section: str = DEFAULTSECT
 
-    def __init__(self, section: str | None = None):
+    def __init__(self, section: str | None = None) -> None:
         if section is not None:
             self.section = section
 

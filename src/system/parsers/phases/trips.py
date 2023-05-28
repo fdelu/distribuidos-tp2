@@ -28,7 +28,7 @@ class TripsPhase(Phase):
         self.comms.set_all_batchs_done_callback(self._all_batchs_done)
         return self
 
-    def _all_batchs_done(self):
+    def _all_batchs_done(self) -> None:
         logging.info(
             f"Finished parsing all trips. Total processed in this node: {self.count}"
         )

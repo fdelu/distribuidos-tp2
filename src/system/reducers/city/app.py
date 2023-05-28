@@ -9,7 +9,7 @@ from .config import Config
 from .comms import SystemCommunication
 
 
-def main():
+def main() -> None:
     config = Config()
     setup_logs(config.log_level)
 

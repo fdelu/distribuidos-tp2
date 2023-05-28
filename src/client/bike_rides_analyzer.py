@@ -23,7 +23,7 @@ class BikeRidesAnalyzer:
     input_socket: SocketStopWrapper
     output_socket: SocketStopWrapper
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         self.config = config
         self.phase = Phase.StationsWeather
         self.context = zmq.Context()
@@ -37,24 +37,24 @@ class BikeRidesAnalyzer:
         output_socket.connect(config.output_address)
         self.output_socket = SocketStopWrapper(output_socket, self.interrupted)
 
-    def interrupt_on_signal(self, signum: signal.Signals):
+    def interrupt_on_signal(self, signum: signal.Signals) -> None:
         signal.signal(signum, lambda *_: self.interrupted.set())
 
-    def send_stations(self, city: str, lines: Iterable[str]):
+    def send_stations(self, city: str, lines: Iterable[str]) -> None:
         logging.info(f"Sending stations for {city}")
         if self.phase != Phase.StationsWeather:
             raise ValueError(f"Can't send stations in this phase: {self.phase}")
 
         self.__send_batchs(city, lines, RecordType.STATION)
 
-    def send_weather(self, city: str, lines: Iterable[str]):
+    def send_weather(self, city: str, lines: Iterable[str]) -> None:
         logging.info(f"Sending weather for {city}")
         if self.phase != Phase.StationsWeather:
             raise ValueError(f"Can't send weather in this phase: {self.phase}")
 
         self.__send_batchs(city, lines, RecordType.WEATHER)
 
-    def send_trips(self, city: str, lines: Iterable[str]):
+    def send_trips(self, city: str, lines: Iterable[str]) -> None:
         logging.info(f"Sending trips for {city}")
         if self.phase == Phase.StationsWeather:
             self.phase = Phase.Trips
@@ -72,7 +72,7 @@ class BikeRidesAnalyzer:
     def get_city_averages(self) -> dict[str, float]:
         return self.__get_stat(StatType.CITY)
 
-    def close(self):
+    def close(self) -> None:
         self.input_socket.close()
         self.output_socket.close()
         self.context.term()

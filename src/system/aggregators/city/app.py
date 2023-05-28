@@ -12,7 +12,7 @@ from .comms import SystemCommunication
 NAME = "city"
 
 
-def main():
+def main() -> None:
     config = Config(NAME)
     setup_logs(config.log_level)
 

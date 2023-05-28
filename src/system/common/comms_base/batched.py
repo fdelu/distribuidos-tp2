@@ -32,14 +32,14 @@ class CommsSendBatched(
     batches: dict[tuple[str, str], "BatchInfo"]  # exchange, routing_key -> batch
     out_type: type
 
-    def __init__(self, config: BatchConfig):
+    def __init__(self, config: BatchConfig) -> None:
         super().__init__(config)
         self.batch_size = config.batch_size
         self.batches = {}
         self.out_type = get_generic_type(self, CommsSendBatched, 1)
         self.add_stop_callback(self.__flush)
 
-    def send(self, record: OUT):
+    def send(self, record: OUT) -> None:
         key = self._get_routing_details(record)
         if self.is_stopped():
             # I must send it now since I won't be able to set a timer
@@ -82,7 +82,7 @@ class CommsSendBatched(
 
         self.set_timer(self.__check_delay, remaining)
 
-    def __flush(self):
+    def __flush(self) -> None:
         """
         Sends all batches that are currently in the queue
         """
@@ -90,7 +90,7 @@ class CommsSendBatched(
             self.__send_batch(*batch_key, batch.records)
         self.batches.clear()
 
-    def __send_up_to(self, key: tuple[str, str]):
+    def __send_up_to(self, key: tuple[str, str]) -> None:
         """
         Sends all batches up to the given key
         """
@@ -99,7 +99,7 @@ class CommsSendBatched(
             if batch_key == key:
                 break
 
-    def __send_batch(self, exchange: str, routing_key: str, batch: list[OUT]):
+    def __send_batch(self, exchange: str, routing_key: str, batch: list[OUT]) -> None:
         """
         Sends the given batch to the given exchange and routing key
         """

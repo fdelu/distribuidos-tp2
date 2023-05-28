@@ -20,12 +20,12 @@ class CityJoiner:
     config: Config
     comms: JoinerComms[JoinedCityTrip]
 
-    def __init__(self, config: Config, comms: JoinerComms):
+    def __init__(self, config: Config, comms: JoinerComms) -> None:
         self.station_names = {}
         self.config = config
         self.comms = comms
 
-    def handle_station(self, station: BasicStation):
+    def handle_station(self, station: BasicStation) -> None:
         if station.latitude is None or station.longitude is None:
             logging.debug(
                 f"Missing coordinates for station code {station.code}, year"
@@ -37,10 +37,10 @@ class CityJoiner:
             station.name, (station.latitude, station.longitude)
         )
 
-    def handle_weather(self, weather: BasicWeather):
+    def handle_weather(self, weather: BasicWeather) -> None:
         logging.warn("Unexpected Weather received on year joiner")
 
-    def handle_trip(self, trip: BasicTrip):
+    def handle_trip(self, trip: BasicTrip) -> None:
         data = self._get_join_data(trip)
         if data is None:
             return

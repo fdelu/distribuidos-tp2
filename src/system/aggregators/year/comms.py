@@ -17,11 +17,11 @@ class SystemCommunication(
     trips_queue: str
     out_queue: str
 
-    def _load_definitions(self):
+    def _load_definitions(self) -> None:
         # in
         self.trips_queue, self.out_queue = load_definitions(self, self.NAME)
 
-    def _get_routing_details(self, record: PartialYearRecords):
+    def _get_routing_details(self, record: PartialYearRecords) -> tuple[str, str]:
         return "", self.out_queue
 
     def set_all_trips_done_callback(self, callback: Callable[[], None]) -> None:

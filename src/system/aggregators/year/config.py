@@ -7,7 +7,7 @@ class Config(ConfigBase):
     year_base: str
     year_compared: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(NAME)
         self.year_base = self.get("YearBase")
         self.year_compared = self.get("YearCompared")

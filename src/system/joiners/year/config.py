@@ -7,7 +7,7 @@ class Config(JoinerConfig):
     year_base: int
     year_compared: int
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(NAME)
         self.year_base = self.get_int("YearBase")
         self.year_compared = self.get_int("YearCompared")

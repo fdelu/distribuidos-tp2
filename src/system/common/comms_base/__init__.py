@@ -23,10 +23,10 @@ class SystemCommunicationBase(CommsProtocol):
     def channel(self) -> BlockingChannel:
         return self.ch
 
-    def __init__(self, config: ConfigProtocol):
+    def __init__(self, config: ConfigProtocol) -> None:
         self.conn = BlockingConnection(ConnectionParameters(host=config.rabbit_host))
         self.ch = self.conn.channel()
 
-    def close(self):
+    def close(self) -> None:
         self.ch.close()
         self.conn.close()

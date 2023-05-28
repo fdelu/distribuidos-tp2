@@ -34,11 +34,11 @@ class CommsProtocol(Protocol):
         ...
 
     @abstractmethod
-    def __init__(self, config: ConfigProtocol):
+    def __init__(self, config: ConfigProtocol) -> None:
         ...
 
     @abstractmethod
-    def close(self):
+    def close(self) -> None:
         """
         Closes the connection
         """
@@ -48,21 +48,21 @@ class CommsProtocol(Protocol):
 # Comms with receive capabilities
 class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
     @abstractmethod
-    def start_consuming(self):
+    def start_consuming(self) -> None:
         """
         Start consuming messages from the queues
         """
         ...
 
     @abstractmethod
-    def stop_consuming(self):
+    def stop_consuming(self) -> None:
         """
         Signal/Thread-Safe way to stop consuming
         """
         ...
 
     @abstractmethod
-    def set_callback(self, callback: Callable[[IN], None]):
+    def set_callback(self, callback: Callable[[IN], None]) -> None:
         """
         Sets the callback to be called when a record is received
         """
@@ -84,13 +84,13 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
         ...
 
     @abstractmethod
-    def cancel_timer(self, timer: Any):
+    def cancel_timer(self, timer: Any) -> None:
         """
         Cancels the timer
         """
         ...
 
-    def add_stop_callback(self, callback: Callable[[], None]):
+    def add_stop_callback(self, callback: Callable[[], None]) -> None:
         """
         Sets a callback to be called when the consuming is stopped.
         It won't be called if the consuming was interrupted by a signal.
@@ -98,14 +98,14 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
         ...
 
     @abstractmethod
-    def _load_definitions(self):
+    def _load_definitions(self) -> None:
         """
         Declares the exchanges, queues and bindings required for the communication
         """
         ...
 
     @abstractmethod
-    def _start_consuming_from(self, queue: str):
+    def _start_consuming_from(self, queue: str) -> None:
         """
         Starts consuming from the given queue.
         This method returns when stop_consuming() is called.
@@ -145,7 +145,7 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
 # Comms with send capabilities
 class CommsSendProtocol(CommsProtocol, Protocol[OUT]):
     @abstractmethod
-    def send(self, record: OUT):
+    def send(self, record: OUT) -> None:
         """
         Sends a record to the appropriate queue
         """

@@ -22,7 +22,7 @@ class JoinedRainTrip:
     def be_handled_by(self, handler: "JoinedRecordHandler[T, JoinedRainTrip]") -> T:
         return handler.handle_joined(self)
 
-    def get_routing_key(self):
+    def get_routing_key(self) -> str:
         return RecordType.TRIP
 
 
@@ -37,7 +37,7 @@ class JoinedYearTrip:
     def be_handled_by(self, handler: "JoinedRecordHandler[T, JoinedYearTrip]") -> T:
         return handler.handle_joined(self)
 
-    def get_routing_key(self):
+    def get_routing_key(self) -> str:
         return RecordType.TRIP
 
 
@@ -53,7 +53,7 @@ class JoinedCityTrip:
     def be_handled_by(self, handler: "JoinedRecordHandler[T, JoinedCityTrip]") -> T:
         return handler.handle_joined(self)
 
-    def get_routing_key(self):
+    def get_routing_key(self) -> str:
         return RecordType.TRIP
 
 

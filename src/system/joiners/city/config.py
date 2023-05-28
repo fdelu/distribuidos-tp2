@@ -6,6 +6,6 @@ NAME = "city"
 class Config(JoinerConfig):
     city: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(NAME)
         self.city = self.get("City").lower()

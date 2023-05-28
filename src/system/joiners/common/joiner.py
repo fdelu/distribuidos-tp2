@@ -16,16 +16,16 @@ class JoinHandler(Generic[GenericJoinedTrip]):
     joiner: Joiner
     phase: Phase
 
-    def __init__(self, config: Config, comms: JoinerComms, joiner: Joiner):
+    def __init__(self, config: Config, comms: JoinerComms, joiner: Joiner) -> None:
         self.comms = comms
         self.config = config
         self.phase = WeatherStationsPhase(self.comms, config, joiner)
 
-    def run(self):
+    def run(self) -> None:
         logging.info("Receiving weather & stations")
         self.comms.set_callback(self.handle_record)
         self.comms.start_consuming()
         self.comms.close()
 
-    def handle_record(self, record: BasicRecord):
+    def handle_record(self, record: BasicRecord) -> None:
         self.phase = self.phase.handle_record(record)

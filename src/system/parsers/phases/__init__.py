@@ -11,7 +11,7 @@ from ..comms import SystemCommunication
 class Phase:
     comms: SystemCommunication
 
-    def __init__(self, comms: SystemCommunication):
+    def __init__(self, comms: SystemCommunication) -> None:
         self.comms = comms
 
     def handle_station_batch(self, batch: RawBatch) -> "Phase":

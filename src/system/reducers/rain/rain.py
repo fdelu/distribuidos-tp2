@@ -5,10 +5,10 @@ from common.messages.stats import RainAverages, StatsRecord
 class RainReducer:
     averages: dict[str, DateInfo]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.averages = {}
 
-    def handle_aggregated(self, avg: PartialRainAverages):
+    def handle_aggregated(self, avg: PartialRainAverages) -> None:
         for date, date_average in avg.duration_averages.items():
             current = self.averages.setdefault(date, DateInfo(0, 0))
 

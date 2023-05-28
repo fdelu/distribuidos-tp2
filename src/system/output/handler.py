@@ -20,7 +20,7 @@ class ClientHandler(Thread):
 
     control_socket: zmq.Socket | None = None
 
-    def __init__(self, config: Config, context: zmq.Context, stats: Stats):
+    def __init__(self, config: Config, context: zmq.Context, stats: Stats) -> None:
         """
         Initializes the client handler. Must be called from the main thread.
         """
@@ -31,11 +31,11 @@ class ClientHandler(Thread):
 
         self.control_socket = None
 
-    def run(self):
+    def run(self) -> None:
         logging.info("Client handler started")
         ClientHandlerInternal(self.context, self.config, self.stats).run()
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Stops a running server
         Must be called from the main thread.
@@ -45,7 +45,7 @@ class ClientHandler(Thread):
         self.control_socket.send_string(END_MSG)
         self.control_socket.close()
 
-    def received(self, type: StatType):
+    def received(self, type: StatType) -> None:
         """
         Executed when a stat is received.
         Must be called from the main thread.
@@ -71,7 +71,7 @@ class ClientHandlerInternal:
     stats: Stats
     pending_clients: dict[StatType, list[bytes]] = {}  # stat_type -> clients waiting
 
-    def __init__(self, context: zmq.Context, config: Config, stats: Stats):
+    def __init__(self, context: zmq.Context, config: Config, stats: Stats) -> None:
         self.clients_socket = context.socket(zmq.ROUTER)
         self.clients_socket.bind(config.address)
         self.control_socket = context.socket(zmq.PAIR)
@@ -79,7 +79,7 @@ class ClientHandlerInternal:
 
         self.stats = stats
 
-    def run(self):
+    def run(self) -> None:
         poller = zmq.Poller()
         poller.register(self.clients_socket, zmq.POLLIN)
         poller.register(self.control_socket, zmq.POLLIN)
@@ -109,7 +109,7 @@ class ClientHandlerInternal:
             self.__handle_client(id, body)
         return False
 
-    def __handle_client(self, id: bytes, msg: bytes):
+    def __handle_client(self, id: bytes, msg: bytes) -> None:
         """
         Handles a client request, either by sending him the stat he
         requested or by adding him to the list of clients waiting for that stat
@@ -128,7 +128,7 @@ class ClientHandlerInternal:
         else:
             self.__send_stat(id, stat)
 
-    def __handle_received(self, type: StatType):
+    def __handle_received(self, type: StatType) -> None:
         """
         Sends a stat to all clients waiting for it when it is received
         """
@@ -153,7 +153,7 @@ class ClientHandlerInternal:
                 return self.stats.city_averages
             return None
 
-    def __send_stat(self, id: bytes, stat: StatsRecord):
+    def __send_stat(self, id: bytes, stat: StatsRecord) -> None:
         """
         Sends a stat to a client
         """

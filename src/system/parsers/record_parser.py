@@ -12,15 +12,15 @@ class RecordParser:
     comms: SystemCommunication
     phase: Phase
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         self.comms = SystemCommunication(config)
         self.phase = WeatherStationsPhase(self.comms)
 
-    def run(self):
+    def run(self) -> None:
         logging.info("Receiving weather & stations")
         self.comms.set_callback(self.handle_record)
         self.comms.start_consuming()
         self.comms.close()
 
-    def handle_record(self, raw_record: RawRecord):
+    def handle_record(self, raw_record: RawRecord) -> None:
         self.phase = self.phase.handle_record(raw_record)

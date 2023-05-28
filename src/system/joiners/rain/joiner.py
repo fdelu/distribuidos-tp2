@@ -13,19 +13,19 @@ class RainJoiner:
     config: Config
     comms: JoinerComms[JoinedRainTrip]
 
-    def __init__(self, config: Config, comms: JoinerComms):
+    def __init__(self, config: Config, comms: JoinerComms) -> None:
         self.weather = {}
         self.config = config
         self.comms = comms
 
-    def handle_station(self, station: BasicStation):
+    def handle_station(self, station: BasicStation) -> None:
         logging.warn("Unexpected Station received on rain joiner")
 
-    def handle_weather(self, weather: BasicWeather):
+    def handle_weather(self, weather: BasicWeather) -> None:
         weathers = self.weather.setdefault(weather.city, {})
         weathers[weather.date] = weather.precipitation
 
-    def handle_trip(self, trip: BasicTrip):
+    def handle_trip(self, trip: BasicTrip) -> None:
         precipitation = self._get_join_data(trip)
         if (
             precipitation is None

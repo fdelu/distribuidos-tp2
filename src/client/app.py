@@ -11,7 +11,7 @@ from .config import Config
 from .bike_rides_analyzer import BikeRidesAnalyzer
 
 
-def main():
+def main() -> None:
     config = Config()
     setup_logs(config.log_level)
 
@@ -26,7 +26,7 @@ def main():
     logging.info("Exiting gracefully")
 
 
-def get_stats(bike_rides_analyzer: BikeRidesAnalyzer, config: Config):
+def get_stats(bike_rides_analyzer: BikeRidesAnalyzer, config: Config) -> None:
     cities = os.listdir(config.data_path)
     logging.info(f"Using data in {config.data_path}. Cities: {', '.join(cities)}")
 
@@ -53,7 +53,7 @@ def line_reader(file_path: str) -> Iterable[str]:
             yield line.strip()
 
 
-def save_results(config: Config, name: str, data: Any):
+def save_results(config: Config, name: str, data: Any) -> None:
     with open(f"{config.result_path}/{name}.json", "w") as file:
         file.write(
             json.dumps(

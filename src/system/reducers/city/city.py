@@ -7,11 +7,11 @@ class CityReducer:
     averages: dict[str, StationInfo]  # station name -> info
     config: Config
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         self.averages = {}
         self.config = config
 
-    def handle_aggregated(self, avg: PartialCityAverages):
+    def handle_aggregated(self, avg: PartialCityAverages) -> None:
         for station, station_average in avg.distance_averages.items():
             current = self.averages.setdefault(station, StationInfo(0, 0))
 

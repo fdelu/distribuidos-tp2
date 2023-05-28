@@ -10,13 +10,13 @@ from .comms import AggregatorComms
 
 
 class Aggregator(Protocol[GenericJoinedTrip, GenericAggregatedRecord]):
-    def handle_joined(self, trip: GenericJoinedTrip):
+    def handle_joined(self, trip: GenericJoinedTrip) -> None:
         ...
 
     def get_value(self) -> GenericAggregatedRecord:
         ...
 
-    def reset(self):
+    def reset(self) -> None:
         ...
 
 
@@ -40,18 +40,18 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         self.ends_received = 0
         self.timer = None
 
-    def run(self):
+    def run(self) -> None:
         self.comms.set_callback(self.handle_record)
         self.comms.start_consuming()
         self.comms.close()
 
-    def handle_joined(self, trip: GenericJoinedTrip):
+    def handle_joined(self, trip: GenericJoinedTrip) -> None:
         self.aggregator.handle_joined(trip)
         self.count += 1
         if self.timer is None:
             self.setup_timer()
 
-    def handle_end(self):
+    def handle_end(self) -> None:
         self.ends_received += 1
         logging.debug(
             "A joiner finished sending trips"
@@ -65,7 +65,7 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
     def handle_record(self, record: GenericJoinedTrip | End) -> None:
         record.be_handled_by(self)
 
-    def finished(self):
+    def finished(self) -> None:
         logging.info(
             f"Finished processing all trips. Total processed in this node: {self.count}"
         )
@@ -77,16 +77,16 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         self.comms.send(End())
         self.comms.stop_consuming()
 
-    def timer_callback(self):
+    def timer_callback(self) -> None:
         self.send_averages()
         self.setup_timer()
 
-    def setup_timer(self):
+    def setup_timer(self) -> None:
         self.timer = self.comms.set_timer(
             self.timer_callback, self.config.send_interval_seconds
         )
 
-    def send_averages(self):
+    def send_averages(self) -> None:
         logging.debug("Sending partial results")
         self.comms.send(self.aggregator.get_value())
         self.aggregator.reset()

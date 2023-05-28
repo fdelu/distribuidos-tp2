@@ -8,7 +8,7 @@ from .record_parser import RecordParser
 trips = False
 
 
-def main():
+def main() -> None:
     config = Config()
     setup_logs(config.log_level)
 

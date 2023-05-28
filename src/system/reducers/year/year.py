@@ -8,16 +8,18 @@ class YearReducer:
     counts_year_compared: dict[str, int]  # station name -> count
     config: Config
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         self.counts_year_base = {}
         self.counts_year_compared = {}
         self.config = config
 
-    def handle_aggregated(self, counts: PartialYearCounts):
+    def handle_aggregated(self, counts: PartialYearCounts) -> None:
         self.__merge_counts(self.counts_year_base, counts.counts_year_base)
         self.__merge_counts(self.counts_year_compared, counts.counts_year_compared)
 
-    def __merge_counts(self, counts: dict[str, int], other_counts: dict[str, int]):
+    def __merge_counts(
+        self, counts: dict[str, int], other_counts: dict[str, int]
+    ) -> None:
         for station, count in other_counts.items():
             counts[station] = counts.get(station, 0) + count
 

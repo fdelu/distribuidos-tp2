@@ -21,7 +21,7 @@ class SystemCommunication(
     END_QUEUE = f"parser_ends_{uuid4()}"
     OUT_EXCHANGE = "basic_records"
 
-    def _load_definitions(self):
+    def _load_definitions(self) -> None:
         # in
         self._start_consuming_from(self.BATCHS_QUEUE)
 
@@ -29,8 +29,8 @@ class SystemCommunication(
         self.channel.queue_bind(self.END_QUEUE, self.EXCHANGE, RecordType.END)
         self._start_consuming_from(self.END_QUEUE)
 
-    def _get_routing_details(self, record: BasicRecord):
+    def _get_routing_details(self, record: BasicRecord) -> tuple[str, str]:
         return self.OUT_EXCHANGE, record.get_routing_key()
 
-    def set_all_batchs_done_callback(self, callback: Callable[[], None]):
+    def set_all_batchs_done_callback(self, callback: Callable[[], None]) -> None:
         self._set_empty_queue_callback(self.BATCHS_QUEUE, callback)

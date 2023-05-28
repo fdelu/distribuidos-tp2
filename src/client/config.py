@@ -11,7 +11,7 @@ class Config:
 
     SECTION = "client"
 
-    def __init__(self):
+    def __init__(self) -> None:
         parser = configparser.ConfigParser()
         parser.read("/config.ini")
         self.batch_size = parser.getint(self.SECTION, "BatchSize")

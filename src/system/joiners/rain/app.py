@@ -7,7 +7,7 @@ from ..common.joiner import JoinHandler
 from .joiner import RainJoiner
 
 
-def main():
+def main() -> None:
     config = Config()
     setup_logs(config.log_level)
 

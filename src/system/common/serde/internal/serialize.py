@@ -27,7 +27,7 @@ def serialize_item(item: Any, expected_type: Any) -> Translated:
     return serialize_object(item, expected_type)
 
 
-def serialize_enum(item: Any, expected_type: EnumType):
+def serialize_enum(item: Any, expected_type: EnumType) -> Translated:
     verify_type(item, expected_type)
     return item.value
 

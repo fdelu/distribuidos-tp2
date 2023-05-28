@@ -21,7 +21,7 @@ class SystemCommunication(
     OTHER_QUEUE = f"rain_joiner_other_{uuid4()}"
     OUT_EXCHANGE = "rain_joined_records"
 
-    def _load_definitions(self):
+    def _load_definitions(self) -> None:
         # in
 
         self.channel.queue_declare(
@@ -34,11 +34,11 @@ class SystemCommunication(
         self.channel.queue_bind(self.OTHER_QUEUE, self.EXCHANGE, RecordType.END)
         self._start_consuming_from(self.OTHER_QUEUE)
 
-    def _get_routing_details(self, record: JoinedRainRecords):
+    def _get_routing_details(self, record: JoinedRainRecords) -> tuple[str, str]:
         return self.OUT_EXCHANGE, record.get_routing_key()
 
-    def start_consuming_trips(self):
+    def start_consuming_trips(self) -> None:
         self._start_consuming_from(self.TRIPS_QUEUE)
 
-    def set_all_trips_done_callback(self, callback: Callable[[], None]):
+    def set_all_trips_done_callback(self, callback: Callable[[], None]) -> None:
         self._set_empty_queue_callback(self.TRIPS_QUEUE, callback)

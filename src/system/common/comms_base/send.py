@@ -18,18 +18,18 @@ class CommsSend(CommsProtocol, Generic[OUT], ABC):
 
     out_type: type
 
-    def __init__(self, config: ConfigBase):
+    def __init__(self, config: ConfigBase) -> None:
         super().__init__(config)
         self.out_type = get_generic_type(self, CommsSend, 0)
 
-    def send(self, record: OUT):
+    def send(self, record: OUT) -> None:
         exchange, routing_key = self._get_routing_details(record)
         self.__send_to(record, exchange, routing_key)
 
     def _serialize_record(self, message: OUT) -> str:
         return serialize(message, set_type=self.out_type)
 
-    def __send_to(self, record: OUT, exchange: str, routing_key: str):
+    def __send_to(self, record: OUT, exchange: str, routing_key: str) -> None:
         self.channel.basic_publish(
             exchange,
             routing_key,

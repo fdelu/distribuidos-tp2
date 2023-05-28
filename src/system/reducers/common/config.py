@@ -5,7 +5,7 @@ class Config(ConfigBase):
     aggregators_count: int
     prefetch_count: int
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(f"reducers.{name}")
         self.aggregators_count = self.get_int("AggregatorsCount")
         self.prefetch_count = self.get_int("PrefetchCount")

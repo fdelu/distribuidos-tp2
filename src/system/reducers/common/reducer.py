@@ -12,7 +12,7 @@ from .comms import ReducerComms
 
 
 class Reducer(Protocol[GenericAggregatedRecord]):
-    def handle_aggregated(self, aggregated: GenericAggregatedRecord):
+    def handle_aggregated(self, aggregated: GenericAggregatedRecord) -> None:
         ...
 
     def get_value(self) -> StatsRecord:
@@ -36,15 +36,15 @@ class ReductionHandler(Generic[GenericAggregatedRecord]):
         self.ends_received = 0
         self.config = config
 
-    def run(self):
+    def run(self) -> None:
         self.comms.set_callback(self.handle_record)
         self.comms.start_consuming()
         self.comms.close()
 
-    def handle_aggregated(self, aggregated: GenericAggregatedRecord):
+    def handle_aggregated(self, aggregated: GenericAggregatedRecord) -> None:
         self.reducer.handle_aggregated(aggregated)
 
-    def handle_end(self):
+    def handle_end(self) -> None:
         self.ends_received += 1
         if self.ends_received < self.config.aggregators_count:
             logging.debug(

@@ -25,11 +25,11 @@ class SystemCommunication(
 
     config: Config
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         self.config = config
         super().__init__(config)
 
-    def _load_definitions(self):
+    def _load_definitions(self) -> None:
         # in
 
         self.channel.queue_declare(
@@ -42,14 +42,14 @@ class SystemCommunication(
         self.__bind_city(self.TRIPS_QUEUE, RecordType.TRIP)
         self._start_consuming_from(self.OTHER_QUEUE)
 
-    def __bind_city(self, queue: str, record: RecordType):
+    def __bind_city(self, queue: str, record: RecordType) -> None:
         self.channel.queue_bind(queue, self.EXCHANGE, f"{record}.{self.config.city}.*")
 
-    def _get_routing_details(self, record: JoinedCityRecords):
+    def _get_routing_details(self, record: JoinedCityRecords) -> tuple[str, str]:
         return self.OUT_EXCHANGE, record.get_routing_key()
 
-    def start_consuming_trips(self):
+    def start_consuming_trips(self) -> None:
         self._start_consuming_from(self.TRIPS_QUEUE)
 
-    def set_all_trips_done_callback(self, callback: Callable[[], None]):
+    def set_all_trips_done_callback(self, callback: Callable[[], None]) -> None:
         self._set_empty_queue_callback(self.TRIPS_QUEUE, callback)

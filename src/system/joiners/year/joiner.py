@@ -13,19 +13,19 @@ class YearJoiner:
     config: Config
     comms: JoinerComms[JoinedYearTrip]
 
-    def __init__(self, config: Config, comms: JoinerComms):
+    def __init__(self, config: Config, comms: JoinerComms) -> None:
         self.station_names = {}
         self.config = config
         self.comms = comms
 
-    def handle_station(self, station: BasicStation):
+    def handle_station(self, station: BasicStation) -> None:
         station_names = self.station_names.setdefault(station.city, {})
         station_names[(station.code, station.year)] = station.name
 
-    def handle_weather(self, weather: BasicWeather):
+    def handle_weather(self, weather: BasicWeather) -> None:
         logging.warn("Unexpected Weather received on year joiner")
 
-    def handle_trip(self, trip: BasicTrip):
+    def handle_trip(self, trip: BasicTrip) -> None:
         name = self._get_join_data(trip)
         if name is None:
             return

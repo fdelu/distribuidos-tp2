@@ -42,7 +42,7 @@ class TripsPhase(Phase[GenericJoinedTrip]):
         self.comms.set_all_trips_done_callback(self._all_trips_done)
         return self
 
-    def _all_trips_done(self):
+    def _all_trips_done(self) -> None:
         logging.info(
             f"Finished joining all trips. Total processed in this node: {self.count}"
         )

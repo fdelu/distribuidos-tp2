@@ -13,7 +13,7 @@ Serializer = Callable[Concatenate[Translated, P], str]
 Deserializer = Callable[Concatenate[str, P], Translated]
 
 
-def verify_type(item: object, expected_type: type):
+def verify_type(item: object, expected_type: type) -> None:
     """
     Verifies that the given item is of the expected type.
 
@@ -32,8 +32,8 @@ def verify_type(item: object, expected_type: type):
         if base_type == type(item):
             return
 
-    if expected_type == float:
-        return isinstance(item, (int, float))
+    if expected_type == float and isinstance(item, (int, float)):
+        return
 
     if type(item) == expected_type:
         return

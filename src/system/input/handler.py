@@ -31,7 +31,7 @@ class ClientHandler:
 
     stop_event: Event
 
-    def __init__(self, config: Config, context: zmq.Context):
+    def __init__(self, config: Config, context: zmq.Context) -> None:
         self.config = config
         self.phase = Phase.StationsWeather
         self.comms = SystemCommunication(config)
@@ -41,7 +41,7 @@ class ClientHandler:
         socket.bind(config.address)
         self.socket = SocketStopWrapper(socket, self.stop_event)
 
-    def run(self):
+    def run(self) -> None:
         self.setup_interrupt()
         logging.info("Receiving weather & stations")
         try:
@@ -52,10 +52,10 @@ class ClientHandler:
         self.comms.close()
         self.socket.close()
 
-    def setup_interrupt(self):
+    def setup_interrupt(self) -> None:
         signal.signal(signal.SIGTERM, lambda *_: self.stop_event.set())
 
-    def receive_data(self):
+    def receive_data(self) -> None:
         while not self.stop_event.is_set():
             msg = self.socket.recv()
 
@@ -78,7 +78,7 @@ class ClientHandler:
         record_type, city = header.split(SplitChar.HEADER)
         return RecordType(record_type), city
 
-    def __handle_batch(self, record_type: RecordType, city: str):
+    def __handle_batch(self, record_type: RecordType, city: str) -> None:
         count = 0
         msg = self.socket.recv()
         headers, msg = msg.split(SplitChar.RECORDS, 1)
@@ -97,7 +97,7 @@ class ClientHandler:
             f"{self.phase} | {city} | Received and sent {count} {record_type} records"
         )
 
-    def __handle_end(self):
+    def __handle_end(self) -> None:
         self.comms.send(End())
         self.stop_event.set()
 

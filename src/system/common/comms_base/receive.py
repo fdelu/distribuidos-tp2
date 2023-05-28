@@ -37,7 +37,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     stop_callbacks: list[Callable[[], None]] = []
     in_type: type
 
-    def __init__(self, config: ReceiveConfig, with_interrupt: bool = True):
+    def __init__(self, config: ReceiveConfig, with_interrupt: bool = True) -> None:
         super().__init__(config)
         self.channel.basic_qos(prefetch_count=config.prefetch_count)
         self.callback = None
@@ -46,32 +46,32 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         self.__setup()
         self.in_type = get_generic_type(self, CommsReceive, 0)
 
-    def start_consuming(self):
+    def start_consuming(self) -> None:
         self.channel.start_consuming()
 
-    def stop_consuming(self):
+    def stop_consuming(self) -> None:
         self.connection.add_callback_threadsafe(self.__stop)
 
-    def set_callback(self, callback: Callable[[IN], None]):
+    def set_callback(self, callback: Callable[[IN], None]) -> None:
         self.callback = callback
 
     def set_timer(self, callback: Callable[[], None], timeout_seconds: float) -> Any:
         return self.connection.call_later(timeout_seconds, callback)
 
-    def cancel_timer(self, timer: Any):
+    def cancel_timer(self, timer: Any) -> None:
         self.connection.remove_timeout(timer)
 
     def is_stopped(self) -> bool:
         return self.interrupted.is_set() or self.stopped.is_set()
 
-    def add_stop_callback(self, callback: Callable[[], None]):
+    def add_stop_callback(self, callback: Callable[[], None]) -> None:
         self.stop_callbacks.append(callback)
 
     @abstractmethod
-    def _load_definitions(self):
+    def _load_definitions(self) -> None:
         ...
 
-    def _start_consuming_from(self, queue: str):
+    def _start_consuming_from(self, queue: str) -> None:
         callback = partial(self.__handle_record, queue)
         self.channel.basic_consume(queue=queue, on_message_callback=callback)
 
@@ -113,13 +113,13 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         for callback in self.stop_callbacks:
             callback()
 
-    def __setup_interrupt(self):
+    def __setup_interrupt(self) -> None:
         """
         Sets up the interrupt handler
         """
         signal(SIGTERM, lambda *_: self.stop_consuming())
 
-    def __setup(self):
+    def __setup(self) -> None:
         """
         Loads the definitions. When done, writes "OK" to the status file.
         """
@@ -154,7 +154,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         if method.delivery_tag is not None:
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
-    def __timeout_handler(self, info: "TimeoutInfo"):
+    def __timeout_handler(self, info: "TimeoutInfo") -> None:
         """
         Handles a timeout for the given timeout info
         """

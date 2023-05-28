@@ -7,7 +7,7 @@ from .handler import ClientHandler
 from .config import Config
 
 
-def main():
+def main() -> None:
     config = Config()
     setup_logs(config.log_level)
 

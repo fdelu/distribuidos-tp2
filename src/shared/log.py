@@ -6,7 +6,7 @@ VALID_LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 FORMAT = "{asctime} | {levelname} | {funcName} | {message}"
 
 
-def setup_logs(log_level: str | None = None):
+def setup_logs(log_level: str | None = None) -> None:
     if log_level is not None:
         log_level = log_level.upper()
     invalid = False

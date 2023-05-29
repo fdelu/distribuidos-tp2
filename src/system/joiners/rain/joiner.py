@@ -13,7 +13,7 @@ class RainJoiner:
     config: Config
     comms: JoinerComms[JoinedRainTrip]
 
-    def __init__(self, config: Config, comms: JoinerComms) -> None:
+    def __init__(self, config: Config, comms: JoinerComms[JoinedRainTrip]) -> None:
         self.weather = {}
         self.config = config
         self.comms = comms

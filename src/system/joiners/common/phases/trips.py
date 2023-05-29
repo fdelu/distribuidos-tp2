@@ -13,24 +13,24 @@ class TripsPhase(Phase[GenericJoinedTrip]):
     ends_received: int = 0
     count: int = 0
 
-    def handle_station(self, station: BasicStation) -> Phase:
+    def handle_station(self, station: BasicStation) -> Phase[GenericJoinedTrip]:
         logging.warn("Unexpected Station received while receiving trips")
         return self
 
-    def handle_weather(self, weather: BasicWeather) -> Phase:
+    def handle_weather(self, weather: BasicWeather) -> Phase[GenericJoinedTrip]:
         logging.warn("Unexpected Weather received while receiving trips")
         return self
 
-    def handle_trips_start(self) -> Phase:
+    def handle_trips_start(self) -> Phase[GenericJoinedTrip]:
         logging.warn("Unexpected TripsStart received while already receiving trips")
         return self
 
-    def handle_trip(self, trip: BasicTrip) -> Phase:
+    def handle_trip(self, trip: BasicTrip) -> Phase[GenericJoinedTrip]:
         self.joiner.handle_trip(trip)
         self.count += 1
         return self
 
-    def handle_end(self) -> Phase:
+    def handle_end(self) -> Phase[GenericJoinedTrip]:
         self.ends_received += 1
         logging.debug(
             "A parser finished sending trips"

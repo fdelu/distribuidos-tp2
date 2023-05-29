@@ -29,7 +29,7 @@ class CommsSendBatched(
     """
 
     batch_size: int
-    batches: dict[tuple[str, str], "BatchInfo"]  # exchange, routing_key -> batch
+    batches: dict[tuple[str, str], "BatchInfo[OUT]"]  # exchange, routing_key -> batch
     out_type: type
 
     def __init__(self, config: BatchConfig) -> None:

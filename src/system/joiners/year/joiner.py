@@ -13,7 +13,7 @@ class YearJoiner:
     config: Config
     comms: JoinerComms[JoinedYearTrip]
 
-    def __init__(self, config: Config, comms: JoinerComms) -> None:
+    def __init__(self, config: Config, comms: JoinerComms[JoinedYearTrip]) -> None:
         self.station_names = {}
         self.config = config
         self.comms = comms

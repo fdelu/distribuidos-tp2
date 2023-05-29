@@ -1,5 +1,5 @@
 import types
-from typing import Callable, Concatenate, ParamSpec, get_args, get_origin
+from typing import Any, Callable, Concatenate, ParamSpec, get_args, get_origin
 
 """
 Type alias for the types that can be serialized and deserialized.
@@ -43,7 +43,7 @@ def verify_type(item: object, expected_type: type) -> None:
     )
 
 
-def get_type_name(type) -> str:
+def get_type_name(type: Any) -> str:
     if isinstance(type, types.GenericAlias):
         return (
             get_type_name(get_origin(type))

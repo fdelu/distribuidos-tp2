@@ -33,7 +33,7 @@ class Phase:
         self,
         batch: RawBatch,
         parse_func: Callable[[list[str], dict[str, int], str], BasicRecord],
-    ):
+    ) -> None:
         indexes = get_indexes(batch)
         rows = get_rows(batch)
         for row in rows:

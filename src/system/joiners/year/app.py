@@ -1,6 +1,8 @@
 import logging
 from shared.log import setup_logs
 
+from common.messages.joined import JoinedYearTrip
+
 from .config import Config
 from .comms import SystemCommunication
 from ..common.joiner import JoinHandler
@@ -13,7 +15,7 @@ def main() -> None:
 
     comms = SystemCommunication(config)
     joiner = YearJoiner(config, comms)
-    handler = JoinHandler(config, comms, joiner)
+    handler = JoinHandler[JoinedYearTrip](config, comms, joiner)
     handler.run()
     logging.info("Exiting gracefully")
 

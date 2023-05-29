@@ -13,10 +13,15 @@ from .config import Config
 class JoinHandler(Generic[GenericJoinedTrip]):
     comms: JoinerComms[GenericJoinedTrip]
     config: Config
-    joiner: Joiner
-    phase: Phase
+    joiner: Joiner[None]
+    phase: Phase[GenericJoinedTrip]
 
-    def __init__(self, config: Config, comms: JoinerComms, joiner: Joiner) -> None:
+    def __init__(
+        self,
+        config: Config,
+        comms: JoinerComms[GenericJoinedTrip],
+        joiner: Joiner[None],
+    ) -> None:
         self.comms = comms
         self.config = config
         self.phase = WeatherStationsPhase(self.comms, config, joiner)

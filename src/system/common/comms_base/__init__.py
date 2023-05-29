@@ -9,6 +9,13 @@ from .send import CommsSend  # noqa
 from .receive import CommsReceive  # noqa
 from .batched import CommsSendBatched  # noqa
 
+__all__ = [
+    "CommsProtocol",
+    "CommsSend",
+    "CommsReceive",
+    "CommsSendBatched",
+]
+
 
 # Base communication class. See protocol.py for more details about the methods.
 class SystemCommunicationBase(CommsProtocol):

@@ -14,13 +14,15 @@ END_MSG = "END"
 
 
 class ClientHandler(Thread):
-    context: zmq.Context
+    context: zmq.Context[zmq.Socket[None]]
     stats: Stats
     config: Config
 
-    control_socket: zmq.Socket | None = None
+    control_socket: zmq.Socket[None] | None = None
 
-    def __init__(self, config: Config, context: zmq.Context, stats: Stats) -> None:
+    def __init__(
+        self, config: Config, context: zmq.Context[zmq.Socket[None]], stats: Stats
+    ) -> None:
         """
         Initializes the client handler. Must be called from the main thread.
         """
@@ -54,7 +56,7 @@ class ClientHandler(Thread):
             self.control_socket = self.__connect_control()
         self.control_socket.send_string(type)
 
-    def __connect_control(self) -> zmq.Socket:
+    def __connect_control(self) -> zmq.Socket[None]:
         socket = self.context.socket(zmq.PAIR)
         socket.connect(CONTROL_ADDR)
         return socket
@@ -65,13 +67,18 @@ class ClientHandlerInternal:
     Parts of the client handler that can be executed in a separate thread
     """
 
-    clients_socket: zmq.Socket
-    control_socket: zmq.Socket
+    clients_socket: zmq.Socket[None]
+    control_socket: zmq.Socket[None]
 
     stats: Stats
     pending_clients: dict[StatType, list[bytes]] = {}  # stat_type -> clients waiting
 
-    def __init__(self, context: zmq.Context, config: Config, stats: Stats) -> None:
+    def __init__(
+        self,
+        context: zmq.Context[zmq.Socket[None]],
+        config: Config,
+        stats: Stats,
+    ) -> None:
         self.clients_socket = context.socket(zmq.ROUTER)
         self.clients_socket.bind(config.address)
         self.control_socket = context.socket(zmq.PAIR)

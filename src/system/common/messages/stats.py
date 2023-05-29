@@ -6,6 +6,8 @@ from shared.messages import StatType  # noqa
 
 T = TypeVar("T", covariant=True)
 
+__all__ = ["StatType"]
+
 
 @dataclass
 class RainAverages:

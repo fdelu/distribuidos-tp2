@@ -19,7 +19,7 @@ class AggregatorComms(
         ...
 
 
-def load_definitions(comms: AggregatorComms, name: str) -> tuple[str, str]:
+def load_definitions(comms: AggregatorComms[IN, OUT], name: str) -> tuple[str, str]:
     # in
     trips_queue = TRIPS_QUEUE.format(name)
     comms._start_consuming_from(trips_queue)

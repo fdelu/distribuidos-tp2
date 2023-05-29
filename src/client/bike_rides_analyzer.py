@@ -19,7 +19,7 @@ class BikeRidesAnalyzer:
     config: Config
     interrupted: Event
 
-    context: zmq.Context
+    context: zmq.Context[zmq.Socket[None]]
     input_socket: SocketStopWrapper
     output_socket: SocketStopWrapper
 

@@ -80,7 +80,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         queue: str,
         callback: Callable[[], None],
         timeout: float = TIMEOUT_SECONDS,
-    ):
+    ) -> None:
         prev = self.timeout_callbacks.get(queue, None)
         if prev is not None:
             self.connection.remove_timeout(prev.timer)
@@ -92,8 +92,8 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         )
 
     def _set_empty_queue_callback(
-        self, queue: str, callback: Callable[[], None], **queue_kwargs
-    ):
+        self, queue: str, callback: Callable[[], None], **queue_kwargs: Any
+    ) -> None:
         self._set_timeout_callback(
             queue,
             lambda: self.__check_messages_left(queue, callback, **queue_kwargs),
@@ -134,7 +134,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         method: spec.Basic.Deliver,
         _props: spec.BasicProperties,
         body: bytes,
-    ):
+    ) -> None:
         """
         Handles a message received from the queue, calling the callback
         if set and acknowledging the message afterwards.
@@ -180,8 +180,8 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             )
 
     def __check_messages_left(
-        self, queue: str, callback: Callable[[], None], **queue_kwargs
-    ):
+        self, queue: str, callback: Callable[[], None], **queue_kwargs: Any
+    ) -> None:
         """
         Checks if there are messages left in the given queue. If not, calls the
         callback. If there are, calls _set_empty_queue_callback() again.

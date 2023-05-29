@@ -20,7 +20,7 @@ class CityJoiner:
     config: Config
     comms: JoinerComms[JoinedCityTrip]
 
-    def __init__(self, config: Config, comms: JoinerComms) -> None:
+    def __init__(self, config: Config, comms: JoinerComms[JoinedCityTrip]) -> None:
         self.station_names = {}
         self.config = config
         self.comms = comms

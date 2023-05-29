@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Any, Protocol
 import os
 from configparser import ConfigParser, ExtendedInterpolation, DEFAULTSECT
 
@@ -26,14 +26,14 @@ class ConfigBase:
         self.log_level = self.get("LogLevel", fallback=None)
         self.rabbit_host = self.get("RabbitHost")
 
-    def get(self, key: str, **kwargs) -> str:
+    def get(self, key: str, **kwargs: Any) -> str:
         return self.parser.get(self.section, key, vars=os.environ, **kwargs).strip()
 
-    def get_int(self, key: str, **kwargs) -> int:
+    def get_int(self, key: str, **kwargs: Any) -> int:
         return self.parser.getint(self.section, key, vars=os.environ, **kwargs)
 
-    def get_float(self, key: str, **kwargs) -> float:
+    def get_float(self, key: str, **kwargs: Any) -> float:
         return self.parser.getfloat(self.section, key, vars=os.environ, **kwargs)
 
-    def get_bool(self, key: str, **kwargs) -> bool:
+    def get_bool(self, key: str, **kwargs: Any) -> bool:
         return self.parser.getboolean(self.section, key, vars=os.environ, **kwargs)

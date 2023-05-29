@@ -6,12 +6,12 @@ TIMEOUT_MILLISECONDS = 1000
 
 
 class SocketStopWrapper:
-    socket: zmq.Socket
+    socket: zmq.Socket[None]
     in_poller: zmq.Poller
     out_poller: zmq.Poller
     stop_event: Event
 
-    def __init__(self, socket: zmq.Socket, stop_event: Event) -> None:
+    def __init__(self, socket: zmq.Socket[None], stop_event: Event) -> None:
         self.socket = socket
         self.in_poller = zmq.Poller()
         self.in_poller.register(self.socket, zmq.POLLIN)
@@ -27,7 +27,7 @@ class SocketStopWrapper:
         sock = self.__wait_until_ready(self.in_poller)
         return sock.recv_string()
 
-    def __wait_until_ready(self, poller: zmq.Poller) -> zmq.Socket:
+    def __wait_until_ready(self, poller: zmq.Poller) -> zmq.Socket[None]:
         self.__check_stop()
         ready = poller.poll(TIMEOUT_MILLISECONDS)
         while len(ready) == 0:

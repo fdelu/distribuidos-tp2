@@ -118,7 +118,7 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
         queue: str,
         callback: Callable[[], None],
         timeout: float = TIMEOUT_SECONDS,
-    ):
+    ) -> None:
         """
         Sets a callback to be called after timeout seconds passed since the last message
         of the given queue was received. If no message is received after the call to
@@ -128,8 +128,8 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
 
     @abstractmethod
     def _set_empty_queue_callback(
-        self, queue: str, callback: Callable[[], None], **queue_kwargs
-    ):
+        self, queue: str, callback: Callable[[], None], **queue_kwargs: Any
+    ) -> None:
         """
         Sets a callback to be called when the given queue is empty.
         """

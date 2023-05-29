@@ -6,6 +6,8 @@ from common.messages.basic import BasicRecord
 from common.messages.joined import GenericJoinedTrip
 from common.comms_base.protocol import CommsReceiveProtocol, CommsSendProtocol
 
+__all__ = ["GenericJoinedTrip"]
+
 
 class JoinerComms(
     CommsReceiveProtocol[BasicRecord],

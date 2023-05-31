@@ -1,5 +1,5 @@
 import types
-from typing import Any, Callable, Concatenate, ParamSpec, get_args, get_origin
+from typing import Callable, Concatenate, ParamSpec, get_args, get_origin
 
 """
 Type alias for the types that can be serialized and deserialized.
@@ -19,12 +19,13 @@ def verify_type(item: object, expected_type: type) -> None:
 
     Does not verify generic types, only the base type.
     """
+
     if isinstance(expected_type, types.UnionType):
         for t in get_args(expected_type):
             try:
                 verify_type(item, t)
                 return
-            except SerializationError:
+            except SerdeError:
                 pass
 
     if isinstance(expected_type, types.GenericAlias):
@@ -38,21 +39,12 @@ def verify_type(item: object, expected_type: type) -> None:
     if type(item) == expected_type:
         return
 
-    raise SerializationError(
+    raise SerdeError(
         f"Expected type {expected_type} but got {type(item)} (value: {item}))"
     )
 
 
-def get_type_name(type: Any) -> str:
-    if isinstance(type, types.GenericAlias):
-        return (
-            get_type_name(get_origin(type))
-            + f"[{', '.join(get_type_name(x) for x in get_args(type))}]"
-        )
-    return type.__name__
-
-
-class SerializationError(Exception):
+class SerdeError(Exception):
     """
     Raised when a serialization or deserialization error occurs.
     """

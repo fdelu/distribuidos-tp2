@@ -107,7 +107,7 @@ class CommsSendBatched(
         self.channel.basic_publish(exchange, routing_key, msg.encode())
 
     def _serialize_record(self, message: OUT) -> str:
-        return serialize(message, set_type=self.out_type)
+        return serialize(message)
 
     @abstractmethod
     def _get_routing_details(self, record: OUT) -> tuple[str, str]:

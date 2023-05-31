@@ -27,7 +27,7 @@ class CommsSend(CommsProtocol, Generic[OUT], ABC):
         self.__send_to(record, exchange, routing_key)
 
     def _serialize_record(self, message: OUT) -> str:
-        return serialize(message, set_type=self.out_type)
+        return serialize(message)
 
     def __send_to(self, record: OUT, exchange: str, routing_key: str) -> None:
         self.channel.basic_publish(

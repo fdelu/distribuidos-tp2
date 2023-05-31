@@ -31,13 +31,13 @@ build:
 	docker compose build
 
 docker-compose-up: build
-	docker compose up -d	
+	docker compose up -d
 
 docker-compose-stop:
 	docker compose stop -t 3
 
 docker-compose-down: docker-compose-stop
-	docker compose down
+	docker compose down -v
 
 docker-compose-logs:
 	docker compose logs -f

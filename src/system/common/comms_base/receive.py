@@ -11,8 +11,9 @@ from signal import signal, SIGTERM
 from pika import spec
 from pika.adapters.blocking_connection import BlockingChannel
 
-from common.serde import deserialize
-from common.config_base import ConfigProtocol
+from ..messages import Message
+from ..serde import deserialize
+from ..config_base import ConfigProtocol
 
 from .protocol import TIMEOUT_SECONDS, CommsProtocol, BATCH_SEPARATOR
 from .util import get_generic_type
@@ -30,7 +31,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     Comms with receive capabilities. See protocol.py for more details about the methods.
     """
 
-    callback: Callable[[IN], None] | None = None
+    callback: Callable[[Message[IN]], None] | None = None
     interrupted: Event = Event()
     stopped: Event = Event()
     timeout_callbacks: dict[str, "TimeoutInfo"] = {}
@@ -52,7 +53,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     def stop_consuming(self) -> None:
         self.connection.add_callback_threadsafe(self.__stop)
 
-    def set_callback(self, callback: Callable[[IN], None]) -> None:
+    def set_callback(self, callback: Callable[[Message[IN]], None]) -> None:
         self.callback = callback
 
     def set_timer(self, callback: Callable[[], None], timeout_seconds: float) -> Any:
@@ -99,8 +100,8 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             lambda: self.__check_messages_left(queue, callback, **queue_kwargs),
         )
 
-    def _deserialize_record(self, message: str) -> IN:
-        return deserialize(self.in_type, message)
+    def _deserialize_record(self, message: str) -> Message[IN]:
+        return deserialize(Message[self.in_type], message)  # type: ignore
 
     def __stop(self) -> None:
         """

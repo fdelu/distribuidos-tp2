@@ -6,7 +6,7 @@ from common.comms_base import (
     SystemCommunicationBase,
     CommsSendBatched,
 )
-from common.messages import RecordType
+from common.messages import RecordType, Message
 from common.messages.joined import JoinedYearRecords
 from common.messages.basic import BasicRecord
 
@@ -46,8 +46,8 @@ class SystemCommunication(
         for year in (self.config.year_base, self.config.year_compared):
             self.channel.queue_bind(queue, self.EXCHANGE, f"{record}.*.{year}")
 
-    def _get_routing_details(self, record: JoinedYearRecords) -> tuple[str, str]:
-        return self.OUT_EXCHANGE, record.get_routing_key()
+    def _get_routing_details(self, msg: Message[JoinedYearRecords]) -> tuple[str, str]:
+        return self.OUT_EXCHANGE, msg.payload.get_routing_key()
 
     def start_consuming_trips(self) -> None:
         self._start_consuming_from(self.TRIPS_QUEUE)

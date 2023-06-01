@@ -1,6 +1,7 @@
 import logging
 from typing import Protocol
 
+from common.messages import Message
 from common.messages.stats import (
     RainAverages,
     StatsRecord,
@@ -29,7 +30,7 @@ class StatsReceiver:
 
     def __init__(self, config: Config, stats: Stats) -> None:
         self.comms = SystemCommunication(config)
-        self.stats = stats
+        self.stats = Stats()
 
     def add_listener(self, listener: StatListener) -> None:
         self.listeners.append(listener)
@@ -61,7 +62,7 @@ class StatsReceiver:
             self.stats.city_averages = stat
         self.__notify_listeners(StatType.CITY)
 
-    def handle_record(self, record: StatsRecord) -> None:
-        record.be_handled_by(self)
+    def handle_record(self, msg: Message[StatsRecord]) -> None:
+        msg.payload.be_handled_by(self)
         if self.stats.all_done():
             logging.info("Received all stats")

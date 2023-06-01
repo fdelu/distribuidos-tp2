@@ -1,7 +1,7 @@
 import logging
-from typing import Any, Generic, Protocol
+from typing import Any, Callable, Generic, Protocol
 
-from common.messages import End
+from common.messages import End, Message
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
 
@@ -20,30 +20,35 @@ class Aggregator(Protocol[GenericJoinedTrip, GenericAggregatedRecord]):
         ...
 
 
-class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
+class JobAggregator(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
     comms: AggregatorComms[GenericJoinedTrip | End, GenericAggregatedRecord | End]
     aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord]
     config: Config
+    job_id: str
     timer: Any | None
     ends_received: int
     count: int = 0
+    on_finished: Callable[
+        ["JobAggregator[GenericJoinedTrip, GenericAggregatedRecord]"], None
+    ]
 
     def __init__(
         self,
         comms: AggregatorComms[GenericJoinedTrip | End, GenericAggregatedRecord | End],
-        aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord],
         config: Config,
+        aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord],
+        job_id: str,
+        on_finished: Callable[
+            ["JobAggregator[GenericJoinedTrip, GenericAggregatedRecord]"], None
+        ],
     ):
         self.config = config
         self.comms = comms
         self.aggregator = aggregator
+        self.job_id = job_id
         self.ends_received = 0
         self.timer = None
-
-    def run(self) -> None:
-        self.comms.set_callback(self.handle_record)
-        self.comms.start_consuming()
-        self.comms.close()
+        self.on_finished = on_finished
 
     def handle_joined(self, trip: GenericJoinedTrip) -> None:
         self.aggregator.handle_joined(trip)
@@ -74,8 +79,8 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
             self.timer = None
 
         self.send_averages()
-        self.comms.send(End())
-        self.comms.stop_consuming()
+        self.send(End())
+        self.on_finished(self)
 
     def timer_callback(self) -> None:
         self.send_averages()
@@ -88,5 +93,8 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
 
     def send_averages(self) -> None:
         logging.debug("Sending partial results")
-        self.comms.send(self.aggregator.get_value())
+        self.send(self.aggregator.get_value())
         self.aggregator.reset()
+
+    def send(self, record: GenericAggregatedRecord | End) -> None:
+        self.comms.send(Message(self.job_id, record))

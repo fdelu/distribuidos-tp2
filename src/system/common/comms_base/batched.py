@@ -5,6 +5,7 @@ from typing import Generic, Protocol, TypeVar
 
 from common.serde.internal.serialize import serialize
 
+from ..messages import Message
 from ..config_base import ConfigProtocol
 
 from .protocol import CommsSendProtocol, CommsReceiveProtocol, IN, OUT, BATCH_SEPARATOR
@@ -29,7 +30,9 @@ class CommsSendBatched(
     """
 
     batch_size: int
-    batches: dict[tuple[str, str], "BatchInfo[OUT]"]  # exchange, routing_key -> batch
+    batches: dict[
+        tuple[str, str], "BatchInfo[Message[OUT]]"
+    ]  # exchange, routing_key -> batch
     out_type: type
 
     def __init__(self, config: BatchConfig) -> None:
@@ -39,7 +42,7 @@ class CommsSendBatched(
         self.out_type = get_generic_type(self, CommsSendBatched, 1)
         self.add_stop_callback(self.__flush)
 
-    def send(self, record: OUT) -> None:
+    def send(self, record: Message[OUT]) -> None:
         key = self._get_routing_details(record)
         if self.is_stopped():
             # I must send it now since I won't be able to set a timer
@@ -99,18 +102,17 @@ class CommsSendBatched(
             if batch_key == key:
                 break
 
-    def __send_batch(self, exchange: str, routing_key: str, batch: list[OUT]) -> None:
+    def __send_batch(
+        self, exchange: str, routing_key: str, batch: list[Message[OUT]]
+    ) -> None:
         """
         Sends the given batch to the given exchange and routing key
         """
-        msg = BATCH_SEPARATOR.join(self._serialize_record(record) for record in batch)
+        msg = BATCH_SEPARATOR.join(serialize(record) for record in batch)
         self.channel.basic_publish(exchange, routing_key, msg.encode())
 
-    def _serialize_record(self, message: OUT) -> str:
-        return serialize(message)
-
     @abstractmethod
-    def _get_routing_details(self, record: OUT) -> tuple[str, str]:
+    def _get_routing_details(self, record: Message[OUT]) -> tuple[str, str]:
         ...
 
     @dataclass

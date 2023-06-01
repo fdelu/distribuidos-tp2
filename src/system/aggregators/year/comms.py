@@ -1,4 +1,6 @@
 from typing import Callable
+
+from common.messages import Message
 from common.comms_base import CommsSend, CommsReceive, SystemCommunicationBase
 from common.messages.joined import JoinedYearRecords
 from common.messages.aggregated import PartialYearRecords
@@ -21,7 +23,7 @@ class SystemCommunication(
         # in
         self.trips_queue, self.out_queue = load_definitions(self, self.NAME)
 
-    def _get_routing_details(self, record: PartialYearRecords) -> tuple[str, str]:
+    def _get_routing_details(self, msg: Message[PartialYearRecords]) -> tuple[str, str]:
         return "", self.out_queue
 
     def set_all_trips_done_callback(self, callback: Callable[[], None]) -> None:

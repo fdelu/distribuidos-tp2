@@ -4,6 +4,7 @@ from typing import Any, Callable, Protocol, TypeVar
 from pika import BlockingConnection
 from pika.adapters.blocking_connection import BlockingChannel
 
+from common.messages import Message
 
 from ..config_base import ConfigProtocol
 
@@ -62,7 +63,7 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
         ...
 
     @abstractmethod
-    def set_callback(self, callback: Callable[[IN], None]) -> None:
+    def set_callback(self, callback: Callable[[Message[IN]], None]) -> None:
         """
         Sets the callback to be called when a record is received
         """
@@ -135,7 +136,7 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
         """
         ...
 
-    def _deserialize_record(self, message: str) -> IN:
+    def _deserialize_record(self, message: str) -> Message[IN]:
         """
         Deserialize the given message into the input type
         """
@@ -145,22 +146,15 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
 # Comms with send capabilities
 class CommsSendProtocol(CommsProtocol, Protocol[OUT]):
     @abstractmethod
-    def send(self, record: OUT) -> None:
+    def send(self, record: Message[OUT]) -> None:
         """
         Sends a record to the appropriate queue
         """
         ...
 
     @abstractmethod
-    def _get_routing_details(self, record: OUT) -> tuple[str, str]:
+    def _get_routing_details(self, record: Message[OUT]) -> tuple[str, str]:
         """
         Should return a tuple of (exchange_name, routing_key) for this record
-        """
-        ...
-
-    @abstractmethod
-    def _serialize_record(self, message: OUT) -> str:
-        """
-        Serializes the given message into a string
         """
         ...

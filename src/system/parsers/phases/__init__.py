@@ -1,6 +1,7 @@
 import logging
 from typing import Callable
 
+from common.messages import Message
 from common.messages.basic import BasicRecord
 from common.messages.raw import RawBatch, RawRecord
 
@@ -10,9 +11,18 @@ from ..comms import SystemCommunication
 
 class Phase:
     comms: SystemCommunication
+    job_id: str
+    on_finish: Callable[["Phase"], None]
 
-    def __init__(self, comms: SystemCommunication) -> None:
+    def __init__(
+        self,
+        comms: SystemCommunication,
+        job_id: str,
+        on_finish: Callable[["Phase"], None],
+    ) -> None:
         self.comms = comms
+        self.job_id = job_id
+        self.on_finish = on_finish
 
     def handle_station_batch(self, batch: RawBatch) -> "Phase":
         raise NotImplementedError()
@@ -40,4 +50,7 @@ class Phase:
             if self.comms.is_stopped():
                 logging.debug("Parser was stopped, skipping remaining records")
                 break
-            self.comms.send(parse_func(row, indexes, batch.city))
+            self._send(parse_func(row, indexes, batch.city))
+
+    def _send(self, record: BasicRecord) -> None:
+        self.comms.send(Message(self.job_id, record))

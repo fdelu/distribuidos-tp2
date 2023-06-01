@@ -6,7 +6,7 @@ from common.comms_base import (
     SystemCommunicationBase,
     CommsReceive,
 )
-from common.messages import RecordType
+from common.messages import RecordType, Message
 from common.messages.basic import BasicRecord
 from common.messages.joined import JoinedCityRecords
 
@@ -45,8 +45,8 @@ class SystemCommunication(
     def __bind_city(self, queue: str, record: RecordType) -> None:
         self.channel.queue_bind(queue, self.EXCHANGE, f"{record}.{self.config.city}.*")
 
-    def _get_routing_details(self, record: JoinedCityRecords) -> tuple[str, str]:
-        return self.OUT_EXCHANGE, record.get_routing_key()
+    def _get_routing_details(self, msg: Message[JoinedCityRecords]) -> tuple[str, str]:
+        return self.OUT_EXCHANGE, msg.payload.get_routing_key()
 
     def start_consuming_trips(self) -> None:
         self._start_consuming_from(self.TRIPS_QUEUE)

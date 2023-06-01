@@ -7,8 +7,8 @@ from enum import StrEnum
 from shared.socket import SocketStopWrapper
 from shared.messages import SplitChar, RecordType as BaseRecordType
 
-from common.messages import RecordType, End
-from common.messages.raw import RawBatch
+from common.messages import RecordType, End, Message
+from common.messages.raw import RawBatch, RawRecord
 
 from .config import Config
 from .comms import SystemCommunication
@@ -89,7 +89,7 @@ class ClientHandler:
                 headers,
                 msg.splitlines(),
             )
-            self.comms.send(message)
+            self._send(message)
             count += len(msg.splitlines())
             msg = self.socket.recv()
         self.socket.send(BaseRecordType.ACK)
@@ -98,7 +98,7 @@ class ClientHandler:
         )
 
     def __handle_end(self) -> None:
-        self.comms.send(End())
+        self._send(End())
         self.stop_event.set()
 
     def __validate_phase(self, record_type: RecordType) -> bool:
@@ -111,3 +111,6 @@ class ClientHandler:
             )
             return False
         return True
+
+    def _send(self, record: RawRecord) -> None:
+        self.comms.send(Message("123", record))

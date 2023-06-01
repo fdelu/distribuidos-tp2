@@ -26,7 +26,9 @@ class TripsPhase(Phase[GenericJoinedTrip]):
         return self
 
     def handle_trip(self, trip: BasicTrip) -> Phase[GenericJoinedTrip]:
-        self.joiner.handle_trip(trip)
+        joined_trip = self.joiner.handle_trip(trip)
+        if joined_trip is not None:
+            self._send(joined_trip)
         self.count += 1
         return self
 
@@ -46,5 +48,6 @@ class TripsPhase(Phase[GenericJoinedTrip]):
         logging.info(
             f"Finished joining all trips. Total processed in this node: {self.count}"
         )
-        self.comms.send(End())
+        self._send(End())
         self.comms.stop_consuming()
+        self.on_finish(self)

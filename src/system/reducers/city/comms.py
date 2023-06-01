@@ -1,3 +1,4 @@
+from common.messages import Message
 from common.comms_base import CommsSend, CommsReceive, SystemCommunicationBase
 from common.messages.aggregated import PartialCityRecords
 from common.messages.stats import StatsRecord
@@ -18,5 +19,5 @@ class SystemCommunication(
         # in
         self._start_consuming_from(self.INPUT_QUEUE)
 
-    def _get_routing_details(self, record: StatsRecord) -> tuple[str, str]:
+    def _get_routing_details(self, msg: Message[StatsRecord]) -> tuple[str, str]:
         return "", self.OUT_QUEUE

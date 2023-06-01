@@ -18,8 +18,8 @@ class WeatherStationsPhase(Phase):
         return self
 
     def handle_trip_batch(self, batch: RawBatch) -> Phase:
-        self.comms.send(TripsStart())
-        trips_phase: Phase = TripsPhase(self.comms)
+        self._send(TripsStart())
+        trips_phase: Phase = TripsPhase(self.comms, self.job_id, self.on_finish)
         trips_phase = trips_phase.handle_trip_batch(batch)
         if self.received_end:
             trips_phase = trips_phase.handle_end()

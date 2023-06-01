@@ -6,7 +6,7 @@ from common.comms_base import (
     CommsReceive,
     CommsSendBatched,
 )
-from common.messages import RecordType
+from common.messages import RecordType, Message
 from common.messages.raw import RawRecord
 from common.messages.basic import BasicRecord
 
@@ -29,8 +29,8 @@ class SystemCommunication(
         self.channel.queue_bind(self.END_QUEUE, self.EXCHANGE, RecordType.END)
         self._start_consuming_from(self.END_QUEUE)
 
-    def _get_routing_details(self, record: BasicRecord) -> tuple[str, str]:
-        return self.OUT_EXCHANGE, record.get_routing_key()
+    def _get_routing_details(self, msg: Message[BasicRecord]) -> tuple[str, str]:
+        return self.OUT_EXCHANGE, msg.payload.get_routing_key()
 
     def set_all_batchs_done_callback(self, callback: Callable[[], None]) -> None:
         self._set_empty_queue_callback(self.BATCHS_QUEUE, callback)

@@ -32,5 +32,5 @@ class TripsPhase(Phase):
         logging.info(
             f"Finished parsing all trips. Total processed in this node: {self.count}"
         )
-        self.comms.send(End())
-        self.comms.stop_consuming()
+        self._send(End())
+        self.on_finish(self)

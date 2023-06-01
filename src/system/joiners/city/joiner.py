@@ -4,7 +4,6 @@ import logging
 from common.messages.basic import BasicStation, BasicTrip, BasicWeather
 from common.messages.joined import JoinedCityTrip
 
-from ..common.comms import JoinerComms
 from .config import Config
 
 
@@ -18,12 +17,10 @@ class CityJoiner:
     # city -> (code, year) -> data
     station_names: dict[str, dict[tuple[str, str], StationData]]
     config: Config
-    comms: JoinerComms[JoinedCityTrip]
 
-    def __init__(self, config: Config, comms: JoinerComms[JoinedCityTrip]) -> None:
+    def __init__(self, config: Config) -> None:
         self.station_names = {}
         self.config = config
-        self.comms = comms
 
     def handle_station(self, station: BasicStation) -> None:
         if station.latitude is None or station.longitude is None:
@@ -40,13 +37,12 @@ class CityJoiner:
     def handle_weather(self, weather: BasicWeather) -> None:
         logging.warn("Unexpected Weather received on year joiner")
 
-    def handle_trip(self, trip: BasicTrip) -> None:
+    def handle_trip(self, trip: BasicTrip) -> JoinedCityTrip | None:
         data = self._get_join_data(trip)
         if data is None:
-            return
+            return None
         start, end = data
-        joined_trip = JoinedCityTrip(end.name, start.coordinates, end.coordinates)
-        self.comms.send(joined_trip)
+        return JoinedCityTrip(end.name, start.coordinates, end.coordinates)
 
     def _get_join_data(self, trip: BasicTrip) -> tuple[StationData, StationData] | None:
         start = self.__get_station_data(trip.start_station_code, trip.year, trip.city)

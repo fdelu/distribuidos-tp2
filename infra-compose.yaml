@@ -1,0 +1,174 @@
+version: "3"
+services:
+  input:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: input
+    networks:
+      - distribuidos-tp2_outside_net
+      - distribuidos-tp2_internal_net
+    depends_on:
+      parsers:
+        condition: service_healthy
+
+  parsers:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: parsers
+    deploy:
+      mode: replicated
+      replicas: ${PARSERS_SCALE}
+    depends_on:
+      rain-joiners:
+        condition: service_healthy
+      city-joiners:
+        condition: service_healthy
+      year-joiners:
+        condition: service_healthy
+
+  rain-joiners:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: joiners/rain
+      target: joiners
+    deploy:
+      mode: replicated
+      replicas: ${RAIN_JOINERS_SCALE}
+    depends_on:
+      rain-aggregators:
+        condition: service_healthy
+
+  city-joiners:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: joiners/city
+      target: joiners
+    deploy:
+      mode: replicated
+      replicas: ${CITY_JOINERS_SCALE}
+    depends_on:
+      city-aggregators:
+        condition: service_healthy
+
+  year-joiners:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: joiners/year
+      target: joiners
+    deploy:
+      mode: replicated
+      replicas: ${YEAR_JOINERS_SCALE}
+    depends_on:
+      year-aggregators:
+        condition: service_healthy
+
+  rain-aggregators:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: aggregators/rain
+      target: aggregators
+    deploy:
+      mode: replicated
+      replicas: ${RAIN_AGGREGATORS_SCALE}
+
+  city-aggregators:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: aggregators/city
+      target: aggregators
+    deploy:
+      mode: replicated
+      replicas: ${CITY_AGGREGATORS_SCALE}
+
+  year-aggregators:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: aggregators/year
+      target: aggregators
+    deploy:
+      mode: replicated
+      replicas: ${YEAR_AGGREGATORS_SCALE}
+
+  rain-reducer:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: reducers/rain
+      target: reducers
+
+  city-reducer:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: reducers/city
+      target: reducers
+
+  year-reducer:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: reducers/year
+      target: reducers
+
+  output:
+    extends:
+      file: app/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: output
+    networks:
+      - distribuidos-tp2_outside_net
+      - distribuidos-tp2_internal_net
+
+  client:
+    build:
+      dockerfile: ./src/client/Dockerfile
+    volumes:
+      - type: bind
+        source: ./src/client/data
+        target: /tmp/data
+      - type: bind
+        source: config.ini
+        target: /config.ini
+      - type: bind
+        source: ./src/client/results
+        target: /tmp/results
+    networks:
+      - distribuidos-tp2_outside_net
+
+networks:
+  distribuidos-tp2_internal_net:
+    external: true
+  distribuidos-tp2_outside_net:
+    external: true

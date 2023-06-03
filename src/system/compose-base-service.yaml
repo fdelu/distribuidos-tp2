@@ -11,4 +11,4 @@ services:
         target: /config.ini
     env_file: ../../.env
     networks:
-      - internal_net
+      - distribuidos-tp2_internal_net

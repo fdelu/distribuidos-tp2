@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Protocol, Callable
 
-from common.messages import End
+from common.messages import End, Message
 from common.messages.basic import BasicRecord
 from common.messages.joined import GenericJoinedTrip
 from common.comms_base.protocol import CommsReceiveProtocol, CommsSendProtocol
@@ -10,8 +10,8 @@ __all__ = ["GenericJoinedTrip"]
 
 
 class JoinerComms(
-    CommsReceiveProtocol[BasicRecord],
-    CommsSendProtocol[GenericJoinedTrip | End],
+    CommsReceiveProtocol[Message[BasicRecord]],
+    CommsSendProtocol[Message[GenericJoinedTrip | End]],
     Protocol[GenericJoinedTrip],
 ):
     @abstractmethod

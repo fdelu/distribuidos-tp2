@@ -1,18 +1,17 @@
 from typing import Callable
 
+from common.comms_base import CommsSendBatched, CommsReceive, SystemCommunicationBase
 from common.messages import Message
-from common.comms_base import CommsSend, CommsReceive, SystemCommunicationBase
 from common.messages.joined import JoinedCityRecords
 from common.messages.aggregated import PartialCityRecords
 
-from ..common.comms import AggregatorComms, load_definitions
+from ..common.comms import load_definitions
 
 
 class SystemCommunication(
-    CommsReceive[JoinedCityRecords],
-    CommsSend[PartialCityRecords],
+    CommsReceive[Message[JoinedCityRecords]],
+    CommsSendBatched[Message[JoinedCityRecords], Message[PartialCityRecords]],
     SystemCommunicationBase,
-    AggregatorComms[JoinedCityRecords, PartialCityRecords],
 ):
     NAME = "city"
 

@@ -14,8 +14,8 @@ from .config import Config
 
 
 class SystemCommunication(
-    CommsReceive[BasicRecord],
-    CommsSendBatched[BasicRecord, JoinedCityRecords],
+    CommsReceive[Message[BasicRecord]],
+    CommsSendBatched[Message[BasicRecord], Message[JoinedCityRecords]],
     SystemCommunicationBase,
 ):
     EXCHANGE = "basic_records"

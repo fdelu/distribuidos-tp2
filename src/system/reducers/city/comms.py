@@ -1,16 +1,13 @@
+from common.comms_base import CommsSendBatched, CommsReceive, SystemCommunicationBase
 from common.messages import Message
-from common.comms_base import CommsSend, CommsReceive, SystemCommunicationBase
 from common.messages.aggregated import PartialCityRecords
 from common.messages.stats import StatsRecord
 
-from ..common.comms import ReducerComms
-
 
 class SystemCommunication(
-    CommsReceive[PartialCityRecords],
-    CommsSend[StatsRecord],
+    CommsReceive[Message[PartialCityRecords]],
+    CommsSendBatched[Message[PartialCityRecords], Message[StatsRecord]],
     SystemCommunicationBase,
-    ReducerComms[PartialCityRecords],
 ):
     INPUT_QUEUE = "city_aggregated"
     OUT_QUEUE = "stats"

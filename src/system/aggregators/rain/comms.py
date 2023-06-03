@@ -1,18 +1,17 @@
 from typing import Callable
 
+from common.comms_base import CommsSendBatched, CommsReceive, SystemCommunicationBase
 from common.messages import Message
-from common.comms_base import CommsSend, CommsReceive, SystemCommunicationBase
 from common.messages.joined import JoinedRainRecords
 from common.messages.aggregated import PartialRainRecords
 
-from ..common.comms import AggregatorComms, load_definitions
+from ..common.comms import load_definitions
 
 
 class SystemCommunication(
-    CommsReceive[JoinedRainRecords],
-    CommsSend[PartialRainRecords],
+    CommsReceive[Message[JoinedRainRecords]],
+    CommsSendBatched[Message[JoinedRainRecords], Message[PartialRainRecords]],
     SystemCommunicationBase,
-    AggregatorComms[JoinedRainRecords, PartialRainRecords],
 ):
     NAME = "rain"
 

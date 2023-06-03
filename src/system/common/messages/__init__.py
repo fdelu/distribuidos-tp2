@@ -16,6 +16,12 @@ class RecordType(StrEnum):
 
 
 @dataclass
+class Batch(Generic[T]):
+    messages: list[T]
+    msg_id: str | None
+
+
+@dataclass
 class Message(Generic[T]):
     job_id: str
     payload: T

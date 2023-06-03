@@ -1,16 +1,13 @@
+from common.comms_base import CommsSendBatched, CommsReceive, SystemCommunicationBase
 from common.messages import Message
-from common.comms_base import CommsSend, CommsReceive, SystemCommunicationBase
 from common.messages.aggregated import PartialRainRecords
 from common.messages.stats import StatsRecord
 
-from ..common.comms import ReducerComms
-
 
 class SystemCommunication(
-    CommsReceive[PartialRainRecords],
-    CommsSend[StatsRecord],
+    CommsReceive[Message[PartialRainRecords]],
+    CommsSendBatched[Message[PartialRainRecords], Message[StatsRecord]],
     SystemCommunicationBase,
-    ReducerComms[PartialRainRecords],
 ):
     INPUT_QUEUE = "rain_aggregated"
     OUT_QUEUE = "stats"

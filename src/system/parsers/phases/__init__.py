@@ -3,7 +3,7 @@ from typing import Callable
 
 from common.messages import Message
 from common.messages.basic import BasicRecord
-from common.messages.raw import RawBatch, RawRecord
+from common.messages.raw import RawLines, RawRecord
 
 from .parse import get_indexes, get_rows
 from ..comms import SystemCommunication
@@ -24,13 +24,13 @@ class Phase:
         self.job_id = job_id
         self.on_finish = on_finish
 
-    def handle_station_batch(self, batch: RawBatch) -> "Phase":
+    def handle_station_batch(self, batch: RawLines) -> "Phase":
         raise NotImplementedError()
 
-    def handle_weather_batch(self, batch: RawBatch) -> "Phase":
+    def handle_weather_batch(self, batch: RawLines) -> "Phase":
         raise NotImplementedError()
 
-    def handle_trip_batch(self, batch: RawBatch) -> "Phase":
+    def handle_trip_batch(self, batch: RawLines) -> "Phase":
         raise NotImplementedError()
 
     def handle_end(self) -> "Phase":
@@ -41,7 +41,7 @@ class Phase:
 
     def _send_parsed(
         self,
-        batch: RawBatch,
+        batch: RawLines,
         parse_func: Callable[[list[str], dict[str, int], str], BasicRecord],
     ) -> None:
         indexes = get_indexes(batch)

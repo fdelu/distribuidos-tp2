@@ -1,16 +1,13 @@
+from common.comms_base import CommsSendBatched, CommsReceive, SystemCommunicationBase
 from common.messages import Message
-from common.comms_base import CommsSend, CommsReceive, SystemCommunicationBase
 from common.messages.aggregated import PartialYearRecords
 from common.messages.stats import StatsRecord
 
-from ..common.comms import ReducerComms
-
 
 class SystemCommunication(
-    CommsReceive[PartialYearRecords],
-    CommsSend[StatsRecord],
+    CommsReceive[Message[PartialYearRecords]],
+    CommsSendBatched[Message[PartialYearRecords], Message[StatsRecord]],
     SystemCommunicationBase,
-    ReducerComms[PartialYearRecords],
 ):
     INPUT_QUEUE = "year_aggregated"
     OUT_QUEUE = "stats"

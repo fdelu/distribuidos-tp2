@@ -12,8 +12,8 @@ from common.messages.basic import BasicRecord
 
 
 class SystemCommunication(
-    CommsReceive[RawRecord],
-    CommsSendBatched[RawRecord, BasicRecord],
+    CommsReceive[Message[RawRecord]],
+    CommsSendBatched[Message[RawRecord], Message[BasicRecord]],
     SystemCommunicationBase,
 ):
     EXCHANGE = "raw_records"

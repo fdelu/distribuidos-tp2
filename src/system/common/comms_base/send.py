@@ -1,7 +1,6 @@
 from typing import TypeVar, Generic
 from abc import ABC, abstractmethod
 
-from ..messages import Message
 from ..serde import serialize
 from ..config_base import ConfigBase
 
@@ -22,11 +21,11 @@ class CommsSend(CommsProtocol, Generic[OUT], ABC):
         super().__init__(config)
         self.out_type = get_generic_type(self, CommsSend, 0)
 
-    def send(self, record: Message[OUT]) -> None:
+    def send(self, record: OUT) -> None:
         exchange, routing_key = self._get_routing_details(record)
         self.__send_to(record, exchange, routing_key)
 
-    def __send_to(self, record: Message[OUT], exchange: str, routing_key: str) -> None:
+    def __send_to(self, record: OUT, exchange: str, routing_key: str) -> None:
         self.channel.basic_publish(
             exchange,
             routing_key,
@@ -34,5 +33,5 @@ class CommsSend(CommsProtocol, Generic[OUT], ABC):
         )
 
     @abstractmethod
-    def _get_routing_details(self, record: Message[OUT]) -> tuple[str, str]:
+    def _get_routing_details(self, record: OUT) -> tuple[str, str]:
         ...

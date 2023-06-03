@@ -2,7 +2,7 @@ from abc import abstractmethod
 from uuid import uuid4
 from typing import Callable, Protocol
 
-from common.messages import RecordType
+from common.messages import RecordType, Message
 from common.comms_base.protocol import CommsReceiveProtocol, CommsSendProtocol, IN, OUT
 
 EXCHANGE = "{}_joined_records"
@@ -12,7 +12,9 @@ OUT_QUEUE = "{}_aggregated"
 
 
 class AggregatorComms(
-    CommsReceiveProtocol[IN], CommsSendProtocol[OUT], Protocol[IN, OUT]
+    CommsReceiveProtocol[Message[IN]],
+    CommsSendProtocol[Message[OUT]],
+    Protocol[IN, OUT],
 ):
     @abstractmethod
     def set_all_trips_done_callback(self, callback: Callable[[], None]) -> None:

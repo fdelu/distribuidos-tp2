@@ -4,16 +4,15 @@ from typing import Any, Callable, Protocol, TypeVar
 from pika import BlockingConnection
 from pika.adapters.blocking_connection import BlockingChannel
 
-from common.messages import Message
-
 from ..config_base import ConfigProtocol
 
 IN = TypeVar("IN", covariant=True)
 OUT = TypeVar("OUT", contravariant=True)
 
 
-BATCH_SEPARATOR = "\n"  # separator for batched messages
 TIMEOUT_SECONDS = 1  # default timeout when receiving messages
+
+__all__ = ["ConfigProtocol"]
 
 
 # Base comms
@@ -63,7 +62,7 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
         ...
 
     @abstractmethod
-    def set_callback(self, callback: Callable[[Message[IN]], None]) -> None:
+    def set_callback(self, callback: Callable[[IN], None]) -> None:
         """
         Sets the callback to be called when a record is received
         """
@@ -91,10 +90,17 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
         """
         ...
 
-    def add_stop_callback(self, callback: Callable[[], None]) -> None:
+    @abstractmethod
+    def current_message_id(self) -> str | None:
         """
-        Sets a callback to be called when the consuming is stopped.
-        It won't be called if the consuming was interrupted by a signal.
+        Returns the message id of the batch being processed, if any
+        """
+        ...
+
+    @abstractmethod
+    def set_batch_done_callback(self, callback: Callable[[], None]) -> None:
+        """
+        Sets the callback to be called when the current batch is done
         """
         ...
 
@@ -136,24 +142,18 @@ class CommsReceiveProtocol(CommsProtocol, Protocol[IN]):
         """
         ...
 
-    def _deserialize_record(self, message: str) -> Message[IN]:
-        """
-        Deserialize the given message into the input type
-        """
-        ...
-
 
 # Comms with send capabilities
 class CommsSendProtocol(CommsProtocol, Protocol[OUT]):
     @abstractmethod
-    def send(self, record: Message[OUT]) -> None:
+    def send(self, record: OUT) -> None:
         """
         Sends a record to the appropriate queue
         """
         ...
 
     @abstractmethod
-    def _get_routing_details(self, record: Message[OUT]) -> tuple[str, str]:
+    def _get_routing_details(self, record: OUT) -> tuple[str, str]:
         """
         Should return a tuple of (exchange_name, routing_key) for this record
         """

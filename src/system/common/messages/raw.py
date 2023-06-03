@@ -7,7 +7,7 @@ T = TypeVar("T", covariant=True)
 
 
 @dataclass
-class RawBatch:
+class RawLines:
     record_type: RecordType
     city: str
     headers: str
@@ -28,14 +28,14 @@ class RawBatch:
 
 
 class RawRecordHandler(Protocol[T]):
-    def handle_weather_batch(self, batch: RawBatch) -> T:
+    def handle_weather_batch(self, batch: RawLines) -> T:
         ...
 
-    def handle_station_batch(self, batch: RawBatch) -> T:
+    def handle_station_batch(self, batch: RawLines) -> T:
         ...
 
-    def handle_trip_batch(self, batch: RawBatch) -> T:
+    def handle_trip_batch(self, batch: RawLines) -> T:
         ...
 
 
-RawRecord = RawBatch | End
+RawRecord = RawLines | End

@@ -1,18 +1,17 @@
 from typing import Callable
 
+from common.comms_base import CommsSendBatched, CommsReceive, SystemCommunicationBase
 from common.messages import Message
-from common.comms_base import CommsSend, CommsReceive, SystemCommunicationBase
 from common.messages.joined import JoinedYearRecords
 from common.messages.aggregated import PartialYearRecords
 
-from ..common.comms import AggregatorComms, load_definitions
+from ..common.comms import load_definitions
 
 
 class SystemCommunication(
-    CommsReceive[JoinedYearRecords],
-    CommsSend[PartialYearRecords],
+    CommsReceive[Message[JoinedYearRecords]],
+    CommsSendBatched[Message[JoinedYearRecords], Message[PartialYearRecords]],
     SystemCommunicationBase,
-    AggregatorComms[JoinedYearRecords, PartialYearRecords],
 ):
     NAME = "year"
 

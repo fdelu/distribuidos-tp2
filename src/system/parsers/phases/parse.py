@@ -3,7 +3,7 @@ from datetime import date, timedelta
 
 from shared.messages import SplitChar
 from common.messages.basic import BasicStation, BasicTrip, BasicWeather
-from common.messages.raw import RawBatch
+from common.messages.raw import RawLines
 
 
 def parse_optional_float(value: str) -> float | None:
@@ -12,11 +12,11 @@ def parse_optional_float(value: str) -> float | None:
     return float(value)
 
 
-def get_indexes(batch: RawBatch) -> dict[str, int]:
+def get_indexes(batch: RawLines) -> dict[str, int]:
     return {x: i for i, x in enumerate(batch.headers.split(SplitChar.ATTRS))}
 
 
-def get_rows(batch: RawBatch) -> Iterable[list[str]]:
+def get_rows(batch: RawLines) -> Iterable[list[str]]:
     return (x.split(SplitChar.ATTRS) for x in batch.lines)
 
 

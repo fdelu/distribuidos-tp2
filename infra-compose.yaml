@@ -2,7 +2,7 @@ version: "3"
 services:
   input:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -16,7 +16,7 @@ services:
 
   parsers:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -34,7 +34,7 @@ services:
 
   rain-joiners:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -49,7 +49,7 @@ services:
 
   city-joiners:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -64,7 +64,7 @@ services:
 
   year-joiners:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -79,7 +79,7 @@ services:
 
   rain-aggregators:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -91,7 +91,7 @@ services:
 
   city-aggregators:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -103,7 +103,7 @@ services:
 
   year-aggregators:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -115,7 +115,7 @@ services:
 
   rain-reducer:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -124,7 +124,7 @@ services:
 
   city-reducer:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -133,7 +133,7 @@ services:
 
   year-reducer:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -142,7 +142,7 @@ services:
 
   output:
     extends:
-      file: app/system/compose-base-service.yaml
+      file: src/system/compose-base-service.yaml
       service: base
     build:
       args:
@@ -154,16 +154,16 @@ services:
   client:
     build:
       dockerfile: ./src/client/Dockerfile
-    volumes:
-      - type: bind
-        source: ./src/client/data
-        target: /tmp/data
-      - type: bind
-        source: config.ini
-        target: /config.ini
-      - type: bind
-        source: ./src/client/results
-        target: /tmp/results
+    # volumes:
+    #   - type: bind
+    #     source: ./src/client/data
+    #     target: /tmp/data
+    #   - type: bind
+    #     source: config.ini
+    #     target: /config.ini
+    #   - type: bind
+    #     source: ./src/client/results
+    #     target: /tmp/results
     networks:
       - distribuidos-tp2_outside_net
 

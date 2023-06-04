@@ -23,6 +23,7 @@ services:
       dockerfile: ./system/medic/Dockerfile
     networks:
       - internal_net
+      - outside_net
     volumes:
       - type: bind
         source: /var/run/docker.sock
@@ -31,7 +32,7 @@ services:
         source: ./infra-compose.yaml
         target: /compose.yaml
       - type: bind
-        source: ../config.ini
+        source: ./config.ini
         target: /config.ini
       - type: bind
         source: ./.env

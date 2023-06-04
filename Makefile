@@ -29,11 +29,12 @@ get-dataset:
 
 build:
 	docker compose build
+	docker compose -f infra-compose.yaml build
 
 docker-compose-up: build
 	docker compose up -d	
 
-docker-compose-stop:
+docker-compose-stop: #TODO stop containers raised by infra-compose.yaml
 	docker compose stop -t 3
 
 docker-compose-down: docker-compose-stop
@@ -51,3 +52,10 @@ docker_python: # Run python in a docker container with access to the host's dock
 docker_python_stop: # Stop the docker_python container
 	docker stop docker_python
 	docker rm docker_python
+
+docker-log-all: # Show all docker logs from active containers
+	docker ps -q | xargs -L 1 -P `docker ps | wc -l` docker logs -f
+
+docker-nuke:
+	docker stop $$(docker ps -aq)
+	docker rm $$(docker ps -aq)

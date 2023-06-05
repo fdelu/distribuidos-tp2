@@ -6,7 +6,6 @@ from common.serde.internal.serialize import serialize
 from ..messages import Batch
 
 from .protocol import CommsSendProtocol, CommsReceiveProtocol, IN, OUT, ConfigProtocol
-from .util import get_generic_type
 
 
 OUT_INNER = TypeVar("OUT_INNER")
@@ -24,12 +23,10 @@ class CommsSendBatched(
 
     batches: dict[tuple[str, str], "Batch[OUT]"]  # exchange, routing_key -> batch
     routing_count: int = 0
-    out_type: type
 
     def __init__(self, config: ConfigProtocol) -> None:
         super().__init__(config)
         self.batches = {}
-        self.out_type = get_generic_type(self, CommsSendBatched, 1)
         self.set_batch_done_callback(self.__flush)
 
     def send(self, record: OUT) -> None:

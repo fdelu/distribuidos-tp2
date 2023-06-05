@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import logging
 from threading import Event
 import time
-from typing import Callable, Protocol, TypeVar, Generic, Any
+from typing import Callable, Protocol, TypeVar, Generic, Any, Type
 import os
 from functools import partial
 from signal import signal, SIGTERM
@@ -12,10 +12,9 @@ from pika import spec
 from pika.adapters.blocking_connection import BlockingChannel
 
 from common.messages import Batch
-from common.serde import deserialize
+from common.serde import deserialize, get_generic_types
 from common.config_base import ConfigProtocol
 from ..protocol import TIMEOUT_SECONDS, CommsProtocol
-from ..util import get_generic_type
 
 from .reliable import RealiableReceive
 
@@ -32,7 +31,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     Comms with receive capabilities. See protocol.py for more details about the methods.
     """
 
-    in_type: type
+    in_type: Type[Any] | None = None
     interrupted: Event = Event()
     stopped: Event = Event()
     reliable_handler: RealiableReceive | None = None
@@ -50,7 +49,6 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         if with_interrupt:
             self.__setup_interrupt()
         self.__setup()
-        self.in_type = get_generic_type(self, CommsReceive, 0)
 
         if reliable:
             self.reliable_handler = RealiableReceive()
@@ -114,6 +112,8 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         )
 
     def __deserialize_record(self, message: str) -> Batch[IN]:
+        if self.in_type is None:
+            self.in_type = get_generic_types(self, CommsReceive)[0]
         return deserialize(Batch[self.in_type], message)  # type: ignore
 
     def __stop(self) -> None:

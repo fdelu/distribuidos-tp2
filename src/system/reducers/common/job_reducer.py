@@ -20,7 +20,7 @@ class Reducer(Protocol[GenericAggregatedRecord]):
 
 
 class JobReducer(Generic[GenericAggregatedRecord]):
-    comms: ReducerComms[GenericAggregatedRecord | End]
+    comms: ReducerComms[GenericAggregatedRecord]
     config: Config
     reducer: Reducer[GenericAggregatedRecord]
     job_id: str
@@ -29,7 +29,7 @@ class JobReducer(Generic[GenericAggregatedRecord]):
 
     def __init__(
         self,
-        comms: ReducerComms[GenericAggregatedRecord | End],
+        comms: ReducerComms[GenericAggregatedRecord],
         config: Config,
         reducer: Reducer[GenericAggregatedRecord],
         job_id: str,

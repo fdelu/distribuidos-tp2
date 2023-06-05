@@ -48,7 +48,7 @@ def map_generics(this: Type[T], args: tuple[Any, ...]) -> TypeVarMap:
     """
     map: TypeVarMap = {}
     generic = next(
-        (t for t in this.__orig_bases__ if get_origin(t) is Generic),  # type: ignore
+        (t for t in getattr(this, "__orig_bases__", []) if get_origin(t) is Generic),
         None,
     )
     if generic is None:
@@ -58,19 +58,28 @@ def map_generics(this: Type[T], args: tuple[Any, ...]) -> TypeVarMap:
     return map
 
 
-def map_args(args: tuple[Any, ...], generic_map: TypeVarMap) -> tuple[Any, ...]:
+def map_type(to_map: Type[Any], generic_map: TypeVarMap) -> Any:
     """
-    Replace generic types in args with their actual types in generic_map.
+    Replace generic types in to_map with their actual types in generic_map.
     Example usage:
     >>> from typing import Generic, TypeVar
     ...
     >>> A = TypeVar("A")
     >>> B = TypeVar("B")
     ...
-    >>> map_args((A, int, B), {A: int, B: str})
-    (int, int, str)
+    >>> map_args(A | B | float, {A: int, B: str})
+    int | str | float
     """
-    return tuple(generic_map.get(x, x) for x in args)
+    if isinstance(to_map, TypeVar):
+        return generic_map[to_map]
+    origin = get_origin(to_map)
+    if origin is None:
+        return to_map
+    args = get_args(to_map)
+    resolved_args = tuple(map_type(arg, generic_map) for arg in args)
+    if origin in (types.UnionType, Union):
+        return reduce(lambda x, y: x | y, resolved_args)
+    return origin[resolved_args]
 
 
 def resolve_generic_types(base: Type[Any], parent: Type[Any]) -> tuple[Type[Any], ...]:
@@ -97,10 +106,7 @@ def resolve_generic_types(base: Type[Any], parent: Type[Any]) -> tuple[Type[Any]
     >>> resolve_generic_types(Example2, Example)
     (int, str)
     """
-    resolved = __resolve_generic_types_rec(base, parent, {})
-    if resolved is None:
-        raise Exception(f"Class {base} does not inherit from {parent}")
-    return resolved
+    return __resolve_generic_types_rec(base, parent, {}) or ()
 
 
 def get_generic_types(obj: T, parent: Type[Any]) -> tuple[Type[Any], ...]:
@@ -154,7 +160,7 @@ def __resolve_generic_types_rec(
     if not hasattr(this, "__orig_bases__"):
         return None  # not generic
 
-    args = map_args(args, parent_map)
+    args = tuple(map_type(x, parent_map) for x in args)
     generic_map = map_generics(this, args)
 
     if this is parent:
@@ -173,7 +179,7 @@ def __resolve_object_types_rec(
     this = get_origin(current_type) or current_type
     type_hints = get_type_hints(this)
 
-    resolved_args = resolve_generic_types(base_type, this) or ()
+    resolved_args = resolve_generic_types(base_type, this)
     gen_map = map_generics(this, resolved_args)
 
     for t in getattr(this, "__orig_bases__", []):
@@ -184,17 +190,4 @@ def __resolve_object_types_rec(
     for name, item_type in type_hints.items():
         if name in type_map:
             continue
-        type_map[name] = __build_type(item_type, gen_map)
-
-
-def __build_type(original: Type[Any], generic_map: TypeVarMap) -> Any:
-    if isinstance(original, TypeVar):
-        return generic_map[original]
-    origin = get_origin(original)
-    if origin is None:
-        return original
-    args = get_args(original)
-    resolved_args = tuple(__build_type(arg, generic_map) for arg in args)
-    if origin in (types.UnionType, Union):
-        return reduce(lambda x, y: x | y, resolved_args)
-    return origin[resolved_args]
+        type_map[name] = map_type(item_type, gen_map)

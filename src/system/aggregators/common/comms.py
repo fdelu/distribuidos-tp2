@@ -1,33 +1,49 @@
-from abc import abstractmethod
 from uuid import uuid4
-from typing import Callable, Protocol
+from typing import Callable, Generic
 
-from common.messages import RecordType, Message
-from common.comms_base.protocol import CommsReceiveProtocol, CommsSendProtocol, IN, OUT
+from common.comms_base import CommsSendBatched, CommsReceive, SystemCommunicationBase
+from common.messages import Message, End, RecordType
+from common.messages.joined import GenericJoinedTrip
+from common.messages.aggregated import GenericAggregatedRecord
 
-EXCHANGE = "{}_joined_records"
-TRIPS_QUEUE = "{}_joined_trips"
-END_QUEUE = "{}_aggregators_ends_" + str(uuid4())
-OUT_QUEUE = "{}_aggregated"
+from .config import Config
 
 
 class AggregatorComms(
-    CommsReceiveProtocol[Message[IN]],
-    CommsSendProtocol[Message[OUT]],
-    Protocol[IN, OUT],
+    Generic[GenericJoinedTrip, GenericAggregatedRecord],
+    CommsReceive[Message[GenericJoinedTrip | End]],
+    CommsSendBatched[
+        Message[GenericJoinedTrip | End], Message[GenericAggregatedRecord | End]
+    ],
+    SystemCommunicationBase,
 ):
-    @abstractmethod
+    exchange: str
+    trips_queue: str
+    end_queue: str
+    out_queue: str
+
+    config: Config
+
+    def __init__(self, config: Config) -> None:
+        self.config = config
+        self.exchange = f"{config.name}_joined_records"
+        self.trips_queue = f"{config.name}_joined_trips"
+        self.end_queue = f"{config.name}_aggregators_ends_{uuid4()}"
+        self.out_queue = f"{config.name}_aggregated"
+        super().__init__(config)
+
+    def _load_definitions(self) -> None:
+        # in
+        self._start_consuming_from(self.trips_queue)
+
+        self.channel.queue_declare(self.end_queue, exclusive=True)  # end
+        self.channel.queue_bind(self.end_queue, self.exchange, RecordType.END)
+        self._start_consuming_from(self.end_queue)
+
+    def _get_routing_details(
+        self, msg: Message[GenericAggregatedRecord | End]
+    ) -> tuple[str, str]:
+        return "", self.out_queue
+
     def set_all_trips_done_callback(self, callback: Callable[[], None]) -> None:
-        ...
-
-
-def load_definitions(comms: AggregatorComms[IN, OUT], name: str) -> tuple[str, str]:
-    # in
-    trips_queue = TRIPS_QUEUE.format(name)
-    comms._start_consuming_from(trips_queue)
-
-    end_queue = END_QUEUE.format(name)
-    comms.channel.queue_declare(end_queue, exclusive=True)  # end
-    comms.channel.queue_bind(end_queue, EXCHANGE.format(name), RecordType.END)
-    comms._start_consuming_from(end_queue)
-    return trips_queue, OUT_QUEUE.format(name)
+        self._set_empty_queue_callback(self.trips_queue, callback)

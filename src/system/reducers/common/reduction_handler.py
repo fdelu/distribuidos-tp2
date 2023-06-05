@@ -14,7 +14,7 @@ ReducerFactory = Callable[[], Reducer[GenericAggregatedRecord]]
 
 
 class ReductionHandler(Generic[GenericAggregatedRecord]):
-    comms: ReducerComms[GenericAggregatedRecord | End]
+    comms: ReducerComms[GenericAggregatedRecord]
     config: Config
     reducer: Reducer[GenericAggregatedRecord]
     jobs: dict[str, JobReducer[GenericAggregatedRecord]]
@@ -22,7 +22,7 @@ class ReductionHandler(Generic[GenericAggregatedRecord]):
 
     def __init__(
         self,
-        comms: ReducerComms[GenericAggregatedRecord | End],
+        comms: ReducerComms[GenericAggregatedRecord],
         config: Config,
         reducer_factory: ReducerFactory[GenericAggregatedRecord],
     ):

@@ -17,8 +17,7 @@ def deserialize_item(data_type: Any, data: Translated) -> Any:
     if isinstance(data_type, types.UnionType) or origin is Union:
         return deserialize_union(data_type, data)
     if origin in (list, set, dict, tuple):
-        deserialize_collection(origin, get_args(data_type), data)
-
+        return deserialize_collection(data_type, data)
     if isinstance(data_type, EnumType):
         return deserialize_enum(data_type, data)
     return deserialize_object(data_type, data)
@@ -45,9 +44,9 @@ def deserialize_union(type_info: Any, data: Translated) -> Any:
     )
 
 
-def deserialize_collection(
-    origin: type, args: tuple[Any, ...], data: Translated
-) -> Any:
+def deserialize_collection(data_type: type, data: Translated) -> Any:
+    origin = get_origin(data_type)
+    args = get_args(data_type)
     if not isinstance(data, list):
         raise SerdeError(f"Can't deserialize {origin}: serialized object is not a list")
 

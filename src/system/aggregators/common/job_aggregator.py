@@ -21,7 +21,7 @@ class Aggregator(Protocol[GenericJoinedTrip, GenericAggregatedRecord]):
 
 
 class JobAggregator(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
-    comms: AggregatorComms[GenericJoinedTrip | End, GenericAggregatedRecord | End]
+    comms: AggregatorComms[GenericJoinedTrip, GenericAggregatedRecord]
     aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord]
     config: Config
     job_id: str
@@ -34,7 +34,7 @@ class JobAggregator(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
 
     def __init__(
         self,
-        comms: AggregatorComms[GenericJoinedTrip | End, GenericAggregatedRecord | End],
+        comms: AggregatorComms[GenericJoinedTrip, GenericAggregatedRecord],
         config: Config,
         aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord],
         job_id: str,

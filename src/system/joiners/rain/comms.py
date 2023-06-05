@@ -1,44 +1,12 @@
-from uuid import uuid4
-from typing import Callable
+from common.messages import RecordType
+from common.messages.joined import JoinedRainTrip
 
-from common.comms_base import (
-    CommsReceive,
-    SystemCommunicationBase,
-    CommsSendBatched,
-)
-from common.messages import RecordType, Message
-from common.messages.joined import JoinedRainRecords
-from common.messages.basic import BasicRecord
+from ..common.comms import JoinerComms
 
 
-class SystemCommunication(
-    CommsReceive[Message[BasicRecord]],
-    CommsSendBatched[Message[BasicRecord], Message[JoinedRainRecords]],
-    SystemCommunicationBase,
-):
-    EXCHANGE = "basic_records"
-    TRIPS_QUEUE = "rain_basic_trips"
-    OTHER_QUEUE = f"rain_joiner_other_{uuid4()}"
-    OUT_EXCHANGE = "rain_joined_records"
-
+class SystemCommunication(JoinerComms[JoinedRainTrip]):
     def _load_definitions(self) -> None:
-        # in
-
-        self.channel.queue_declare(
-            self.OTHER_QUEUE, exclusive=True
-        )  # for weather, tripstart & end
+        super()._load_definitions()
         self.channel.queue_bind(
-            self.OTHER_QUEUE, self.EXCHANGE, f"{RecordType.WEATHER}.#"
+            self.other_queue, self.EXCHANGE, f"{RecordType.WEATHER}.#"
         )
-        self.channel.queue_bind(self.OTHER_QUEUE, self.EXCHANGE, RecordType.TRIPS_START)
-        self.channel.queue_bind(self.OTHER_QUEUE, self.EXCHANGE, RecordType.END)
-        self._start_consuming_from(self.OTHER_QUEUE)
-
-    def _get_routing_details(self, msg: Message[JoinedRainRecords]) -> tuple[str, str]:
-        return self.OUT_EXCHANGE, msg.payload.get_routing_key()
-
-    def start_consuming_trips(self) -> None:
-        self._start_consuming_from(self.TRIPS_QUEUE)
-
-    def set_all_trips_done_callback(self, callback: Callable[[], None]) -> None:
-        self._set_empty_queue_callback(self.TRIPS_QUEUE, callback)

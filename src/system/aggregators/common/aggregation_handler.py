@@ -13,7 +13,7 @@ AggregatorFactory = Callable[[], Aggregator[GenericJoinedTrip, GenericAggregated
 
 
 class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
-    comms: AggregatorComms[GenericJoinedTrip | End, GenericAggregatedRecord | End]
+    comms: AggregatorComms[GenericJoinedTrip, GenericAggregatedRecord]
     job_agg_factory: Callable[
         [str], JobAggregator[GenericJoinedTrip, GenericAggregatedRecord]
     ]
@@ -22,7 +22,7 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
 
     def __init__(
         self,
-        comms: AggregatorComms[GenericJoinedTrip | End, GenericAggregatedRecord | End],
+        comms: AggregatorComms[GenericJoinedTrip, GenericAggregatedRecord],
         aggregator_factory: AggregatorFactory[
             GenericJoinedTrip, GenericAggregatedRecord
         ],

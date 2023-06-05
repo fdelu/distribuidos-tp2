@@ -5,10 +5,6 @@ services:
       context: ..
       dockerfile: system/Dockerfile
       target: base
-    volumes:
-      - type: bind
-        source: ../../config.ini
-        target: /config.ini
     env_file: ../../.env
     networks:
       - distribuidos-tp2_internal_net

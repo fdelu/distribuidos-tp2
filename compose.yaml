@@ -21,6 +21,8 @@ services:
       args:
         WORKDIR: medic
       dockerfile: ./system/medic/Dockerfile
+    environment:
+      - ABS_PATH=${PWD}
     networks:
       - internal_net
       - outside_net
@@ -30,7 +32,7 @@ services:
         target: /var/run/docker.sock
       - type: bind
         source: ./infra-compose.yaml
-        target: /compose.yaml
+        target: /app/compose.yaml
       - type: bind
         source: ./config.ini
         target: /config.ini

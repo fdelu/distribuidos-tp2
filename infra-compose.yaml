@@ -1,4 +1,5 @@
 version: "3"
+name: infra
 services:
   input:
     extends:
@@ -10,6 +11,10 @@ services:
     networks:
       - distribuidos-tp2_outside_net
       - distribuidos-tp2_internal_net
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
     depends_on:
       parsers:
         condition: service_healthy
@@ -24,6 +29,10 @@ services:
     deploy:
       mode: replicated
       replicas: ${PARSERS_SCALE}
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
     depends_on:
       rain-joiners:
         condition: service_healthy
@@ -43,6 +52,10 @@ services:
     deploy:
       mode: replicated
       replicas: ${RAIN_JOINERS_SCALE}
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
     depends_on:
       rain-aggregators:
         condition: service_healthy
@@ -58,6 +71,10 @@ services:
     deploy:
       mode: replicated
       replicas: ${CITY_JOINERS_SCALE}
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
     depends_on:
       city-aggregators:
         condition: service_healthy
@@ -73,6 +90,10 @@ services:
     deploy:
       mode: replicated
       replicas: ${YEAR_JOINERS_SCALE}
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
     depends_on:
       year-aggregators:
         condition: service_healthy
@@ -88,6 +109,10 @@ services:
     deploy:
       mode: replicated
       replicas: ${RAIN_AGGREGATORS_SCALE}
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
 
   city-aggregators:
     extends:
@@ -100,6 +125,10 @@ services:
     deploy:
       mode: replicated
       replicas: ${CITY_AGGREGATORS_SCALE}
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
 
   year-aggregators:
     extends:
@@ -112,6 +141,10 @@ services:
     deploy:
       mode: replicated
       replicas: ${YEAR_AGGREGATORS_SCALE}
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
 
   rain-reducer:
     extends:
@@ -121,6 +154,10 @@ services:
       args:
         WORKDIR: reducers/rain
       target: reducers
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
 
   city-reducer:
     extends:
@@ -130,6 +167,10 @@ services:
       args:
         WORKDIR: reducers/city
       target: reducers
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
 
   year-reducer:
     extends:
@@ -139,6 +180,10 @@ services:
       args:
         WORKDIR: reducers/year
       target: reducers
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
 
   output:
     extends:
@@ -147,6 +192,10 @@ services:
     build:
       args:
         WORKDIR: output
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
     networks:
       - distribuidos-tp2_outside_net
       - distribuidos-tp2_internal_net
@@ -154,16 +203,16 @@ services:
   client:
     build:
       dockerfile: ./src/client/Dockerfile
-    # volumes:
-    #   - type: bind
-    #     source: ./src/client/data
-    #     target: /tmp/data
-    #   - type: bind
-    #     source: config.ini
-    #     target: /config.ini
-    #   - type: bind
-    #     source: ./src/client/results
-    #     target: /tmp/results
+    volumes:
+      - type: bind
+        source: config.ini
+        target: /config.ini
+      - type: bind
+        source: src/client/data
+        target: /tmp/data
+      - type: bind
+        source: src/client/results
+        target: /tmp/results
     networks:
       - distribuidos-tp2_outside_net
 

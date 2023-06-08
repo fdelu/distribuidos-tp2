@@ -38,7 +38,8 @@ services:
         target: /config.ini
       - type: bind
         source: ./.env
-        target: /.env
+        target: /app/.env
+    env_file: ./.env
     stdin_open: true # docker run -i TODO: remove
     tty: true # docker run -t TODO: remove
     depends_on:

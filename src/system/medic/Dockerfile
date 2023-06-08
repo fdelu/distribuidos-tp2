@@ -1,9 +1,12 @@
 FROM python:3.11.3-bullseye AS base
 SHELL ["/bin/bash", "-c"]
 
+RUN curl -fsSL https://get.docker.com | sh
 # Copy client-shared & system-common modules
 COPY shared /app/shared
 COPY system/common /app/system/common
+COPY system/compose-base-service.yaml /app/src/system/compose-base-service.yaml
+# COPY ../.env /app/.env
 
 # Install common dependencies
 COPY system/requirements.txt /app/system/requirements.txt
@@ -25,4 +28,4 @@ RUN if test -e requirements.txt; then pip install -r requirements.txt; fi
 WORKDIR /app
 # replace / in WORKDIR with .
 ENTRYPOINT python3 -m system.${WORKDIR//\//.}.app
-# CMD ["/bin/bash"] #TODO remove
+# CMD ["/bin/bash"]

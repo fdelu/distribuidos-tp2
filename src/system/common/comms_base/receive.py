@@ -4,7 +4,6 @@ import logging
 from threading import Event
 import time
 from typing import Callable, Protocol, TypeVar, Generic, Any
-import os
 from functools import partial
 from signal import signal, SIGTERM
 
@@ -15,10 +14,11 @@ from common.serde import deserialize
 from common.config_base import ConfigProtocol
 
 from .protocol import TIMEOUT_SECONDS, CommsProtocol, BATCH_SEPARATOR
-from .util import get_generic_type
+from .util import get_generic_type, set_healthy
+
 
 IN = TypeVar("IN")
-STATUS_FILE = os.getenv("STATUS_FILE", "status.txt")
+# STATUS_FILE = os.getenv("STATUS_FILE", "status.txt") TODO: remove
 
 
 class ReceiveConfig(ConfigProtocol, Protocol):
@@ -124,8 +124,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Loads the definitions. When done, writes "OK" to the status file.
         """
         self._load_definitions()
-        with open(STATUS_FILE, "w") as f:
-            f.write("OK")
+        set_healthy("OK")
 
     def __handle_record(
         self,

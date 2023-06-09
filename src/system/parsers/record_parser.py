@@ -28,7 +28,9 @@ class RecordParser:
         self.jobs.pop(job.job_id)
 
     def handle_record(self, msg: Message[RawRecord]) -> None:
-        handler = self.jobs.get(
-            msg.job_id, WeatherStationsPhase(self.comms, msg.job_id, self.finished)
-        )
-        self.jobs[msg.job_id] = handler.handle_record(msg.payload)
+        if msg.job_id not in self.jobs:
+            logging.info(f"Starting job {msg.job_id}")
+            self.jobs[msg.job_id] = WeatherStationsPhase(
+                self.comms, msg.job_id, self.finished
+            )
+        self.jobs[msg.job_id] = self.jobs[msg.job_id].handle_record(msg.payload)

@@ -25,7 +25,7 @@ class RealiableReceive:
         batch: Batch[Any],
     ) -> bool:
         if batch.msg_id and self.__already_received(batch.msg_id):
-            logging.info(f"Already received {batch.msg_id}")
+            logging.warn(f"Already received {batch.msg_id}")
             return False
         self.current_msg_id = batch.msg_id
         if batch.msg_id:

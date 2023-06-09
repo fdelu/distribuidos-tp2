@@ -3,20 +3,17 @@ from typing import Protocol
 
 from common.messages import Message
 from common.messages.stats import (
-    RainAverages,
     StatsRecord,
     StatType,
-    YearCounts,
-    CityAverages,
 )
 
-from . import Stats
+from . import StatsStorage
 from ..config import Config
 from ..comms import SystemCommunication
 
 
 class StatListener(Protocol):
-    def received(self, type: StatType) -> None:
+    def received(self, job_id: str, type: StatType) -> None:
         """
         This method is called when a new stat is received
         """
@@ -25,44 +22,28 @@ class StatListener(Protocol):
 
 class StatsReceiver:
     comms: SystemCommunication
-    stats: Stats
+    stats_storage: StatsStorage
     listeners: list[StatListener] = []
 
-    def __init__(self, config: Config, stats: Stats) -> None:
+    def __init__(self, config: Config, stats: StatsStorage) -> None:
         self.comms = SystemCommunication(config)
-        self.stats = Stats()
+        self.stats_storage = stats
 
     def add_listener(self, listener: StatListener) -> None:
         self.listeners.append(listener)
 
-    def __notify_listeners(self, type: StatType) -> None:
+    def __notify_listeners(self, job_id: str, type: StatType) -> None:
         for listener in self.listeners:
-            listener.received(type)
+            listener.received(job_id, type)
 
     def run(self) -> None:
         self.comms.set_callback(self.handle_record)
         self.comms.start_consuming()
         self.comms.close()
 
-    def handle_rain_averages(self, stat: RainAverages) -> None:
-        logging.info("Received rain averages")
-        with self.stats.lock:
-            self.stats.rain_averages = stat
-        self.__notify_listeners(StatType.RAIN)
-
-    def handle_year_counts(self, stat: YearCounts) -> None:
-        logging.info("Received year counts")
-        with self.stats.lock:
-            self.stats.year_counts = stat
-        self.__notify_listeners(StatType.YEAR)
-
-    def handle_city_averages(self, stat: CityAverages) -> None:
-        logging.info("Received city averages")
-        with self.stats.lock:
-            self.stats.city_averages = stat
-        self.__notify_listeners(StatType.CITY)
-
     def handle_record(self, msg: Message[StatsRecord]) -> None:
-        msg.payload.be_handled_by(self)
-        if self.stats.all_done():
-            logging.info("Received all stats")
+        logging.info(f"Job {msg.job_id} | Received stat {msg.payload.stat_type()}")
+        self.stats_storage.store(msg.job_id, msg.payload)
+        self.__notify_listeners(msg.job_id, msg.payload.stat_type())
+        if self.stats_storage.all_done(msg.job_id):
+            logging.info(f"Job {msg.job_id} | Received all stats")

@@ -33,6 +33,9 @@ class CommsSendBatched(
         key = self._get_routing_details(record)
         batch = self.batches.get(key) or Batch([], self.__next_message_id())
         batch.messages.append(record)
+        if batch.msg_id is None:
+            self.__send_batch(*key, batch)
+            return
         self.batches[key] = batch
 
     def __next_message_id(self) -> str | None:

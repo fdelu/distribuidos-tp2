@@ -16,6 +16,9 @@ class RainAverages:
     def be_handled_by(self, handler: "StatHandler[T]") -> T:
         return handler.handle_rain_averages(self)
 
+    def stat_type(self) -> StatType:
+        return StatType.RAIN
+
 
 @dataclass
 class YearCounts:
@@ -25,6 +28,9 @@ class YearCounts:
     def be_handled_by(self, handler: "StatHandler[T]") -> T:
         return handler.handle_year_counts(self)
 
+    def stat_type(self) -> StatType:
+        return StatType.YEAR
+
 
 @dataclass
 class CityAverages:
@@ -32,6 +38,9 @@ class CityAverages:
 
     def be_handled_by(self, handler: "StatHandler[T]") -> T:
         return handler.handle_city_averages(self)
+
+    def stat_type(self) -> StatType:
+        return StatType.CITY
 
 
 class StatHandler(Protocol[T]):

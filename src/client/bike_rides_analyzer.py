@@ -91,13 +91,18 @@ class BikeRidesAnalyzer:
         return json.loads(response)
 
     def __send_batchs(self, city: str, lines: Iterable[str], type: RecordType) -> int:
-        count = -1  # don't count the header
+        count = 0
+        batch_id = 0
+        csv_header, *data = lines
 
-        self.input_socket.send(f"{type}{SplitChar.HEADER}{city}")
+        self.input_socket.send(
+            f"{type}{SplitChar.HEADER}{city}{SplitChar.HEADER}{csv_header}"
+        )
 
-        for batch in self.__batch(lines):
+        for batch in self.__batch(data):
+            self.input_socket.send(SplitChar.RECORDS.join((str(batch_id), *batch)))
             count += len(batch)
-            self.input_socket.send(SplitChar.RECORDS.join(batch))
+            batch_id += 1
 
         self.input_socket.send(RecordType.END)
 

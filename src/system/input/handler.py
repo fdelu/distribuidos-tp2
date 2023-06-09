@@ -3,7 +3,6 @@ import signal
 from threading import Event
 import zmq
 from enum import StrEnum
-from hashlib import sha256
 
 from shared.socket import SocketStopWrapper
 from shared.messages import SplitChar, RecordType as BaseRecordType
@@ -60,7 +59,7 @@ class ClientHandler:
         while not self.stop_event.is_set():
             msg = self.socket.recv()
 
-            record_type, city = self.__get_record_data(msg)
+            record_type, city, columns = self.__get_record_data(msg)
             if not self.__validate_phase(record_type):
                 continue
 
@@ -71,23 +70,23 @@ class ClientHandler:
             if record_type == RecordType.END:
                 self.__handle_end()
             else:
-                self.__handle_batch(record_type, city)
+                self.__handle_batch(record_type, city, columns)
 
-    def __get_record_data(self, header: str) -> tuple[RecordType, str]:
+    def __get_record_data(self, header: str) -> tuple[RecordType, str, str]:
         if header == RecordType.END:
-            return RecordType.END, ""
-        record_type, city = header.split(SplitChar.HEADER)
-        return RecordType(record_type), city
+            return RecordType.END, "", ""
+        record_type, city, columns = header.split(SplitChar.HEADER)
+        return RecordType(record_type), city, columns
 
-    def __handle_batch(self, record_type: RecordType, city: str) -> None:
+    def __handle_batch(self, record_type: RecordType, city: str, columns: str) -> None:
         count = 0
         msg = self.socket.recv()
-        headers, data = msg.split(SplitChar.RECORDS, 1)
         while msg != RecordType.END:
-            raw = RawLines(record_type, city, headers, data.splitlines())
-            hash = sha256(data.encode()).hexdigest()
-            self._send(self.__build_msg(raw, hash, "123"))
-            count += len(msg.splitlines())
+            batch_number, data = msg.split(SplitChar.RECORDS, 1)
+            raw = RawLines(record_type, city, columns, data.splitlines())
+            msg_id = self.__get_msg_id("123", record_type, city, batch_number)
+            self._send(self.__build_msg(raw, msg_id, "123"))
+            count += len(data.splitlines())
             msg = self.socket.recv()
         self.socket.send(BaseRecordType.ACK)
         logging.info(
@@ -95,9 +94,16 @@ class ClientHandler:
         )
 
     def __build_msg(
-        self, lines: RawLines, hash: str, job_id: str
+        self, lines: RawLines, msg_id: str | None, job_id: str
     ) -> Batch[Message[RawRecord]]:
-        return Batch([Message(job_id, lines)], hash)
+        return Batch([Message(job_id, lines)], msg_id)
+
+    def __get_msg_id(
+        self, job_id: str, record_type: RecordType, city: str, batch_number: str
+    ) -> str | None:
+        if record_type != RecordType.TRIP:
+            return None
+        return f"{job_id};{city};{batch_number}"
 
     def __handle_end(self) -> None:
         self._send(Batch([Message("123", End())], None))

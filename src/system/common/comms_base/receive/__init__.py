@@ -66,6 +66,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         self.batch_done_callback = callback
 
     def set_timer(self, callback: Callable[[], None], timeout_seconds: float) -> Any:
+        logging.debug(f"Setting timer for {timeout_seconds} seconds")
         return self.connection.call_later(timeout_seconds, callback)
 
     def cancel_timer(self, timer: Any) -> None:
@@ -97,11 +98,9 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         if prev is not None:
             self.connection.remove_timeout(prev.timer)
 
-        info = self.TimeoutInfo(callback, timeout or TIMEOUT_SECONDS, None)
+        info = self.TimeoutInfo(callback, timeout, None)
         self.timeout_callbacks[queue] = info
-        info.timer = self.connection.call_later(
-            info.time_seconds, lambda: self.__timeout_handler(info)
-        )
+        info.timer = self.set_timer(lambda: self.__timeout_handler(info), timeout)
 
     def _set_empty_queue_callback(
         self, queue: str, callback: Callable[[], None], **queue_kwargs: Any

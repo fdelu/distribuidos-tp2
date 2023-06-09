@@ -47,5 +47,7 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         self.jobs.pop(job.job_id)
 
     def handle_record(self, msg: Message[GenericJoinedTrip | End]) -> None:
-        handler = self.jobs.get(msg.job_id) or self.job_agg_factory(msg.job_id)
-        msg.payload.be_handled_by(handler)
+        if msg.job_id not in self.jobs:
+            logging.info(f"Starting job {msg.job_id}")
+            self.jobs[msg.job_id] = self.job_agg_factory(msg.job_id)
+        msg.payload.be_handled_by(self.jobs[msg.job_id])

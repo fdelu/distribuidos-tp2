@@ -67,9 +67,6 @@ class JobAggregator(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         logging.info("Waiting for all trips to be processed")
         self.comms.set_all_trips_done_callback(self.finished)
 
-    def handle_record(self, record: GenericJoinedTrip | End) -> None:
-        record.be_handled_by(self)
-
     def finished(self) -> None:
         logging.info(
             f"Finished processing all trips. Total processed in this node: {self.count}"

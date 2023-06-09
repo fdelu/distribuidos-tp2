@@ -46,5 +46,7 @@ class ReductionHandler(Generic[GenericAggregatedRecord]):
         self.reducer.handle_aggregated(aggregated)
 
     def handle_record(self, msg: Message[GenericAggregatedRecord | End]) -> None:
-        handler = self.jobs.get(msg.job_id) or self.job_red_factory(msg.job_id)
-        msg.payload.be_handled_by(handler)
+        if msg.job_id not in self.jobs:
+            logging.info(f"Starting job {msg.job_id}")
+            self.jobs[msg.job_id] = self.job_red_factory(msg.job_id)
+        msg.payload.be_handled_by(self.jobs[msg.job_id])

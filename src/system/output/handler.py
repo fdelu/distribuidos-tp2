@@ -1,13 +1,13 @@
 import json
 import logging
 from threading import Thread
+from typing import Any
 import zmq
 
 from shared.messages import StatType
-from common.messages.stats import StatsRecord
 
 from .config import Config
-from .stats import Stats
+from .stats import StatsStorage
 
 CONTROL_ADDR = "inproc://control"
 END_MSG = "END"
@@ -15,13 +15,16 @@ END_MSG = "END"
 
 class ClientHandler(Thread):
     context: zmq.Context[zmq.Socket[None]]
-    stats: Stats
+    stats: StatsStorage
     config: Config
 
     control_socket: zmq.Socket[None] | None = None
 
     def __init__(
-        self, config: Config, context: zmq.Context[zmq.Socket[None]], stats: Stats
+        self,
+        config: Config,
+        context: zmq.Context[zmq.Socket[None]],
+        stats: StatsStorage,
     ) -> None:
         """
         Initializes the client handler. Must be called from the main thread.
@@ -47,7 +50,7 @@ class ClientHandler(Thread):
         self.control_socket.send_string(END_MSG)
         self.control_socket.close()
 
-    def received(self, type: StatType) -> None:
+    def received(self, job_id: str, type: StatType) -> None:
         """
         Executed when a stat is received.
         Must be called from the main thread.
@@ -70,14 +73,14 @@ class ClientHandlerInternal:
     clients_socket: zmq.Socket[None]
     control_socket: zmq.Socket[None]
 
-    stats: Stats
+    stats: StatsStorage
     pending_clients: dict[StatType, list[bytes]] = {}  # stat_type -> clients waiting
 
     def __init__(
         self,
         context: zmq.Context[zmq.Socket[None]],
         config: Config,
-        stats: Stats,
+        stats: StatsStorage,
     ) -> None:
         self.clients_socket = context.socket(zmq.ROUTER)
         self.clients_socket.bind(config.address)
@@ -129,7 +132,7 @@ class ClientHandlerInternal:
             logging.warning(f"Invalid stat type was requested: {msg_str}")
             self.clients_socket.send_multipart([id, b"", b"Invalid stat type"])
             return
-        stat = self.__get_stat(type)
+        stat = self.stats.get("123", type)
         if stat is None:
             self.pending_clients.setdefault(type, []).append(id)
         else:
@@ -141,28 +144,15 @@ class ClientHandlerInternal:
         """
         waiting = self.pending_clients.pop(type, [])
         logging.info(f"Sending received stat '{type}' to {len(waiting)} clients")
-        stat = self.__get_stat(type)
+        stat = self.stats.get("123", type)
         if stat is None:
             raise RuntimeError("Stat was received but it is not available")
         for id in waiting:
             self.__send_stat(id, stat)
 
-    def __get_stat(self, type: StatType) -> StatsRecord | None:
-        """
-        Returns a stat if it is available
-        """
-        with self.stats.lock:
-            if type == StatType.RAIN:
-                return self.stats.rain_averages
-            if type == StatType.YEAR:
-                return self.stats.year_counts
-            if type == StatType.CITY:
-                return self.stats.city_averages
-            return None
-
-    def __send_stat(self, id: bytes, stat: StatsRecord) -> None:
+    def __send_stat(self, id: bytes, stat: Any) -> None:
         """
         Sends a stat to a client
         """
         logging.debug("Sending response to client")
-        self.clients_socket.send_multipart([id, b"", json.dumps(stat.data).encode()])
+        self.clients_socket.send_multipart([id, b"", json.dumps(stat).encode()])

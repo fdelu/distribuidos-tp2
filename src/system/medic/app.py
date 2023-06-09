@@ -1,7 +1,8 @@
 import logging
 from shared.log import setup_logs
+from common.comms_base.util import set_healthy
+
 from .config import Config
-from ..common.comms_base.util import set_healthy
 
 
 def main() -> None:

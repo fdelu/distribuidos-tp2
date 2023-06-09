@@ -18,13 +18,10 @@ ENV STATUS_FILE=/status.txt
 HEALTHCHECK --interval=0.5s --timeout=3s --retries=50 CMD cat ${STATUS_FILE} | grep -q "HEALTHY" || exit 1
 
 # Copy service modules and install dependencies, if any
-ARG WORKDIR
-ENV WORKDIR=${WORKDIR}
-WORKDIR /app/system/${WORKDIR}
-COPY system/${WORKDIR} .
-RUN if test -e requirements.txt; then pip install -r requirements.txt; fi
+WORKDIR /app/system/medic
+COPY system/medic .
+RUN pip install -r requirements.txt
 
 WORKDIR /app
-# replace / in WORKDIR with .
-ENTRYPOINT python3 -m system.${WORKDIR//\//.}.app
+ENTRYPOINT python3 -m system.medic.app
 # CMD ["/bin/bash"]

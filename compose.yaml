@@ -186,13 +186,11 @@ services:
   #   depends_on:
   #     rabbitmq:
   #       condition: service_healthy
-  
+
   medic1:
     build:
       context: ./src
       dockerfile: ./system/medic/Dockerfile
-      args:
-        WORKDIR: medic
     environment:
       - ID=1
     networks:
@@ -213,8 +211,6 @@ services:
     build:
       context: ./src
       dockerfile: ./system/medic/Dockerfile
-      args:
-        WORKDIR: medic
     environment:
       - ID=2
     networks:

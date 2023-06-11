@@ -1,9 +1,10 @@
 from typing import Iterable
 from datetime import date, timedelta
 
-from shared.messages import SplitChar
 from common.messages.basic import BasicStation, BasicTrip, BasicWeather
 from common.messages.raw import RawLines
+
+SPLIT_CHAR = ","
 
 
 def parse_optional_float(value: str) -> float | None:
@@ -13,11 +14,11 @@ def parse_optional_float(value: str) -> float | None:
 
 
 def get_indexes(batch: RawLines) -> dict[str, int]:
-    return {x: i for i, x in enumerate(batch.headers.split(SplitChar.ATTRS))}
+    return {x: i for i, x in enumerate(batch.columns.split(SPLIT_CHAR))}
 
 
 def get_rows(batch: RawLines) -> Iterable[list[str]]:
-    return (x.split(SplitChar.ATTRS) for x in batch.lines)
+    return (x.split(SPLIT_CHAR) for x in batch.lines)
 
 
 def parse_station(row: list[str], indexes: dict[str, int], city: str) -> BasicStation:

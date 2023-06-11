@@ -18,7 +18,6 @@ class RecordParser:
         self.jobs = {}
 
     def run(self) -> None:
-        logging.info("Receiving weather & stations")
         self.comms.set_callback(self.handle_record)
         self.comms.start_consuming()
         self.comms.close()

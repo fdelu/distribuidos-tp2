@@ -5,15 +5,17 @@ from common.config_base import ConfigProtocol
 
 from .protocol import CommsProtocol
 
-from .send import CommsSend  # noqa
-from .receive import CommsReceive  # noqa
-from .batched import CommsSendBatched  # noqa
+from .send import CommsSend
+from .send.reliable import ReliableSend
+from .receive import CommsReceive
+from .receive.reliable import ReliableReceive
 
 __all__ = [
     "CommsProtocol",
     "CommsSend",
     "CommsReceive",
-    "CommsSendBatched",
+    "ReliableSend",
+    "ReliableReceive",
 ]
 
 
@@ -35,5 +37,8 @@ class SystemCommunicationBase(CommsProtocol):
         self.ch = self.conn.channel()
 
     def close(self) -> None:
+        """
+        Closes the connection
+        """
         self.ch.close()
         self.conn.close()

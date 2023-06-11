@@ -5,9 +5,9 @@ from common.messages import End, Message, RecordType
 from common.messages.basic import BasicRecord
 from common.messages.joined import GenericJoinedTrip
 from common.comms_base import (
-    CommsSendBatched,
+    ReliableSend,
     SystemCommunicationBase,
-    CommsReceive,
+    ReliableReceive,
 )
 
 from .config import Config
@@ -17,8 +17,8 @@ __all__ = ["GenericJoinedTrip"]
 
 class JoinerComms(
     Generic[GenericJoinedTrip],
-    CommsReceive[Message[BasicRecord]],
-    CommsSendBatched[Message[BasicRecord], Message[GenericJoinedTrip | End]],
+    ReliableReceive[Message[BasicRecord]],
+    ReliableSend[Message[GenericJoinedTrip | End]],
     SystemCommunicationBase,
 ):
     EXCHANGE = "basic_records"

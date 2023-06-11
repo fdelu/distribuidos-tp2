@@ -1,10 +1,9 @@
-import json
 import logging
 from threading import Thread
-from typing import Any
 import zmq
 
-from shared.messages import StatType
+from shared.serde import deserialize, serialize
+from shared.messages import StatType, GetStat, Message as ClientMessage, Stat
 
 from .config import Config
 from .stats import StatsStorage
@@ -57,7 +56,7 @@ class ClientHandler(Thread):
         """
         if self.control_socket is None:
             self.control_socket = self.__connect_control()
-        self.control_socket.send_string(type)
+        self.control_socket.send_string(serialize((job_id, type)))
 
     def __connect_control(self) -> zmq.Socket[None]:
         socket = self.context.socket(zmq.PAIR)
@@ -74,7 +73,8 @@ class ClientHandlerInternal:
     control_socket: zmq.Socket[None]
 
     stats: StatsStorage
-    pending_clients: dict[StatType, list[bytes]] = {}  # stat_type -> clients waiting
+    # (job_id, stat_type) -> clients waiting
+    pending_clients: dict[tuple[str, StatType], list[bytes]] = {}
 
     def __init__(
         self,
@@ -112,47 +112,49 @@ class ClientHandlerInternal:
             msg = self.control_socket.recv_string()
             if msg == END_MSG:
                 return True
-            self.__handle_received(StatType(msg))
+            self.__handle_received(*deserialize(tuple[str, StatType], msg))
 
         if self.clients_socket in ready:
             id, _, body = self.clients_socket.recv_multipart()
             self.__handle_client(id, body)
         return False
 
-    def __handle_client(self, id: bytes, msg: bytes) -> None:
+    def __handle_client(self, id: bytes, bytes: bytes) -> None:
         """
         Handles a client request, either by sending him the stat he
         requested or by adding him to the list of clients waiting for that stat
         """
-        msg_str = msg.decode()
-        logging.info(f"Received request for stats {msg_str}")
-        try:
-            type = StatType(msg_str)
-        except ValueError:
-            logging.warning(f"Invalid stat type was requested: {msg_str}")
-            self.clients_socket.send_multipart([id, b"", b"Invalid stat type"])
-            return
-        stat = self.stats.get("123", type)
+        msg: ClientMessage[GetStat] = deserialize(
+            ClientMessage[GetStat], bytes.decode()
+        )
+        stat = self.stats.get(msg.job_id, msg.payload.stat_type)
+        log = f"Job {msg.job_id} | Received request for stat {msg.payload.stat_type}"
         if stat is None:
-            self.pending_clients.setdefault(type, []).append(id)
+            logging.info(f"{log} | Waiting for stat to be received")
+            self.pending_clients.setdefault(
+                (msg.job_id, msg.payload.stat_type), []
+            ).append(id)
         else:
+            logging.info(f"{log} | Sending available stat")
             self.__send_stat(id, stat)
 
-    def __handle_received(self, type: StatType) -> None:
+    def __handle_received(self, job_id: str, type: StatType) -> None:
         """
         Sends a stat to all clients waiting for it when it is received
         """
-        waiting = self.pending_clients.pop(type, [])
-        logging.info(f"Sending received stat '{type}' to {len(waiting)} clients")
-        stat = self.stats.get("123", type)
+        waiting = self.pending_clients.pop((job_id, type), [])
+        logging.info(
+            f"Job {job_id} | Sending received stat '{type}' to {len(waiting)} clients"
+        )
+        stat = self.stats.get(job_id, type)
         if stat is None:
             raise RuntimeError("Stat was received but it is not available")
         for id in waiting:
             self.__send_stat(id, stat)
 
-    def __send_stat(self, id: bytes, stat: Any) -> None:
+    def __send_stat(self, id: bytes, stat: Stat) -> None:
         """
         Sends a stat to a client
         """
         logging.debug("Sending response to client")
-        self.clients_socket.send_multipart([id, b"", json.dumps(stat).encode()])
+        self.clients_socket.send_multipart([id, b"", serialize(stat).encode()])

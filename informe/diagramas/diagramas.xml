@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2023-05-01T20:26:04.193Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36" etag="YBRqV2mrBW5dUW69NBSI" version="21.2.3" type="device" pages="8">
+<mxfile host="app.diagrams.net" modified="2023-06-10T15:38:14.528Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" etag="30cFvFdVifxmAxYyYmgy" version="21.3.8" type="device" pages="8">
   <diagram name="Robustez" id="cgUQp_EKNE75rNgvOlVN">
-    <mxGraphModel dx="2019" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2019" dy="689" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -2342,7 +2342,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="_Fe3oobjO4AM3bwKx193" name="Queues &amp; Exchanges">
-    <mxGraphModel dx="1604" dy="443" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1649" dy="475" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -2372,8 +2372,8 @@
         <mxCell id="UCiqfViatgIfVZ1tXiYh-1" value="&lt;span style=&quot;font-size: 5px;&quot;&gt;&lt;b&gt;RawBatch&lt;/b&gt;&lt;/span&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=4;rotation=0;fillColor=#bac8d3;strokeColor=#23445d;direction=south;" parent="1" vertex="1">
           <mxGeometry x="-338" y="743.75" width="40" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="UCiqfViatgIfVZ1tXiYh-2" value="&lt;font size=&quot;1&quot; style=&quot;&quot;&gt;&lt;i style=&quot;&quot;&gt;raw_batchs&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="-353" y="720" width="70" height="30" as="geometry" />
+        <mxCell id="UCiqfViatgIfVZ1tXiYh-2" value="&lt;font size=&quot;1&quot; style=&quot;&quot;&gt;&lt;i style=&quot;&quot;&gt;raw_batchs&lt;br&gt;_{job_id}&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="-353" y="705.75" width="70" height="40" as="geometry" />
         </mxCell>
         <mxCell id="UCiqfViatgIfVZ1tXiYh-3" value="&lt;b style=&quot;border-color: var(--border-color); font-size: 5px;&quot;&gt;End&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=4;rotation=0;fillColor=#f8cecc;strokeColor=#b85450;direction=south;labelBackgroundColor=none;" parent="1" vertex="1">
           <mxGeometry x="-261" y="760" width="40" height="20" as="geometry" />
@@ -2525,8 +2525,8 @@
         <mxCell id="XWhDJuiJZ-sy8bF-XHhT-121" value="&lt;span style=&quot;font-size: 5px;&quot;&gt;&lt;b&gt;JoinedTrip&lt;/b&gt;&lt;/span&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=4;rotation=0;fillColor=#bac8d3;strokeColor=#23445d;direction=south;" parent="1" vertex="1">
           <mxGeometry x="410" y="504.75" width="40" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="XWhDJuiJZ-sy8bF-XHhT-122" value="&lt;font size=&quot;1&quot;&gt;&lt;i&gt;rain_joined_trips&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="380" y="481" width="100" height="30" as="geometry" />
+        <mxCell id="XWhDJuiJZ-sy8bF-XHhT-122" value="&lt;font size=&quot;1&quot;&gt;&lt;i&gt;rain_joined_trips&lt;br&gt;_{job_id}&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="380" y="464.75" width="100" height="40" as="geometry" />
         </mxCell>
         <mxCell id="XWhDJuiJZ-sy8bF-XHhT-123" value="" style="group" parent="1" vertex="1" connectable="0">
           <mxGeometry x="576" y="481" width="60" height="60" as="geometry" />
@@ -2692,8 +2692,8 @@
         <mxCell id="gOcDgimTilD4Y4PUoHVX-4" value="&lt;span style=&quot;font-size: 5px;&quot;&gt;&lt;b&gt;BasicTrip&lt;/b&gt;&lt;/span&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=4;rotation=0;fillColor=#bac8d3;strokeColor=#23445d;direction=south;" parent="1" vertex="1">
           <mxGeometry x="60" y="503.75" width="40" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="gOcDgimTilD4Y4PUoHVX-5" value="&lt;font size=&quot;1&quot; style=&quot;&quot;&gt;&lt;i style=&quot;&quot;&gt;rain_basic_trips&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="35" y="480" width="90" height="30" as="geometry" />
+        <mxCell id="gOcDgimTilD4Y4PUoHVX-5" value="&lt;font size=&quot;1&quot; style=&quot;&quot;&gt;&lt;i style=&quot;&quot;&gt;rain_basic_trips&lt;br&gt;_{job_id}&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="35" y="464.75" width="90" height="40" as="geometry" />
         </mxCell>
         <mxCell id="gOcDgimTilD4Y4PUoHVX-6" value="" style="group" parent="1" vertex="1" connectable="0">
           <mxGeometry x="207" y="480" width="60" height="60" as="geometry" />
@@ -2836,8 +2836,8 @@
         <mxCell id="gOcDgimTilD4Y4PUoHVX-49" value="&lt;span style=&quot;font-size: 5px;&quot;&gt;&lt;b&gt;JoinedTrip&lt;/b&gt;&lt;/span&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=4;rotation=0;fillColor=#bac8d3;strokeColor=#23445d;direction=south;" parent="1" vertex="1">
           <mxGeometry x="410" y="744.75" width="40" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="gOcDgimTilD4Y4PUoHVX-50" value="&lt;font size=&quot;1&quot;&gt;&lt;i&gt;year_joined_trips&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="380" y="721" width="100" height="30" as="geometry" />
+        <mxCell id="gOcDgimTilD4Y4PUoHVX-50" value="&lt;font size=&quot;1&quot;&gt;&lt;i&gt;year_joined_trips&lt;br&gt;_{job_id}&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="380" y="705.75" width="100" height="40" as="geometry" />
         </mxCell>
         <mxCell id="gOcDgimTilD4Y4PUoHVX-51" value="" style="group" parent="1" vertex="1" connectable="0">
           <mxGeometry x="576" y="721" width="60" height="60" as="geometry" />
@@ -3003,8 +3003,8 @@
         <mxCell id="gOcDgimTilD4Y4PUoHVX-81" value="&lt;span style=&quot;font-size: 5px;&quot;&gt;&lt;b&gt;BasicTrip&lt;/b&gt;&lt;/span&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=4;rotation=0;fillColor=#bac8d3;strokeColor=#23445d;direction=south;" parent="1" vertex="1">
           <mxGeometry x="60" y="743.75" width="40" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="gOcDgimTilD4Y4PUoHVX-82" value="&lt;font size=&quot;1&quot; style=&quot;&quot;&gt;&lt;i style=&quot;&quot;&gt;year_basic_trips&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="30" y="720" width="100" height="30" as="geometry" />
+        <mxCell id="gOcDgimTilD4Y4PUoHVX-82" value="&lt;font size=&quot;1&quot; style=&quot;&quot;&gt;&lt;i style=&quot;&quot;&gt;year_basic_trips&lt;br&gt;_{job_id}&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="27" y="705.75" width="100" height="40" as="geometry" />
         </mxCell>
         <mxCell id="gOcDgimTilD4Y4PUoHVX-83" value="" style="group" parent="1" vertex="1" connectable="0">
           <mxGeometry x="207" y="720" width="60" height="60" as="geometry" />
@@ -3147,8 +3147,8 @@
         <mxCell id="gOcDgimTilD4Y4PUoHVX-111" value="&lt;span style=&quot;font-size: 5px;&quot;&gt;&lt;b&gt;JoinedTrip&lt;/b&gt;&lt;/span&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=4;rotation=0;fillColor=#bac8d3;strokeColor=#23445d;direction=south;" parent="1" vertex="1">
           <mxGeometry x="410" y="984.75" width="40" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="gOcDgimTilD4Y4PUoHVX-112" value="&lt;font size=&quot;1&quot;&gt;&lt;i&gt;city_joined_trips&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="380" y="961" width="100" height="30" as="geometry" />
+        <mxCell id="gOcDgimTilD4Y4PUoHVX-112" value="&lt;font size=&quot;1&quot;&gt;&lt;i&gt;city_joined_trips&lt;br&gt;_{job_id}&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="380" y="949" width="100" height="40" as="geometry" />
         </mxCell>
         <mxCell id="gOcDgimTilD4Y4PUoHVX-113" value="" style="group;fontSize=12;" parent="1" vertex="1" connectable="0">
           <mxGeometry x="576" y="961" width="60" height="60" as="geometry" />
@@ -3314,8 +3314,8 @@
         <mxCell id="gOcDgimTilD4Y4PUoHVX-143" value="&lt;span style=&quot;font-size: 5px;&quot;&gt;&lt;b&gt;BasicTrip&lt;/b&gt;&lt;/span&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=4;rotation=0;fillColor=#bac8d3;strokeColor=#23445d;direction=south;" parent="1" vertex="1">
           <mxGeometry x="60" y="983.75" width="40" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="gOcDgimTilD4Y4PUoHVX-144" value="&lt;font size=&quot;1&quot; style=&quot;&quot;&gt;&lt;i style=&quot;&quot;&gt;city_basic_trips&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="35" y="960" width="90" height="30" as="geometry" />
+        <mxCell id="gOcDgimTilD4Y4PUoHVX-144" value="&lt;font size=&quot;1&quot; style=&quot;&quot;&gt;&lt;i style=&quot;&quot;&gt;city_basic_trips&lt;br&gt;_{job_id}&lt;/i&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="35" y="947" width="90" height="40" as="geometry" />
         </mxCell>
         <mxCell id="gOcDgimTilD4Y4PUoHVX-145" value="" style="group" parent="1" vertex="1" connectable="0">
           <mxGeometry x="207" y="960" width="60" height="60" as="geometry" />

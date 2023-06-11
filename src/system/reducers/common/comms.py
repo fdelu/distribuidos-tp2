@@ -1,6 +1,6 @@
 from typing import Generic
 
-from common.comms_base import CommsSendBatched, CommsReceive, SystemCommunicationBase
+from common.comms_base import ReliableSend, ReliableReceive, SystemCommunicationBase
 from common.messages import Message, End
 from common.messages.aggregated import GenericAggregatedRecord
 from common.messages.stats import StatsRecord
@@ -10,8 +10,8 @@ from .config import Config
 
 class ReducerComms(
     Generic[GenericAggregatedRecord],
-    CommsReceive[Message[GenericAggregatedRecord | End]],
-    CommsSendBatched[Message[GenericAggregatedRecord | End], Message[StatsRecord]],
+    ReliableReceive[Message[GenericAggregatedRecord | End]],
+    ReliableSend[Message[StatsRecord]],
     SystemCommunicationBase,
 ):
     OUT_QUEUE = "stats"

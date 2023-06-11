@@ -3,8 +3,8 @@ from typing import Callable
 
 from common.comms_base import (
     SystemCommunicationBase,
-    CommsReceive,
-    CommsSendBatched,
+    ReliableReceive,
+    ReliableSend,
 )
 from common.messages import RecordType, Message
 from common.messages.raw import RawRecord
@@ -12,8 +12,8 @@ from common.messages.basic import BasicRecord
 
 
 class SystemCommunication(
-    CommsReceive[Message[RawRecord]],
-    CommsSendBatched[Message[RawRecord], Message[BasicRecord]],
+    ReliableReceive[Message[RawRecord]],
+    ReliableSend[Message[BasicRecord]],
     SystemCommunicationBase,
 ):
     EXCHANGE = "raw_records"

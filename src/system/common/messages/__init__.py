@@ -10,7 +10,7 @@ class RecordType(StrEnum):
     TRIP = BaseRecordType.TRIP
     STATION = BaseRecordType.STATION
     WEATHER = BaseRecordType.WEATHER
-    END = BaseRecordType.END
+    END = "end"
     RAW_BATCH = "raw_batch"
     TRIPS_START = "trips_start"
 
@@ -29,7 +29,7 @@ class Message(Generic[T]):
 
 class End:
     def get_routing_key(self) -> str:
-        return BaseRecordType.END
+        return RecordType.END
 
     def be_handled_by(self, handler: "EndHandler[T]") -> T:
         return handler.handle_end()

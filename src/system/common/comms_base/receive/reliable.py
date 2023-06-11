@@ -1,11 +1,13 @@
-from typing import Any
+from typing import Any, Callable, Generic
 from time import time
 from shutil import move
 import logging
 import os
 
+from shared.serde import deserialize
 from common.messages import Batch
 
+from . import CommsReceive, IN, ReceiveConfig
 
 MINUTES_TO_KEEP = 3
 
@@ -13,14 +15,44 @@ LOG_FILE = "/received.log"
 LOG_FILE_TMP = "/tmp/received.log.tmp"
 
 
-class RealiableReceive:
+class ReliableReceive(Generic[IN], CommsReceive[IN]):
     current_msg_id: str | None = None
     latest_messages: dict[int, list[str]] = {}  # minuto -> lista de ids
+    batch_done_callback: Callable[[], None] | None = None
 
-    def __init__(self) -> None:
+    def __init__(self, config: ReceiveConfig, with_interrupt: bool = True) -> None:
         self.__load_msg_ids()
+        super().__init__(config, with_interrupt)
 
-    def pre_process(
+    def current_message_id(self) -> str | None:
+        """
+        Returns the message id of the batch being processed, if any
+        """
+        return self.current_msg_id
+
+    def set_batch_done_callback(self, callback: Callable[[], None]) -> None:
+        """
+        Sets the callback to be called when the current batch is done
+        """
+        self.batch_done_callback = callback
+
+    def _process_message(self, message: str) -> None:
+        batch = self.__deserialize_batch(message)
+        if not self.__pre_process(batch):
+            return
+
+        if self.callback is not None:
+            for msg in batch.messages:
+                self.callback(msg)
+        if self.batch_done_callback:
+            self.batch_done_callback()
+
+        self.__post_process()
+
+    def __deserialize_batch(self, message: str) -> Batch[IN]:
+        return deserialize(Batch[self.in_type], message)  # type: ignore
+
+    def __pre_process(
         self,
         batch: Batch[Any],
     ) -> bool:
@@ -32,14 +64,11 @@ class RealiableReceive:
             self.__add_msg_id(batch.msg_id)
         return True
 
-    def post_process(self) -> None:
+    def __post_process(self) -> None:
         if not os.path.exists(LOG_FILE_TMP):
             # must have received batches without msg_id
             return
         move(LOG_FILE_TMP, LOG_FILE)
-
-    def current_message_id(self) -> str | None:
-        return self.current_msg_id
 
     def __already_received(self, msg_id: str) -> bool:
         return any(msg_id in ids for ids in self.latest_messages.values())

@@ -10,7 +10,7 @@ T = TypeVar("T", covariant=True)
 class RawLines:
     record_type: RecordType
     city: str
-    headers: str
+    columns: str
     lines: list[str]
 
     def get_routing_key(self) -> str:

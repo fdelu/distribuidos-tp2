@@ -1,7 +1,7 @@
 from uuid import uuid4
 from typing import Callable, Generic
 
-from common.comms_base import CommsSendBatched, CommsReceive, SystemCommunicationBase
+from common.comms_base import ReliableSend, ReliableReceive, SystemCommunicationBase
 from common.messages import Message, End, RecordType
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
@@ -11,10 +11,8 @@ from .config import Config
 
 class AggregatorComms(
     Generic[GenericJoinedTrip, GenericAggregatedRecord],
-    CommsReceive[Message[GenericJoinedTrip | End]],
-    CommsSendBatched[
-        Message[GenericJoinedTrip | End], Message[GenericAggregatedRecord | End]
-    ],
+    ReliableReceive[Message[GenericJoinedTrip | End]],
+    ReliableSend[Message[GenericAggregatedRecord | End]],
     SystemCommunicationBase,
 ):
     exchange: str

@@ -1,19 +1,22 @@
 from threading import Lock
-from typing import Any
 
-from common.messages.stats import StatType, StatsRecord
+from shared.messages import Stat
+from common.messages.stats import (
+    StatType,
+    StatsRecord,
+)
 
 
 class StatsStorage:
-    stats: dict[str, dict[StatType, Any]] = {}
+    stats: dict[str, dict[StatType, Stat]] = {}
     lock: Lock = Lock()
 
     def store(self, job_id: str, stat: StatsRecord) -> None:
         with self.lock:
-            self.stats.setdefault(job_id, {})
-            self.stats[job_id][stat.stat_type()] = stat.data
+            stats = self.stats.setdefault(job_id, {})
+            stats[stat.stat_type()] = stat
 
-    def get(self, job_id: str, stat_type: StatType) -> Any:
+    def get(self, job_id: str, stat_type: StatType) -> Stat | None:
         with self.lock:
             if job_id not in self.stats:
                 return None
@@ -21,6 +24,4 @@ class StatsStorage:
 
     def all_done(self, job_id: str) -> bool:
         with self.lock:
-            return job_id in self.stats and all(
-                x in self.stats[job_id] for x in StatType
-            )
+            return job_id in self.stats and len(self.stats[job_id]) == len(StatType)

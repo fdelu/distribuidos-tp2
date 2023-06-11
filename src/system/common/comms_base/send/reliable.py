@@ -1,20 +1,18 @@
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
-from common.serde.internal.serialize import serialize
+from shared.serde.internal.serialize import serialize
 
-from ..messages import Batch
+from ...messages import Batch
 
-from .protocol import CommsSendProtocol, CommsReceiveProtocol, IN, OUT, ConfigProtocol
+from ..protocol import CommsProtocol, ReceiveReliableProtocol, OUT, ConfigProtocol
 
 
 OUT_INNER = TypeVar("OUT_INNER")
 MAX_DELAY_S = 3.0
 
 
-class CommsSendBatched(
-    CommsSendProtocol[OUT], CommsReceiveProtocol[IN], Generic[IN, OUT]
-):
+class ReliableSend(CommsProtocol, ReceiveReliableProtocol, Generic[OUT]):
     """
     Comms with send batching capabilities. It will group messages in batches
     with the same routing key and send them when the batch being received is
@@ -39,6 +37,9 @@ class CommsSendBatched(
         self.batches[key] = batch
 
     def __next_message_id(self) -> str | None:
+        """
+        Returns the next message id to be used
+        """
         id = self.current_message_id()
         if id is None:
             return None

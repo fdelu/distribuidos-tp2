@@ -95,5 +95,5 @@ def deserialize_object(data_type: Type[T], data: Translated) -> T:
     return out
 
 
-def deserialize(data_type: Type[Any], data: str) -> Any:
+def deserialize(data_type: Any, data: str) -> Any:
     return deserialize_item(data_type, json.loads(data))

@@ -11,12 +11,9 @@ from signal import signal, SIGTERM
 from pika import spec
 from pika.adapters.blocking_connection import BlockingChannel
 
-from common.messages import Batch
-from common.serde import deserialize, get_generic_types
+from shared.serde import deserialize, get_generic_types
 from common.config_base import ConfigProtocol
 from ..protocol import TIMEOUT_SECONDS, CommsProtocol
-
-from .reliable import RealiableReceive
 
 IN = TypeVar("IN")
 STATUS_FILE = os.getenv("STATUS_FILE", "status.txt")
@@ -31,18 +28,14 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     Comms with receive capabilities. See protocol.py for more details about the methods.
     """
 
-    in_type: Type[Any] | None = None
+    __in_type: Type[Any] | None = None
     interrupted: Event = Event()
     stopped: Event = Event()
-    reliable_handler: RealiableReceive | None = None
 
     callback: Callable[[IN], None] | None = None
     timeout_callbacks: dict[str, "TimeoutInfo"] = {}
-    batch_done_callback: Callable[[], None] | None = None
 
-    def __init__(
-        self, config: ReceiveConfig, with_interrupt: bool = True, reliable: bool = True
-    ) -> None:
+    def __init__(self, config: ReceiveConfig, with_interrupt: bool = True) -> None:
         super().__init__(config)
         self.channel.basic_qos(prefetch_count=config.prefetch_count)
         self.callback = None
@@ -50,41 +43,65 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             self.__setup_interrupt()
         self.__setup()
 
-        if reliable:
-            self.reliable_handler = RealiableReceive()
+    @property
+    def in_type(self) -> Type[Any]:
+        """
+        Input type (resolved IN TypeVar from CommsReceive[IN])
+        """
+        if self.__in_type is None:
+            self.__in_type = get_generic_types(self, CommsReceive)[0]
+        return self.__in_type
 
     def start_consuming(self) -> None:
+        """
+        Start consuming messages from the queues
+        """
         self.channel.start_consuming()
 
     def stop_consuming(self) -> None:
+        """
+        Signal/Thread-Safe way to stop consuming
+        """
         self.connection.add_callback_threadsafe(self.__stop)
 
     def set_callback(self, callback: Callable[[IN], None]) -> None:
+        """
+        Sets the callback to be called when a record is received
+        """
         self.callback = callback
 
-    def set_batch_done_callback(self, callback: Callable[[], None]) -> None:
-        self.batch_done_callback = callback
-
     def set_timer(self, callback: Callable[[], None], timeout_seconds: float) -> Any:
+        """
+        Calls the callback after timeout seconds.
+        Returns an object that can be used to cancel the timer.
+        """
         logging.debug(f"Setting timer for {timeout_seconds} seconds")
         return self.connection.call_later(timeout_seconds, callback)
 
     def cancel_timer(self, timer: Any) -> None:
+        """
+        Cancels the timer
+        """
         self.connection.remove_timeout(timer)
 
     def is_stopped(self) -> bool:
+        """
+        Returns whether the consuming was stopped (or will be soon)
+        """
         return self.interrupted.is_set() or self.stopped.is_set()
-
-    def current_message_id(self) -> str | None:
-        if self.reliable_handler:
-            return self.reliable_handler.current_message_id()
-        return None
 
     @abstractmethod
     def _load_definitions(self) -> None:
+        """
+        Declares the exchanges, queues and bindings required for the communication
+        """
         ...
 
     def _start_consuming_from(self, queue: str) -> None:
+        """
+        Starts consuming from the given queue.
+        This method returns when stop_consuming() is called.
+        """
         callback = partial(self.__handle_record, queue)
         self.channel.basic_consume(queue=queue, on_message_callback=callback)
 
@@ -94,6 +111,11 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         callback: Callable[[], None],
         timeout: float = TIMEOUT_SECONDS,
     ) -> None:
+        """
+        Sets a callback to be called after timeout seconds passed since the last message
+        of the given queue was received. If no message is received after the call to
+        this method, the callback will be called after timeout seconds.
+        """
         prev = self.timeout_callbacks.get(queue, None)
         if prev is not None:
             self.connection.remove_timeout(prev.timer)
@@ -105,15 +127,27 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     def _set_empty_queue_callback(
         self, queue: str, callback: Callable[[], None], **queue_kwargs: Any
     ) -> None:
+        """
+        Sets a callback to be called when the given queue is empty.
+        """
         self._set_timeout_callback(
             queue,
             lambda: self.__check_messages_left(queue, callback, **queue_kwargs),
         )
 
-    def __deserialize_record(self, message: str) -> Batch[IN]:
-        if self.in_type is None:
-            self.in_type = get_generic_types(self, CommsReceive)[0]
-        return deserialize(Batch[self.in_type], message)  # type: ignore
+    def _process_message(self, message: str) -> None:
+        """
+        Processes a message. Can be overridden by subclasses.
+        """
+        decoded = self.__deserialize_record(message)
+        if self.callback is not None:
+            self.callback(decoded)
+
+    def __deserialize_record(self, message: str) -> IN:
+        """
+        Deserializes a record from the given message
+        """
+        return deserialize(self.in_type, message)  # type: ignore
 
     def __stop(self) -> None:
         """
@@ -160,16 +194,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         if timeout_info is not None:
             timeout_info.last_message_on = time.time()
 
-        batch = self.__deserialize_record(body.decode())
-
-        if not self.reliable_handler or self.reliable_handler.pre_process(batch):
-            if self.callback is not None:
-                for msg in batch.messages:
-                    self.callback(msg)
-            if self.batch_done_callback:
-                self.batch_done_callback()
-            if self.reliable_handler:
-                self.reliable_handler.post_process()
+        self._process_message(body.decode())
 
         if method.delivery_tag is not None:
             ch.basic_ack(delivery_tag=method.delivery_tag)

@@ -43,3 +43,11 @@ docker-compose-logs:
 	docker compose logs -f
 
 debug: docker-compose-down docker-compose-up docker-compose-logs
+
+docker_python: # Run python in a docker container with access to the host's docker socket
+	docker run --name docker_python -dit -v /var/run/docker.sock:/var/run/docker.sock --net=host ubuntu bash
+	docker exec -it docker_python bash -c "apt -y update && apt -y upgrade && apt install -y python3 && apt install -y python3-pip && pip install docker && python3"
+
+docker_python_stop: # Stop the docker_python container
+	docker stop docker_python
+	docker rm docker_python

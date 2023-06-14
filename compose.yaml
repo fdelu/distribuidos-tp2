@@ -186,6 +186,23 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+  
+  medic:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: medic
+    networks:
+      - internal_net
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+    depends_on:
+      parsers:
+        condition: service_healthy
 
   client:
     build:

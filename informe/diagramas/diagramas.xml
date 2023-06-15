@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2023-06-10T15:38:14.528Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" etag="30cFvFdVifxmAxYyYmgy" version="21.3.8" type="device" pages="8">
+<mxfile host="app.diagrams.net" modified="2023-06-15T02:30:36.671Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" etag="xcfpYaZEPwdRAM0C85wy" version="21.3.8" type="device" pages="8">
   <diagram name="Robustez" id="cgUQp_EKNE75rNgvOlVN">
     <mxGraphModel dx="2019" dy="689" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -3457,7 +3457,7 @@
         <mxCell id="gOcDgimTilD4Y4PUoHVX-175" value="&lt;span style=&quot;font-size: 11px;&quot;&gt;Output&lt;/span&gt;" style="ellipse;shape=umlControl;whiteSpace=wrap;html=1;" parent="gOcDgimTilD4Y4PUoHVX-174" vertex="1">
           <mxGeometry x="3.3333333333333357" width="53.33333333333333" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="gOcDgimTilD4Y4PUoHVX-187" value="Solo recibe viajes y estaciones con tóopicos:&lt;br&gt;&amp;nbsp;&lt;b style=&quot;border-color: var(--border-color); font-size: 7px;&quot;&gt;&lt;font style=&quot;border-color: var(--border-color); font-size: 7px;&quot; face=&quot;Courier New&quot;&gt;trip.*.2016, trip.*.2017, station.*.2016, station.*.2017&lt;/font&gt;&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;fontSize=7;" parent="1" vertex="1">
+        <mxCell id="gOcDgimTilD4Y4PUoHVX-187" value="Solo recibe viajes y estaciones con tópicos:&lt;br&gt;&amp;nbsp;&lt;b style=&quot;border-color: var(--border-color); font-size: 7px;&quot;&gt;&lt;font style=&quot;border-color: var(--border-color); font-size: 7px;&quot; face=&quot;Courier New&quot;&gt;trip.*.2016, trip.*.2017, station.*.2016, station.*.2017&lt;/font&gt;&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;fontSize=7;" parent="1" vertex="1">
           <mxGeometry x="35" y="634" width="80" height="60" as="geometry" />
         </mxCell>
         <mxCell id="gOcDgimTilD4Y4PUoHVX-188" value="Solo recibe viajes y estaciones con tópicos:&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;&amp;nbsp;&lt;b style=&quot;border-color: var(--border-color); font-size: 7px;&quot;&gt;&lt;font style=&quot;border-color: var(--border-color); font-size: 7px;&quot; face=&quot;Courier New&quot;&gt;trip.montreal.*,&lt;br&gt;station.montreal.*&lt;br&gt;&lt;/font&gt;&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;fontSize=7;" parent="1" vertex="1">

@@ -33,6 +33,15 @@ class CommsProtocol(Protocol):
         """
         ...
 
+    @property
+    @abstractmethod
+    def id(self) -> str:
+        """
+        Returns an unique id for this instance that
+        is persistent between restarts
+        """
+        ...
+
     @abstractmethod
     def __init__(self, config: ConfigProtocol) -> None:
         ...

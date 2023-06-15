@@ -1,3 +1,5 @@
+import os
+from uuid import uuid4
 from pika import BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
 
@@ -9,6 +11,7 @@ from .send import CommsSend
 from .send.reliable import ReliableSend
 from .receive import CommsReceive
 from .receive.reliable import ReliableReceive
+from .util import setup_jobs_queues
 
 __all__ = [
     "CommsProtocol",
@@ -16,29 +19,48 @@ __all__ = [
     "CommsReceive",
     "ReliableSend",
     "ReliableReceive",
+    "setup_jobs_queues",
 ]
+
+ID_FILE_PATH = "/host_id.txt"
 
 
 # Base communication class. See protocol.py for more details about the methods.
 class SystemCommunicationBase(CommsProtocol):
-    conn: BlockingConnection
-    ch: BlockingChannel
+    __conn: BlockingConnection
+    __ch: BlockingChannel
+    __id: str
 
     @property
     def connection(self) -> BlockingConnection:
-        return self.conn
+        return self.__conn
 
     @property
     def channel(self) -> BlockingChannel:
-        return self.ch
+        return self.__ch
+
+    @property
+    def id(self) -> str:
+        return self.__id
 
     def __init__(self, config: ConfigProtocol) -> None:
-        self.conn = BlockingConnection(ConnectionParameters(host=config.rabbit_host))
-        self.ch = self.conn.channel()
+        self.__setup_id()
+        self.__conn = BlockingConnection(ConnectionParameters(host=config.rabbit_host))
+        self.__ch = self.connection.channel()
+
+    def __setup_id(self) -> None:
+        if os.path.exists(ID_FILE_PATH):
+            with open(ID_FILE_PATH, "r") as f:
+                self.__id = f.read()
+            return
+
+        with open(ID_FILE_PATH, "w") as f:
+            f.write(self.id)
+        self.__id = str(uuid4())
 
     def close(self) -> None:
         """
         Closes the connection
         """
-        self.ch.close()
-        self.conn.close()
+        self.channel.close()
+        self.connection.close()

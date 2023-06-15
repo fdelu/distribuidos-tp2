@@ -23,6 +23,7 @@ class Phase:
         self.comms = comms
         self.job_id = job_id
         self.on_finish = on_finish
+        self.comms.start_consuming_job(job_id)
 
     def handle_station_batch(self, batch: RawLines) -> "Phase":
         raise NotImplementedError()

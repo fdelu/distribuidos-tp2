@@ -15,16 +15,27 @@ class RecordType(StrEnum):
     TRIPS_START = "trips_start"
 
 
+class WithRoutingKey(Protocol):
+    def get_routing_key(self) -> str:
+        ...
+
+
 @dataclass
 class Batch(Generic[T]):
     messages: list[T]
     msg_id: str | None
 
 
+P = TypeVar("P", covariant=True, bound=WithRoutingKey)
+
+
 @dataclass
-class Message(Generic[T]):
+class Message(Generic[P]):
     job_id: str
-    payload: T
+    payload: P
+
+    def get_routing_key(self) -> str:
+        return f"{self.job_id}.{self.payload.get_routing_key()}"
 
 
 class End:

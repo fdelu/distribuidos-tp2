@@ -1,14 +1,16 @@
-from uuid import uuid4
 from typing import Callable
 
 from common.comms_base import (
     SystemCommunicationBase,
     ReliableReceive,
     ReliableSend,
+    setup_jobs_queues,
 )
 from common.messages import RecordType, Message
 from common.messages.raw import RawRecord
 from common.messages.basic import BasicRecord
+
+from .config import Config
 
 
 class SystemCommunication(
@@ -16,21 +18,36 @@ class SystemCommunication(
     ReliableSend[Message[BasicRecord]],
     SystemCommunicationBase,
 ):
-    EXCHANGE = "raw_records"
-    BATCHS_QUEUE = "raw_batchs"
-    END_QUEUE = f"parser_ends_{uuid4()}"
-    OUT_EXCHANGE = "basic_records"
+    config: Config
+
+    def __init__(self, config: Config) -> None:
+        self.config = config
+        super().__init__(config)
 
     def _load_definitions(self) -> None:
         # in
-        self._start_consuming_from(self.BATCHS_QUEUE)
-
-        self.channel.queue_declare(self.END_QUEUE, exclusive=True)
-        self.channel.queue_bind(self.END_QUEUE, self.EXCHANGE, RecordType.END)
-        self._start_consuming_from(self.END_QUEUE)
+        ends_queue = self.config.in_ends_queue_format.format(host_id=self.id)
+        self.channel.queue_declare(ends_queue)
+        self.channel.queue_bind(ends_queue, self.config.in_exchange, RecordType.END)
+        self._start_consuming_from(ends_queue)
 
     def _get_routing_details(self, msg: Message[BasicRecord]) -> tuple[str, str]:
-        return self.OUT_EXCHANGE, msg.payload.get_routing_key()
+        return self.config.out_exchange, msg.get_routing_key()
 
-    def set_all_batchs_done_callback(self, callback: Callable[[], None]) -> None:
-        self._set_empty_queue_callback(self.BATCHS_QUEUE, callback)
+    def set_all_batchs_done_callback(
+        self, job_id: str, callback: Callable[[], None]
+    ) -> None:
+        self._set_empty_queue_callback(self.__batchs_queue(job_id), callback)
+
+    def start_consuming_job(self, job_id: str) -> None:
+        queue = self.__batchs_queue(job_id)
+        self._start_consuming_from(queue)
+        setup_jobs_queues(
+            self, self.config.out_exchange, self.config.out_queues, job_id
+        )
+
+    def stop_consuming_job(self, job_id: str) -> None:
+        self.channel.queue_delete(self.__batchs_queue(job_id), if_empty=True)
+
+    def __batchs_queue(self, job_id: str) -> str:
+        return self.config.in_batchs_queue_format.format(job_id=job_id)

@@ -36,6 +36,9 @@ class ClientHandler:
         self.comms = comms
         self.socket = socket
 
+        logging.info(f"Starting job {job_id}")
+        comms.setup_job_queue(job_id)
+
     def handle_start(self, msg: RecordStart) -> bool:
         if not self.phase.validate_phase(msg):
             return False

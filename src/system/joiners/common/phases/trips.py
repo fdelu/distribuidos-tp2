@@ -41,7 +41,7 @@ class TripsPhase(Phase[GenericJoinedTrip]):
         if self.ends_received < self.config.parsers_count:
             return self
         logging.info("All parsers finished sending trips, waiting until all are joined")
-        self.comms.set_all_trips_done_callback(self._all_trips_done)
+        self.comms.set_all_trips_done_callback(self.job_id, self._all_trips_done)
         return self
 
     def _all_trips_done(self) -> None:
@@ -49,5 +49,5 @@ class TripsPhase(Phase[GenericJoinedTrip]):
             f"Finished joining all trips. Total processed in this node: {self.count}"
         )
         self._send(End())
-        self.comms.stop_consuming()
+        self.comms.stop_consuming_trips(self.job_id)
         self.on_finish(self)

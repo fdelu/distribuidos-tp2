@@ -25,7 +25,7 @@ class TripsPhase(Phase):
 
     def handle_end(self) -> Phase:
         logging.info("Received End, waiting for all batchs to be processed")
-        self.comms.set_all_batchs_done_callback(self._all_batchs_done)
+        self.comms.set_all_batchs_done_callback(self.job_id, self._all_batchs_done)
         return self
 
     def _all_batchs_done(self) -> None:
@@ -33,4 +33,5 @@ class TripsPhase(Phase):
             f"Finished parsing all trips. Total processed in this node: {self.count}"
         )
         self._send(End())
+        self.comms.stop_consuming_job(self.job_id)
         self.on_finish(self)

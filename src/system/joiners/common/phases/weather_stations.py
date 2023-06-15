@@ -25,14 +25,14 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip]):
     def handle_trips_start(self) -> Phase[GenericJoinedTrip]:
         self.parsers_sending_trips += 1
         logging.debug(
-            "A parser finished sending weather & stations"
+            f"Job {self.job_id} | A parser finished sending weather & stations"
             f" ({self.parsers_sending_trips}/{self.config.parsers_count})"
         )
         if self.parsers_sending_trips < self.config.parsers_count:
             return self
 
-        logging.info("Receiving trips")
-        self.comms.start_consuming_trips()
+        logging.info(f"Job {self.job_id} | Receiving trips")
+        self.comms.start_consuming_trips(self.job_id)
         trips_phase: Phase[GenericJoinedTrip] = TripsPhase(
             self.comms, self.config, self.joiner, self.job_id, self.on_finish
         )

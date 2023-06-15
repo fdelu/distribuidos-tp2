@@ -25,27 +25,6 @@
     "policies": [],
     "queues": [
         {
-            "name": "rain_joined_trips",
-            "vhost": "/",
-            "durable": false,
-            "auto_delete": false,
-            "arguments": {}
-        },
-        {
-            "name": "year_joined_trips",
-            "vhost": "/",
-            "durable": false,
-            "auto_delete": false,
-            "arguments": {}
-        },
-        {
-            "name": "city_joined_trips",
-            "vhost": "/",
-            "durable": false,
-            "auto_delete": false,
-            "arguments": {}
-        },
-        {
             "name": "rain_aggregated",
             "vhost": "/",
             "durable": false,
@@ -78,7 +57,7 @@
         {
             "name": "raw_records",
             "vhost": "/",
-            "type": "direct",
+            "type": "topic",
             "durable": false,
             "auto_delete": false,
             "internal": false,
@@ -96,7 +75,7 @@
         {
             "name": "rain_joined_records",
             "vhost": "/",
-            "type": "direct",
+            "type": "topic",
             "durable": false,
             "auto_delete": false,
             "internal": false,
@@ -105,7 +84,7 @@
         {
             "name": "year_joined_records",
             "vhost": "/",
-            "type": "direct",
+            "type": "topic",
             "durable": false,
             "auto_delete": false,
             "internal": false,
@@ -114,37 +93,12 @@
         {
             "name": "city_joined_records",
             "vhost": "/",
-            "type": "direct",
+            "type": "topic",
             "durable": false,
             "auto_delete": false,
             "internal": false,
             "arguments": {}
         }
     ],
-    "bindings": [
-        {
-            "source": "rain_joined_records",
-            "vhost": "/",
-            "destination": "rain_joined_trips",
-            "destination_type": "queue",
-            "routing_key": "trip",
-            "arguments": {}
-        },
-        {
-            "source": "year_joined_records",
-            "vhost": "/",
-            "destination": "year_joined_trips",
-            "destination_type": "queue",
-            "routing_key": "trip",
-            "arguments": {}
-        },
-        {
-            "source": "city_joined_records",
-            "vhost": "/",
-            "destination": "city_joined_trips",
-            "destination_type": "queue",
-            "routing_key": "trip",
-            "arguments": {}
-        }
-    ]
+    "bindings": []
 }

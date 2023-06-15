@@ -4,7 +4,7 @@ from shared.serde import serialize
 from shared.messages import RecordStart, Ack, LinesBatch
 from shared.socket import SocketStopWrapper
 
-from common.messages import RecordType, Message, Batch, End
+from common.messages import RecordType, Message, Package, End, Start
 from common.messages.raw import RawLines, RawRecord
 
 from ..config import Config
@@ -36,8 +36,9 @@ class ClientHandler:
         self.comms = comms
         self.socket = socket
 
-        logging.info(f"Starting job {job_id}")
+        logging.info(f"Starting job {job_id} - Sending Start to parsers")
         comms.setup_job_queue(job_id)
+        self.__send(Start())
 
     def handle_start(self, msg: RecordStart) -> bool:
         if not self.phase.validate_phase(msg):
@@ -61,26 +62,22 @@ class ClientHandler:
             msg.lines,
         )
         msg_id = self.__get_msg_id(msg.batch_id)
-        self.__send_internal(self.__build_msg(raw, msg_id))
+        self.__send(raw, msg_id)
         count += len(msg.lines)
         self.socket.send(serialize(Ack(msg.batch_id)))
         return True
 
     def handle_all_sent(self) -> bool:
-        self.comms.send(self.__build_msg(End()))
+        self.__send(End())
         self.socket.send(serialize(Ack()))
         logging.info(f"Job {self.job_id} | Finished sending input data")
         return False
-
-    def __build_msg(
-        self, payload: RawRecord, msg_id: str | None = None
-    ) -> Batch[Message[RawRecord]]:
-        return Batch([Message(self.job_id, payload)], msg_id)
 
     def __get_msg_id(self, batch_number: int | str) -> str | None:
         if not self.last_start or self.last_start.record_type != RecordType.TRIP:
             return None
         return f"{self.job_id};{self.last_start.city};{batch_number}"
 
-    def __send_internal(self, record: Batch[Message[RawRecord]]) -> None:
-        self.comms.send(record)
+    def __send(self, record: RawRecord, msg_id: str | None = None) -> None:
+        package = Package([Message(self.job_id, record)], msg_id)
+        self.comms.send(package)

@@ -1,12 +1,13 @@
 from typing import Callable, Generic
 
-from common.messages import End, Message
+from common.messages import End, Message, Start
 from common.messages.basic import BasicRecord
 from common.messages.joined import GenericJoinedTrip
 from common.comms_base import (
     ReliableSend,
     SystemCommunicationBase,
     ReliableReceive,
+    setup_job_queues,
 )
 
 from .config import Config
@@ -17,36 +18,36 @@ __all__ = ["GenericJoinedTrip"]
 class JoinerComms(
     Generic[GenericJoinedTrip],
     ReliableReceive[Message[BasicRecord]],
-    ReliableSend[Message[GenericJoinedTrip | End]],
+    ReliableSend[Message[GenericJoinedTrip | End | Start]],
     SystemCommunicationBase,
 ):
-    out_exchange: str
     config: Config
 
     def __init__(self, config: Config) -> None:
         self.config = config
-        self.out_exchange = self.config.out_exchange
         super().__init__(config)
 
     def _load_definitions(self) -> None:
         # in
-        other_queue = self.config.in_other_queue_format.format(host_id=self.id)
-        self.channel.queue_declare(other_queue)  # for station, tripstart & end
-        for rk in self.config.in_other_queue_routing_keys:
-            self.channel.queue_bind(other_queue, self.config.in_exchange, rk)
+        others_queue = self.config.in_others_queue_format.format(host_id=self.id)
+        self.channel.queue_declare(others_queue)  # for station, tripstart & end
+        for rk in self.config.in_others_queue_routing_keys:
+            self.channel.queue_bind(others_queue, self.config.in_exchange, rk)
 
-        self._start_consuming_from(other_queue)
+        self._start_consuming_from(others_queue)
 
     def _get_routing_details(
-        self, msg: Message[GenericJoinedTrip | End]
+        self, msg: Message[GenericJoinedTrip | End | Start]
     ) -> tuple[str, str]:
-        return self.out_exchange, msg.get_routing_key()
+        return self.config.out_exchange, msg.get_routing_key()
 
     def start_consuming_trips(self, job_id: str) -> None:
         self._start_consuming_from(self.__trips_queue(job_id))
 
+        setup_job_queues(self, self.config.out_exchange, self.config.out_queues, job_id)
+
     def stop_consuming_trips(self, job_id: str) -> None:
-        self.channel.queue_delete(self.__trips_queue(job_id), if_empty=True)
+        self._delete_queue(self.__trips_queue(job_id))
 
     def set_all_trips_done_callback(
         self, job_id: str, callback: Callable[[], None]

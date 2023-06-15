@@ -3,7 +3,6 @@ import logging
 from common.messages import Message
 from common.messages.raw import RawRecord
 
-from .config import Config
 from .comms import SystemCommunication
 from .phases import Phase
 from .phases.weather_stations import WeatherStationsPhase
@@ -13,8 +12,8 @@ class RecordParser:
     comms: SystemCommunication
     jobs: dict[str, Phase]
 
-    def __init__(self, config: Config) -> None:
-        self.comms = SystemCommunication(config)
+    def __init__(self, comms: SystemCommunication) -> None:
+        self.comms = comms
         self.jobs = {}
 
     def run(self) -> None:

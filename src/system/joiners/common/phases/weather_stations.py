@@ -1,5 +1,6 @@
 import logging
 
+from common.messages import Start
 from common.messages.basic import (
     BasicStation,
     BasicTrip,
@@ -22,7 +23,7 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip]):
         self.joiner.handle_weather(weather)
         return self
 
-    def handle_trips_start(self) -> Phase[GenericJoinedTrip]:
+    def handle_start(self) -> Phase[GenericJoinedTrip]:
         self.parsers_sending_trips += 1
         logging.debug(
             f"Job {self.job_id} | A parser finished sending weather & stations"
@@ -33,6 +34,7 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip]):
 
         logging.info(f"Job {self.job_id} | Receiving trips")
         self.comms.start_consuming_trips(self.job_id)
+        self._send(Start())
         trips_phase: Phase[GenericJoinedTrip] = TripsPhase(
             self.comms, self.config, self.joiner, self.job_id, self.on_finish
         )

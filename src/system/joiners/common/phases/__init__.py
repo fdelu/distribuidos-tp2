@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Generic, Callable, Protocol
 
-from common.messages import End, Message
+from common.messages import End, Message, Start
 from common.messages.basic import (
     BasicRecord,
     BasicStation,
@@ -59,7 +59,7 @@ class Phase(ABC, Generic[GenericJoinedTrip]):
         ...
 
     @abstractmethod
-    def handle_trips_start(self) -> "Phase[GenericJoinedTrip]":
+    def handle_start(self) -> "Phase[GenericJoinedTrip]":
         ...
 
     @abstractmethod
@@ -73,5 +73,5 @@ class Phase(ABC, Generic[GenericJoinedTrip]):
     def handle_record(self, record: BasicRecord) -> "Phase[GenericJoinedTrip]":
         return record.be_handled_by(self)
 
-    def _send(self, record: GenericJoinedTrip | End) -> None:
+    def _send(self, record: GenericJoinedTrip | End | Start) -> None:
         self.comms.send(Message(self.job_id, record))

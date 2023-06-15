@@ -54,7 +54,6 @@ class JobReducer(Generic[GenericAggregatedRecord]):
             )
             return
 
-        logging.info("All records reduced, stopping...")
         self._send(self.reducer.get_value())
         self.on_finish(self)
 

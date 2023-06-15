@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Generic, Protocol
+from typing import Callable, Generic, TypeVar
 
 from common.messages import End, Message
 from common.messages.joined import GenericJoinedTrip
@@ -7,17 +7,10 @@ from common.messages.aggregated import GenericAggregatedRecord
 
 from .config import Config
 from .comms import AggregatorComms
+from .aggregator import Aggregator
+from .timer import TimerSender
 
-
-class Aggregator(Protocol[GenericJoinedTrip, GenericAggregatedRecord]):
-    def handle_joined(self, trip: GenericJoinedTrip) -> None:
-        ...
-
-    def get_value(self) -> GenericAggregatedRecord:
-        ...
-
-    def reset(self) -> None:
-        ...
+S = TypeVar("S")
 
 
 class JobAggregator(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
@@ -25,12 +18,12 @@ class JobAggregator(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
     aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord]
     config: Config
     job_id: str
-    timer: Any | None
     ends_received: int
     count: int = 0
     on_finished: Callable[
         ["JobAggregator[GenericJoinedTrip, GenericAggregatedRecord]"], None
     ]
+    timer: TimerSender[GenericJoinedTrip, GenericAggregatedRecord]
 
     def __init__(
         self,
@@ -47,51 +40,38 @@ class JobAggregator(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         self.aggregator = aggregator
         self.job_id = job_id
         self.ends_received = 0
-        self.timer = None
         self.on_finished = on_finished
+        self.timer = TimerSender(job_id, comms, aggregator, config)
 
     def handle_joined(self, trip: GenericJoinedTrip) -> None:
         self.aggregator.handle_joined(trip)
         self.count += 1
-        if self.timer is None:
-            self.setup_timer()
+        self.timer.setup_timer()
+
+    def handle_start(self) -> None:
+        self.comms.start_consuming_trips(self.job_id)
 
     def handle_end(self) -> None:
         self.ends_received += 1
         logging.debug(
-            "A joiner finished sending trips"
+            f"Job {self.job_id} | A joiner finished sending trips"
             f" ({self.ends_received}/{self.config.joiners_count})"
         )
         if self.ends_received < self.config.joiners_count:
             return
         logging.info("Waiting for all trips to be processed")
-        self.comms.set_all_trips_done_callback(self.finished)
+        self.comms.set_all_trips_done_callback(self.job_id, self.finished)
 
     def finished(self) -> None:
         logging.info(
-            f"Finished processing all trips. Total processed in this node: {self.count}"
+            f"Job {self.job_id} | Finished processing all trips. Total processed in"
+            f" this node: {self.count}"
         )
-        if self.timer is not None:
-            self.comms.cancel_timer(self.timer)
-            self.timer = None
 
-        self.send_averages()
+        self.timer.remove_timer()
         self.send(End())
+        self.comms.stop_consuming_trips(self.job_id)
         self.on_finished(self)
-
-    def timer_callback(self) -> None:
-        self.send_averages()
-        self.setup_timer()
-
-    def setup_timer(self) -> None:
-        self.timer = self.comms.set_timer(
-            self.timer_callback, self.config.send_interval_seconds
-        )
-
-    def send_averages(self) -> None:
-        logging.debug("Sending partial results")
-        self.send(self.aggregator.get_value())
-        self.aggregator.reset()
 
     def send(self, record: GenericAggregatedRecord | End) -> None:
         self.comms.send(Message(self.job_id, record))

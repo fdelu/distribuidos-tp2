@@ -11,7 +11,7 @@ from .send import CommsSend
 from .send.reliable import ReliableSend
 from .receive import CommsReceive
 from .receive.reliable import ReliableReceive
-from .util import setup_jobs_queues
+from .util import setup_job_queues
 
 __all__ = [
     "CommsProtocol",
@@ -19,7 +19,7 @@ __all__ = [
     "CommsReceive",
     "ReliableSend",
     "ReliableReceive",
-    "setup_jobs_queues",
+    "setup_job_queues",
 ]
 
 ID_FILE_PATH = "/host_id.txt"
@@ -54,13 +54,13 @@ class SystemCommunicationBase(CommsProtocol):
                 self.__id = f.read()
             return
 
+        self.__id = str(uuid4())
         with open(ID_FILE_PATH, "w") as f:
             f.write(self.id)
-        self.__id = str(uuid4())
+
+    def reset_channel(self) -> None:
+        self.__ch = self.connection.channel()
 
     def close(self) -> None:
-        """
-        Closes the connection
-        """
         self.channel.close()
         self.connection.close()

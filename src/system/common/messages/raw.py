@@ -1,7 +1,7 @@
 from typing import Protocol, TypeVar
 from dataclasses import dataclass
 
-from common.messages import End, RecordType
+from common.messages import End, RecordType, Start
 
 T = TypeVar("T", covariant=True)
 
@@ -38,4 +38,4 @@ class RawRecordHandler(Protocol[T]):
         ...
 
 
-RawRecord = RawLines | End
+RawRecord = RawLines | End | Start

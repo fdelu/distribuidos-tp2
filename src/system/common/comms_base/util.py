@@ -1,7 +1,7 @@
 from .protocol import CommsProtocol
 
 
-def setup_jobs_queues(
+def setup_job_queues(
     comms: CommsProtocol, exchange: str, queues: dict[str, list[str]], job_id: str
 ) -> None:
     """

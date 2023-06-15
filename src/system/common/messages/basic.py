@@ -1,7 +1,7 @@
 from typing import Protocol, TypeVar
 from dataclasses import dataclass
 
-from common.messages import End, RecordType
+from common.messages import End, RecordType, Start
 
 T = TypeVar("T", covariant=True)
 
@@ -51,19 +51,8 @@ class BasicWeather:
         return handler.handle_weather(self)
 
 
-@dataclass
-class TripsStart:
-    # This class is needed to differentiate between the end of weather
-    # & stations of one parser and the end of trips of another parser.
-    def get_routing_key(self) -> str:
-        return RecordType.TRIPS_START
-
-    def be_handled_by(self, handler: "TripsStartHandler[T]") -> T:
-        return handler.handle_trips_start()
-
-
 BasicDataRecord = BasicStation | BasicTrip | BasicWeather
-BasicControlRecord = TripsStart | End
+BasicControlRecord = Start | End
 BasicRecord = BasicDataRecord | BasicControlRecord
 
 
@@ -79,9 +68,4 @@ class BasicWeatherHandler(Protocol[T]):
 
 class BasicTripHandler(Protocol[T]):
     def handle_trip(self, trip: BasicTrip) -> T:
-        ...
-
-
-class TripsStartHandler(Protocol[T]):
-    def handle_trips_start(self) -> T:
         ...

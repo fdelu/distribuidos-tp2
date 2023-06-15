@@ -4,9 +4,9 @@ from common.comms_base import (
     SystemCommunicationBase,
     ReliableReceive,
     ReliableSend,
-    setup_jobs_queues,
+    setup_job_queues,
 )
-from common.messages import RecordType, Message
+from common.messages import Message
 from common.messages.raw import RawRecord
 from common.messages.basic import BasicRecord
 
@@ -26,9 +26,10 @@ class SystemCommunication(
 
     def _load_definitions(self) -> None:
         # in
-        ends_queue = self.config.in_ends_queue_format.format(host_id=self.id)
+        ends_queue = self.config.in_others_queue_format.format(host_id=self.id)
         self.channel.queue_declare(ends_queue)
-        self.channel.queue_bind(ends_queue, self.config.in_exchange, RecordType.END)
+        for rk in self.config.in_others_queue_routing_keys:
+            self.channel.queue_bind(ends_queue, self.config.in_exchange, rk)
         self._start_consuming_from(ends_queue)
 
     def _get_routing_details(self, msg: Message[BasicRecord]) -> tuple[str, str]:
@@ -42,12 +43,10 @@ class SystemCommunication(
     def start_consuming_job(self, job_id: str) -> None:
         queue = self.__batchs_queue(job_id)
         self._start_consuming_from(queue)
-        setup_jobs_queues(
-            self, self.config.out_exchange, self.config.out_queues, job_id
-        )
+        setup_job_queues(self, self.config.out_exchange, self.config.out_queues, job_id)
 
     def stop_consuming_job(self, job_id: str) -> None:
-        self.channel.queue_delete(self.__batchs_queue(job_id), if_empty=True)
+        self._delete_queue(self.__batchs_queue(job_id))
 
     def __batchs_queue(self, job_id: str) -> str:
         return self.config.in_batchs_queue_format.format(job_id=job_id)

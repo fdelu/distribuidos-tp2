@@ -46,6 +46,21 @@ class CommsProtocol(Protocol):
     def __init__(self, config: ConfigProtocol) -> None:
         ...
 
+    @abstractmethod
+    def reset_channel(self) -> None:
+        """
+        Creates a new channel and replaces the old one.
+        Does not close the old channel.
+        """
+        ...
+
+    @abstractmethod
+    def close(self) -> None:
+        """
+        Closes the connection
+        """
+        ...
+
 
 class ReceiveReliableProtocol(Protocol):
     @abstractmethod

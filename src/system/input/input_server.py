@@ -27,7 +27,7 @@ class InputServer:
         self.config = config
         self.handlers = {}
 
-        self.context = zmq.Context()
+        self.context = zmq.Context[zmq.Socket[None]]()
         self.context.setsockopt(zmq.LINGER, 0)  # Don't block on close
 
         socket = self.context.socket(zmq.REP)

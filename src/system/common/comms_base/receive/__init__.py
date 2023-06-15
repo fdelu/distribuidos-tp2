@@ -10,6 +10,7 @@ from signal import signal, SIGTERM
 
 from pika import spec
 from pika.adapters.blocking_connection import BlockingChannel
+from pika.exceptions import ChannelClosedByBroker
 
 from shared.serde import deserialize, get_generic_types
 from common.config_base import ConfigProtocol
@@ -17,6 +18,7 @@ from ..protocol import TIMEOUT_SECONDS, CommsProtocol
 
 IN = TypeVar("IN")
 STATUS_FILE = os.getenv("STATUS_FILE", "status.txt")
+T = TypeVar("T")
 
 
 class ReceiveConfig(ConfigProtocol, Protocol):
@@ -56,7 +58,12 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         """
         Start consuming messages from the queues
         """
-        self.channel.start_consuming()
+        while not self.is_stopped():
+            try:
+                self.channel.start_consuming()
+                return
+            except ChannelClosedByBroker:
+                pass
 
     def stop_consuming(self) -> None:
         """
@@ -101,9 +108,16 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         """
         Starts consuming from the given queue.
         This method returns when stop_consuming() is called.
+        Fails silently if the queue does not exist, logging a warning.
         """
         callback = partial(self.__handle_record, queue)
         self.channel.basic_consume(queue=queue, on_message_callback=callback)
+
+    def _delete_queue(self, queue: str, if_empty: bool = True) -> None:
+        """
+        Deletes the given queue
+        """
+        self.channel.queue_delete(queue, if_empty=if_empty)
 
     def _set_timeout_callback(
         self,
@@ -120,7 +134,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         if prev is not None:
             self.connection.remove_timeout(prev.timer)
 
-        info = self.TimeoutInfo(callback, timeout, None)
+        info = self.TimeoutInfo(queue, callback, timeout, None)
         self.timeout_callbacks[queue] = info
         info.timer = self.set_timer(lambda: self.__timeout_handler(info), timeout)
 
@@ -162,7 +176,14 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         """
         Sets up the interrupt handler
         """
-        signal(SIGTERM, lambda *_: self.stop_consuming())
+        signal(SIGTERM, lambda *_: self.__interrupt())
+
+    def __interrupt(self) -> None:
+        """
+        Interrupt handler
+        """
+        self.interrupted.set()
+        self.stop_consuming()
 
     def __setup(self) -> None:
         """
@@ -219,6 +240,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         seconds_remaining = info.time_seconds - (now - info.last_message_on)
         if seconds_remaining <= 0:
             info.callback()
+            self.timeout_callbacks.pop(info.queue)
         else:
             info.timer = self.connection.call_later(
                 seconds_remaining, lambda: self.__timeout_handler(info)
@@ -231,14 +253,16 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Checks if there are messages left in the given queue. If not, calls the
         callback. If there are, calls _set_empty_queue_callback() again.
         """
-        res = self.channel.queue_declare(queue=queue, passive=True, **queue_kwargs)
-        messages_left = res.method.message_count
-        if messages_left == 0:
+        res = self.channel.queue_declare(queue=queue, **queue_kwargs)
+
+        if res.method.message_count == 0:
             callback()
-        else:
-            # for some reason the queue is not empty but the timeout expired
-            # set the timer again:
-            self._set_empty_queue_callback(queue, callback, **queue_kwargs)
+            return
+
+        # for some reason the queue is not empty but the timeout expired
+        # set the timer again:
+        self._set_empty_queue_callback(queue, callback, **queue_kwargs)
+        return
 
     @dataclass
     class TimeoutInfo:
@@ -247,6 +271,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         See CommsReceive._set_timeout_callback()
         """
 
+        queue: str
         callback: Callable[[], None]
         time_seconds: float  # timeout after this many seconds
         last_message_on: float | None  # time.time() when the last message was received

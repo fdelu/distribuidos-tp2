@@ -23,7 +23,9 @@ class Phase:
         self.comms = comms
         self.job_id = job_id
         self.on_finish = on_finish
-        self.comms.start_consuming_job(job_id)
+
+    def handle_start(self) -> "Phase":
+        raise NotImplementedError()
 
     def handle_station_batch(self, batch: RawLines) -> "Phase":
         raise NotImplementedError()
@@ -49,7 +51,10 @@ class Phase:
         rows = get_rows(batch)
         for row in rows:
             if self.comms.is_stopped():
-                logging.debug("Parser was stopped, skipping remaining records")
+                logging.debug(
+                    f"Job {self.job_id} | Parser was stopped, skipping remaining"
+                    " records"
+                )
                 break
             self._send(parse_func(row, indexes, batch.city))
 

@@ -14,19 +14,15 @@ class ReducerComms(
     ReliableSend[Message[StatsRecord]],
     SystemCommunicationBase,
 ):
-    OUT_QUEUE = "stats"
-    input_queue: str
-
     config: Config
 
     def __init__(self, config: Config) -> None:
         self.config = config
-        self.input_queue = f"{config.name}_aggregated"
         super().__init__(config)
 
     def _load_definitions(self) -> None:
         # in
-        self._start_consuming_from(self.input_queue)
+        self._start_consuming_from(self.config.in_queue)
 
     def _get_routing_details(self, msg: Message[StatsRecord]) -> tuple[str, str]:
-        return "", self.OUT_QUEUE
+        return self.config.out_exchange, self.config.out_queue

@@ -7,7 +7,8 @@ class Config(ConfigBase):
     # Middleware settings
     in_exchange: str
     in_batchs_queue_format: str
-    in_ends_queue_format: str
+    in_others_queue_format: str
+    in_others_queue_routing_keys: list[str]
     out_exchange: str
     out_queues: dict[str, list[str]]  # queue -> routing keys
 
@@ -16,6 +17,7 @@ class Config(ConfigBase):
         self.prefetch_count = self.get_int("PrefetchCount")
         self.in_exchange = self.get("InExchange")
         self.in_batchs_queue_format = self.get("InBatchsQueueFormat")
-        self.in_ends_queue_format = self.get("InEndsQueueFormat")
+        self.in_others_queue_format = self.get("InOthersQueueFormat")
+        self.in_others_queue_routing_keys = self.get_json("InOthersQueueRoutingKeys")
         self.out_exchange = self.get("OutExchange")
         self.out_queues = self.get_json("OutQueues")

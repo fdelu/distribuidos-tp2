@@ -5,7 +5,7 @@ import logging
 import os
 
 from shared.serde import deserialize
-from common.messages import Batch
+from common.messages import Package
 
 from . import CommsReceive, IN, ReceiveConfig
 
@@ -25,15 +25,9 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
         super().__init__(config, with_interrupt)
 
     def current_message_id(self) -> str | None:
-        """
-        Returns the message id of the batch being processed, if any
-        """
         return self.current_msg_id
 
     def set_batch_done_callback(self, callback: Callable[[], None]) -> None:
-        """
-        Sets the callback to be called when the current batch is done
-        """
         self.batch_done_callback = callback
 
     def _process_message(self, message: str) -> None:
@@ -49,19 +43,21 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
 
         self.__post_process()
 
-    def __deserialize_batch(self, message: str) -> Batch[IN]:
-        return deserialize(Batch[self.in_type], message)  # type: ignore
+    def __deserialize_batch(self, message: str) -> Package[IN]:
+        return deserialize(Package[self.in_type], message)  # type: ignore
 
     def __pre_process(
         self,
-        batch: Batch[Any],
+        package: Package[Any],
     ) -> bool:
-        if batch.msg_id and self.__already_received(batch.msg_id):
-            logging.warn(f"Already received {batch.msg_id}")
+        if package.msg_id and self.__already_received(package.msg_id):
+            logging.warn(
+                f"Already received {package.msg_id}\n{str(package.messages)[:100]}"
+            )
             return False
-        self.current_msg_id = batch.msg_id
-        if batch.msg_id:
-            self.__add_msg_id(batch.msg_id)
+        self.current_msg_id = package.msg_id
+        if package.msg_id:
+            self.__add_msg_id(package.msg_id)
         return True
 
     def __post_process(self) -> None:

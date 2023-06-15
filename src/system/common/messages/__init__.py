@@ -12,7 +12,7 @@ class RecordType(StrEnum):
     WEATHER = BaseRecordType.WEATHER
     END = "end"
     RAW_BATCH = "raw_batch"
-    TRIPS_START = "trips_start"
+    START = "start"
 
 
 class WithRoutingKey(Protocol):
@@ -21,7 +21,7 @@ class WithRoutingKey(Protocol):
 
 
 @dataclass
-class Batch(Generic[T]):
+class Package(Generic[T]):
     messages: list[T]
     msg_id: str | None
 
@@ -38,6 +38,7 @@ class Message(Generic[P]):
         return f"{self.job_id}.{self.payload.get_routing_key()}"
 
 
+@dataclass
 class End:
     def get_routing_key(self) -> str:
         return RecordType.END
@@ -46,6 +47,20 @@ class End:
         return handler.handle_end()
 
 
+@dataclass
+class Start:
+    def get_routing_key(self) -> str:
+        return RecordType.START
+
+    def be_handled_by(self, handler: "StartHandler[T]") -> T:
+        return handler.handle_start()
+
+
 class EndHandler(Protocol[T]):
     def handle_end(self) -> T:
+        ...
+
+
+class StartHandler(Protocol[T]):
+    def handle_start(self) -> T:
         ...

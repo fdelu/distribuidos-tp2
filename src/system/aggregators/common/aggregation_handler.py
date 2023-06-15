@@ -1,13 +1,14 @@
 import logging
 from typing import Callable, Generic
 
-from common.messages import End, Message
+from common.messages import End, Message, Start
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
 
 from .config import Config
 from .comms import AggregatorComms
-from .job_aggregator import JobAggregator, Aggregator
+from .job_aggregator import JobAggregator
+from .aggregator import Aggregator
 
 AggregatorFactory = Callable[[], Aggregator[GenericJoinedTrip, GenericAggregatedRecord]]
 
@@ -46,7 +47,7 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         logging.info(f"Finished job {job.job_id}")
         self.jobs.pop(job.job_id)
 
-    def handle_record(self, msg: Message[GenericJoinedTrip | End]) -> None:
+    def handle_record(self, msg: Message[GenericJoinedTrip | End | Start]) -> None:
         if msg.job_id not in self.jobs:
             logging.info(f"Starting job {msg.job_id}")
             self.jobs[msg.job_id] = self.job_agg_factory(msg.job_id)

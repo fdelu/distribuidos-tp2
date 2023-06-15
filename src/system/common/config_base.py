@@ -1,7 +1,7 @@
 from typing import Any, Concatenate, Protocol, TypeVar, ParamSpec, Callable
 import json
 import os
-from configparser import ConfigParser, ExtendedInterpolation, DEFAULTSECT
+from configparser import ConfigParser, ExtendedInterpolation, DEFAULTSECT, NoOptionError
 
 CONFIG_PATH = "/config.ini"
 SECTION_SEP = "."
@@ -16,11 +16,15 @@ def check_subsections(
 ) -> Callable[Concatenate["ConfigBase", str, P], T]:
     def get(self: "ConfigBase", key: str, *args: P.args, **kwds: P.kwargs) -> T:
         s = self.section
+        has_fallback = "fallback" in kwds
+        fallback: T = kwds.pop("fallback", None)  # type: ignore
         while True:
             try:
                 return func(self, s, key, *args, **kwds)
-            except KeyError:
+            except (KeyError, NoOptionError):
                 if s == DEFAULTSECT:
+                    if has_fallback:
+                        return fallback
                     raise
 
                 if SECTION_SEP not in s:

@@ -74,7 +74,7 @@ class ClientHandlerInternal:
 
     stats: StatsStorage
     # (job_id, stat_type) -> clients waiting
-    pending_clients: dict[tuple[str, StatType], list[bytes]] = {}
+    pending_clients: dict[tuple[str, StatType], list[bytes]]
 
     def __init__(
         self,
@@ -86,7 +86,7 @@ class ClientHandlerInternal:
         self.clients_socket.bind(config.address)
         self.control_socket = context.socket(zmq.PAIR)
         self.control_socket.bind(CONTROL_ADDR)
-
+        self.pending_clients = {}
         self.stats = stats
 
     def run(self) -> None:

@@ -24,7 +24,7 @@ class JobReducer(Generic[GenericAggregatedRecord]):
     config: Config
     reducer: Reducer[GenericAggregatedRecord]
     job_id: str
-    ends_received: int
+    ends_received: set[str]
     on_finish: Callable[["JobReducer[GenericAggregatedRecord]"], None]
 
     def __init__(
@@ -37,7 +37,7 @@ class JobReducer(Generic[GenericAggregatedRecord]):
     ):
         self.comms = comms
         self.reducer = reducer
-        self.ends_received = 0
+        self.ends_received = set()
         self.config = config
         self.job_id = job_id
         self.on_finish = on_finish
@@ -45,13 +45,16 @@ class JobReducer(Generic[GenericAggregatedRecord]):
     def handle_aggregated(self, aggregated: GenericAggregatedRecord) -> None:
         self.reducer.handle_aggregated(aggregated)
 
-    def handle_end(self) -> None:
-        self.ends_received += 1
-        if self.ends_received < self.config.aggregators_count:
-            logging.debug(
-                "An aggregator finished sending averages"
-                f" ({self.ends_received}/{self.config.aggregators_count})"
-            )
+    def handle_end(self, end: End) -> None:
+        if end.host is None:
+            logging.warn("Received End without host id")
+            return
+        self.ends_received.add(end.host)
+        logging.debug(
+            f"Aggregator {end.host} finished sending averages"
+            f" ({len(self.ends_received)}/{self.config.aggregators_count})"
+        )
+        if len(self.ends_received) < self.config.aggregators_count:
             return
 
         self._send(self.reducer.get_value())

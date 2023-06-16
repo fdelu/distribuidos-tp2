@@ -52,26 +52,23 @@ class Phase(ABC, Generic[GenericJoinedTrip]):
 
     @abstractmethod
     def handle_weather(self, weather: BasicWeather) -> "Phase[GenericJoinedTrip]":
-        ...
+        raise NotImplementedError()
 
     @abstractmethod
     def handle_station(self, station: BasicStation) -> "Phase[GenericJoinedTrip]":
-        ...
+        raise NotImplementedError()
 
     @abstractmethod
-    def handle_start(self) -> "Phase[GenericJoinedTrip]":
-        ...
+    def handle_start(self, start: Start) -> "Phase[GenericJoinedTrip]":
+        raise NotImplementedError()
 
     @abstractmethod
     def handle_trip(self, trip: BasicTrip) -> "Phase[GenericJoinedTrip]":
-        ...
+        raise NotImplementedError()
 
     @abstractmethod
-    def handle_end(self) -> "Phase[GenericJoinedTrip]":
-        ...
-
-    def handle_record(self, record: BasicRecord) -> "Phase[GenericJoinedTrip]":
-        return record.be_handled_by(self)
+    def handle_end(self, end: End) -> "Phase[GenericJoinedTrip]":
+        raise NotImplementedError()
 
     def _send(self, record: GenericJoinedTrip | End | Start) -> None:
         self.comms.send(Message(self.job_id, record))

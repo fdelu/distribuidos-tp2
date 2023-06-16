@@ -8,7 +8,7 @@ class Aggregator(Protocol[GenericJoinedTrip, GenericAggregatedRecord]):
     def handle_joined(self, trip: GenericJoinedTrip) -> None:
         ...
 
-    def get_value(self) -> GenericAggregatedRecord:
+    def get_value(self) -> GenericAggregatedRecord | None:
         ...
 
     def reset(self) -> None:

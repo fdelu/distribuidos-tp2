@@ -186,7 +186,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-  
+
   medic:
     extends:
       file: src/system/compose-base-service.yaml
@@ -217,6 +217,9 @@ services:
       - type: bind
         source: ./src/client/results
         target: /tmp/results
+    deploy:
+      mode: replicated
+      replicas: ${CLIENTS_SCALE}
     networks:
       - outside_net
 

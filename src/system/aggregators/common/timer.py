@@ -49,8 +49,13 @@ class TimerSender(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         self.__set_timer()
 
     def __send_data(self) -> None:
+        data = self.aggregator.get_value()
+        if data is None:
+            logging.debug(f"Job {self.job_id} | No data to send")
+            return
+
         logging.debug(f"Job {self.job_id} | Sending partial results")
-        msg = Message(self.job_id, self.aggregator.get_value())
+        msg = Message(self.job_id, data)
         id = str(uuid4())
         self.last = (id, msg)
         self.aggregator.reset()

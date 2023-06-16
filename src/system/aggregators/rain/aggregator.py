@@ -14,7 +14,9 @@ class RainAggregator:
         delta = (trip.duration_sec - date_average.average_duration) / date_average.count
         date_average.average_duration += delta
 
-    def get_value(self) -> PartialRainAverages:
+    def get_value(self) -> PartialRainAverages | None:
+        if len(self.averages) == 0:
+            return None
         return PartialRainAverages(self.averages)
 
     def reset(self) -> None:

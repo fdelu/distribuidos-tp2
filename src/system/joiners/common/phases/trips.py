@@ -1,6 +1,6 @@
 import logging
 
-from common.messages import End
+from common.messages import End, Start
 from common.messages.basic import (
     BasicStation,
     BasicTrip,
@@ -10,19 +10,19 @@ from ..phases import Phase, GenericJoinedTrip
 
 
 class TripsPhase(Phase[GenericJoinedTrip]):
-    ends_received: int = 0
+    ends_received: set[str] | None = None
     count: int = 0
 
     def handle_station(self, station: BasicStation) -> Phase[GenericJoinedTrip]:
-        logging.warn("Unexpected Station received while receiving trips")
+        self.__warn("Station")
         return self
 
     def handle_weather(self, weather: BasicWeather) -> Phase[GenericJoinedTrip]:
-        logging.warn("Unexpected Weather received while receiving trips")
+        self.__warn("Weather")
         return self
 
-    def handle_start(self) -> Phase[GenericJoinedTrip]:
-        logging.warn("Unexpected Start received while already receiving trips")
+    def handle_start(self, start: Start) -> Phase[GenericJoinedTrip]:
+        self.__warn(f"Start (host id: {start.host})")
         return self
 
     def handle_trip(self, trip: BasicTrip) -> Phase[GenericJoinedTrip]:
@@ -32,13 +32,17 @@ class TripsPhase(Phase[GenericJoinedTrip]):
         self.count += 1
         return self
 
-    def handle_end(self) -> Phase[GenericJoinedTrip]:
-        self.ends_received += 1
+    def handle_end(self, end: End) -> Phase[GenericJoinedTrip]:
+        if end.host is None:
+            logging.warn("Received End without host id")
+            return self
+        self.ends_received = self.ends_received or set()
+        self.ends_received.add(end.host)
         logging.debug(
-            f"Job {self.job_id} | A parser finished sending trips"
-            f" ({self.ends_received}/{self.config.parsers_count})"
+            f"Job {self.job_id} | Parser {end.host} finished sending trips"
+            f" ({len(self.ends_received)}/{self.config.parsers_count})"
         )
-        if self.ends_received < self.config.parsers_count:
+        if len(self.ends_received) < self.config.parsers_count:
             return self
         logging.info(
             f"Job {self.job_id} | All parsers finished sending trips, waiting until all"
@@ -52,6 +56,11 @@ class TripsPhase(Phase[GenericJoinedTrip]):
             f"Job {self.job_id} | Finished joining all trips. Total processed in this"
             f" node: {self.count}"
         )
-        self._send(End())
+        self._send(End(self.comms.id))
         self.comms.stop_consuming_trips(self.job_id)
         self.on_finish(self)
+
+    def __warn(self, name: str) -> None:
+        logging.warn(
+            f"Job {self.job_id} | Unexpected {name} received while receiving trips"
+        )

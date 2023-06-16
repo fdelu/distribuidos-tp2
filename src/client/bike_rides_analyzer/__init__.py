@@ -21,6 +21,7 @@ class BikeRidesAnalyzer:
     phase: Phase
     interrupted: Event
     context: zmq.Context[zmq.Socket[None]]
+    job_id: str
 
     def __init__(
         self, config: BikeRidesAnalyzerConfig, job_id: str | None = None
@@ -29,10 +30,10 @@ class BikeRidesAnalyzer:
         self.context.setsockopt(zmq.LINGER, 0)  # Don't block on close
 
         self.interrupted = Event()
-        job_id = job_id or uuid4().hex
+        self.job_id = job_id or uuid4().hex
 
-        comms_input = CommsInput(job_id, self.context, config, self.interrupted)
-        comms_output = CommsOutput(job_id, self.context, config, self.interrupted)
+        comms_input = CommsInput(self.job_id, self.context, config, self.interrupted)
+        comms_output = CommsOutput(self.job_id, self.context, config, self.interrupted)
         self.phase = WeatherStationsPhase(comms_input, comms_output)
 
     def interrupt_on_signal(self, signum: signal.Signals) -> None:
@@ -60,6 +61,6 @@ class BikeRidesAnalyzer:
         self.phase.close()
         self.context.term()
 
-    def __get_stat(self, stat: StatType) -> Any:
+    def __get_stat(self, stat: StatType) -> dict[str, Any]:
         self.phase, stat = self.phase.get_stat(stat)
-        return stat
+        return {x: y for x, y in sorted(stat.items())}

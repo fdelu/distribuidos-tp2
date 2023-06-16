@@ -17,10 +17,11 @@ LOG_FILE_TMP = "/tmp/received.log.tmp"
 
 class ReliableReceive(Generic[IN], CommsReceive[IN]):
     current_msg_id: str | None = None
-    latest_messages: dict[int, list[str]] = {}  # minuto -> lista de ids
+    latest_messages: dict[int, list[str]]  # minuto -> lista de ids
     batch_done_callback: Callable[[], None] | None = None
 
     def __init__(self, config: ReceiveConfig, with_interrupt: bool = True) -> None:
+        self.latest_messages = {}
         self.__load_msg_ids()
         super().__init__(config, with_interrupt)
 
@@ -65,6 +66,7 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
             # must have received batches without msg_id
             return
         move(LOG_FILE_TMP, LOG_FILE)
+        self.current_msg_id = None
 
     def __already_received(self, msg_id: str) -> bool:
         return any(msg_id in ids for ids in self.latest_messages.values())

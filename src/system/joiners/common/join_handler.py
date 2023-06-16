@@ -49,4 +49,4 @@ class JoinHandler(Generic[GenericJoinedTrip]):
                 msg.job_id,
                 self.finished,
             )
-        self.jobs[msg.job_id] = self.jobs[msg.job_id].handle_record(msg.payload)
+        self.jobs[msg.job_id] = msg.payload.be_handled_by(self.jobs[msg.job_id])

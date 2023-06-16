@@ -4,13 +4,12 @@ from common.messages import Message
 from common.messages.raw import RawRecord
 
 from .comms import SystemCommunication
-from .phases import Phase
-from .phases.weather_stations import WeatherStationsPhase
+from .job_parser import JobParser
 
 
-class RecordParser:
+class ParseHandler:
     comms: SystemCommunication
-    jobs: dict[str, Phase]
+    jobs: dict[str, JobParser]
 
     def __init__(self, comms: SystemCommunication) -> None:
         self.comms = comms
@@ -21,14 +20,12 @@ class RecordParser:
         self.comms.start_consuming()
         self.comms.close()
 
-    def finished(self, job: Phase) -> None:
+    def finished(self, job: JobParser) -> None:
         logging.info(f"Finished job {job.job_id}")
         self.jobs.pop(job.job_id)
 
     def handle_record(self, msg: Message[RawRecord]) -> None:
         if msg.job_id not in self.jobs:
             logging.info(f"Starting job {msg.job_id}")
-            self.jobs[msg.job_id] = WeatherStationsPhase(
-                self.comms, msg.job_id, self.finished
-            )
-        self.jobs[msg.job_id] = self.jobs[msg.job_id].handle_record(msg.payload)
+            self.jobs[msg.job_id] = JobParser(self.comms, msg.job_id, self.finished)
+        msg.payload.be_handled_by(self.jobs[msg.job_id])

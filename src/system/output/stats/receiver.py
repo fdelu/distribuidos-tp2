@@ -23,11 +23,12 @@ class StatListener(Protocol):
 class StatsReceiver:
     comms: SystemCommunication
     stats_storage: StatsStorage
-    listeners: list[StatListener] = []
+    listeners: list[StatListener]
 
     def __init__(self, config: Config, stats: StatsStorage) -> None:
         self.comms = SystemCommunication(config)
         self.stats_storage = stats
+        self.listeners = []
 
     def add_listener(self, listener: StatListener) -> None:
         self.listeners.append(listener)

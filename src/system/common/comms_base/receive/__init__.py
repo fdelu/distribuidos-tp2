@@ -31,16 +31,21 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     """
 
     __in_type: Type[Any] | None = None
-    interrupted: Event = Event()
-    stopped: Event = Event()
+    interrupted: Event
+    stopped: Event
 
     callback: Callable[[IN], None] | None = None
-    timeout_callbacks: dict[str, "TimeoutInfo"] = {}
+    timeout_callbacks: dict[str, "TimeoutInfo"]
+    ctags: dict[str, str]
 
     def __init__(self, config: ReceiveConfig, with_interrupt: bool = True) -> None:
         super().__init__(config)
         self.channel.basic_qos(prefetch_count=config.prefetch_count)
         self.callback = None
+        self.timeout_callbacks = {}
+        self.interrupted = Event()
+        self.stopped = Event()
+        self.ctags = {}
         if with_interrupt:
             self.__setup_interrupt()
         self.__setup()
@@ -111,13 +116,21 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Fails silently if the queue does not exist, logging a warning.
         """
         callback = partial(self.__handle_record, queue)
-        self.channel.basic_consume(queue=queue, on_message_callback=callback)
+        ctag = self.channel.basic_consume(queue=queue, on_message_callback=callback)
+        self.ctags[queue] = ctag
 
-    def _delete_queue(self, queue: str, if_empty: bool = True) -> None:
+    def _delete_queue(self, queue: str, if_unused: bool = True) -> None:
         """
         Deletes the given queue
         """
-        self.channel.queue_delete(queue, if_empty=if_empty)
+        if queue in self.ctags:
+            self.channel.basic_cancel(self.ctags.pop(queue))
+        if (
+            not if_unused
+            # En teoría por lo menos uno de los nodos debería devolverle esto 0
+            or self.channel.queue_declare(queue).method.consumer_count == 0
+        ):
+            self.channel.queue_delete(queue, if_empty=if_unused)
 
     def _set_timeout_callback(
         self,

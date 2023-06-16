@@ -40,27 +40,31 @@ class Message(Generic[P]):
 
 @dataclass
 class End:
+    host: str | None = None
+
     def get_routing_key(self) -> str:
         return RecordType.END
 
     def be_handled_by(self, handler: "EndHandler[T]") -> T:
-        return handler.handle_end()
+        return handler.handle_end(self)
 
 
 @dataclass
 class Start:
+    host: str | None = None
+
     def get_routing_key(self) -> str:
         return RecordType.START
 
     def be_handled_by(self, handler: "StartHandler[T]") -> T:
-        return handler.handle_start()
+        return handler.handle_start(self)
 
 
 class EndHandler(Protocol[T]):
-    def handle_end(self) -> T:
+    def handle_end(self, end: End) -> T:
         ...
 
 
 class StartHandler(Protocol[T]):
-    def handle_start(self) -> T:
+    def handle_start(self, start: Start) -> T:
         ...

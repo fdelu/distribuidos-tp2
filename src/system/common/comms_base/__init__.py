@@ -1,4 +1,5 @@
 import os
+import logging
 from uuid import uuid4
 from pika import BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
@@ -45,6 +46,7 @@ class SystemCommunicationBase(CommsProtocol):
 
     def __init__(self, config: ConfigProtocol) -> None:
         self.__setup_id()
+        logging.info(f"Host ID: {self.id}")
         self.__conn = BlockingConnection(ConnectionParameters(host=config.rabbit_host))
         self.__ch = self.connection.channel()
 

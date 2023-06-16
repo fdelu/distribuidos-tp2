@@ -11,5 +11,6 @@ class Config(ConfigBase):
 
     def __init__(self) -> None:
         super().__init__()
-        self.medic_id = cast(int, os.environ.get("ID"))
-        self.medic_scale = cast(int, os.environ.get("MEDIC_SCALE"))
+        self.medic_id = int(cast(int, os.environ.get("ID")))
+        self.medic_scale = int(cast(int, os.environ.get("MEDIC_SCALE")))
+        self.prefetch_count = self.get_int("PrefetchCount")

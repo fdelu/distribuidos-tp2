@@ -21,6 +21,7 @@ class ElectionMessageHandler(Protocol[T]):
 @dataclass
 class AnswerMessage:
     id: int
+    receiver_id: int
 
     def be_handled_by(self, handler: "AnswerMessageHandler[T]") -> T:
         return handler.handle_answer(self)

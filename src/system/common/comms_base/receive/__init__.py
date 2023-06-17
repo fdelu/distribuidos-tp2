@@ -119,18 +119,21 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         ctag = self.channel.basic_consume(queue=queue, on_message_callback=callback)
         self.ctags[queue] = ctag
 
-    def _delete_queue(self, queue: str, if_unused: bool = True) -> None:
+    def _stop_consuming_from(self, queue: str, delete_if_unused: bool = True) -> None:
         """
-        Deletes the given queue
+        Stops consuming from the given queue.
+        Optionally deletes it if it's no longer used (no consumers and no messages).
         """
         if queue in self.ctags:
             self.channel.basic_cancel(self.ctags.pop(queue))
         if (
-            not if_unused
-            # En teoría por lo menos uno de los nodos debería devolverle esto 0
-            or self.channel.queue_declare(queue).method.consumer_count == 0
+            delete_if_unused
+            # No pongo passive=True porque podria llegar a darse el caso en que
+            # dos cancelen al mismo tiempo, uno borre la cola y el otro intente
+            # el queue_declare que fallaria porque la cola ya no existe
+            and self.channel.queue_declare(queue).method.consumer_count == 0
         ):
-            self.channel.queue_delete(queue, if_empty=if_unused)
+            self.channel.queue_delete(queue, if_empty=True)
 
     def _set_timeout_callback(
         self,
@@ -266,7 +269,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Checks if there are messages left in the given queue. If not, calls the
         callback. If there are, calls _set_empty_queue_callback() again.
         """
-        res = self.channel.queue_declare(queue=queue, **queue_kwargs)
+        res = self.channel.queue_declare(queue=queue, passive=True, **queue_kwargs)
 
         if res.method.message_count == 0:
             callback()

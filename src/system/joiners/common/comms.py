@@ -47,7 +47,7 @@ class JoinerComms(
         setup_job_queues(self, self.config.out_exchange, self.config.out_queues, job_id)
 
     def stop_consuming_trips(self, job_id: str) -> None:
-        self._delete_queue(self.__trips_queue(job_id))
+        self._stop_consuming_from(self.__trips_queue(job_id))
 
     def set_all_trips_done_callback(
         self, job_id: str, callback: Callable[[], None]

@@ -46,7 +46,7 @@ class SystemCommunication(
         setup_job_queues(self, self.config.out_exchange, self.config.out_queues, job_id)
 
     def stop_consuming_job(self, job_id: str) -> None:
-        self._delete_queue(self.__batchs_queue(job_id))
+        self._stop_consuming_from(self.__batchs_queue(job_id))
 
     def __batchs_queue(self, job_id: str) -> str:
         return self.config.in_batchs_queue_format.format(job_id=job_id)

@@ -71,13 +71,15 @@ class Bully:
         self.medic_scale = config.medic_scale
         self.is_leader = False
         self.comms = SystemCommunication(config, self.id)
+        self.coordination_timer_id = None
 
     def handle_message(self, message: BullyMessage) -> None:
         message.be_handled_by(self)
 
     def run(self) -> None:
         logging.info("Starting bully")
-        self.start_election()
+        if self.id == self.medic_scale:
+            self.start_election()
         self.comms.set_callback(self.handle_message)
         self.comms._start_consuming_from(self.comms.bully_queue)
         self.comms.start_consuming()
@@ -94,7 +96,7 @@ class Bully:
         self.is_leader = True
         self.current_leader = self.id
         self.send_coordinator_message()
-        self.election_started = False
+        self.election_started = False  # TODO: set timer for this
 
     def __timer_awnser(self) -> None:
         logging.info("Awnser timeout")

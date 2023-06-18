@@ -1,6 +1,4 @@
-import os
 import logging
-from uuid import uuid4
 from pika import BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
 
@@ -12,7 +10,7 @@ from .send import CommsSend
 from .send.reliable import ReliableSend
 from .receive import CommsReceive
 from .receive.reliable import ReliableReceive
-from .util import setup_job_queues
+from .util import setup_job_queues, get_host_id
 
 __all__ = [
     "CommsProtocol",
@@ -45,20 +43,10 @@ class SystemCommunicationBase(CommsProtocol):
         return self.__id
 
     def __init__(self, config: ConfigProtocol) -> None:
-        self.__setup_id()
+        self.__id = get_host_id()
         logging.info(f"Host ID: {self.id}")
         self.__conn = BlockingConnection(ConnectionParameters(host=config.rabbit_host))
         self.__ch = self.connection.channel()
-
-    def __setup_id(self) -> None:
-        if os.path.exists(ID_FILE_PATH):
-            with open(ID_FILE_PATH, "r") as f:
-                self.__id = f.read()
-            return
-
-        self.__id = str(uuid4())
-        with open(ID_FILE_PATH, "w") as f:
-            f.write(self.id)
 
     def reset_channel(self) -> None:
         self.__ch = self.connection.channel()

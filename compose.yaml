@@ -227,6 +227,26 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  medic3:
+    build:
+      context: ./src
+      dockerfile: ./system/medic/Dockerfile
+    environment:
+      - ID=3
+    networks:
+      - internal_net
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+      - type: bind
+        source: ./config.ini
+        target: /config.ini
+    env_file: ./.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
   # client:
   #   build:
   #     dockerfile: ./src/client/Dockerfile

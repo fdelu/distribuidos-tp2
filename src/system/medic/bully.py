@@ -1,5 +1,4 @@
 from typing import Any
-from common.comms_base import SystemCommunicationBase, CommsReceive, CommsSend
 from .messages.bully_messages import (
     BullyMessage,
     ElectionMessage,
@@ -7,102 +6,10 @@ from .messages.bully_messages import (
     AnswerMessage,
     AliveMessage,
 )
+from .leader_heartbeat import LeaderChecker, LeaderHeartbeat
 from .config import Config
 import logging
-
-
-class SystemCommunication(
-    CommsReceive[BullyMessage], CommsSend[BullyMessage], SystemCommunicationBase
-):
-    EXCHANGE = "medics"
-    id: int
-    bully_queue: str
-    config: Config
-    medic_scale: int
-
-    def __init__(self, config: Config, id: int) -> None:
-        self.id = id
-        self.bully_queue = f"bully_{self.id}"
-        self.medic_scale = config.medic_scale
-        super().__init__(config)
-
-    def _load_definitions(self) -> None:
-        self.channel.queue_declare(queue=self.bully_queue, exclusive=True)
-        self.channel.queue_bind(self.bully_queue, self.EXCHANGE, f"#.{self.id}.#")
-
-    def create_routing_key(self, start: int, end: int) -> str:
-        routing_key = ""
-        for i in range(start, end + 1):
-            if i == self.id:
-                continue
-            routing_key += str(i) + "."
-        return routing_key[:-1]
-
-    def _get_routing_details(self, record: BullyMessage) -> tuple[str, str]:
-        routing_key = self.create_routing_key(1, self.medic_scale)
-        if isinstance(record, ElectionMessage):
-            routing_key = self.create_routing_key(self.id + 1, self.medic_scale)
-            logging.info(f"Election message to route: {routing_key}")
-        elif isinstance(record, CoordinatorMessage):
-            routing_key = self.create_routing_key(1, self.medic_scale)
-            logging.info(f"Coordinator message to route: {routing_key}")
-        elif isinstance(record, AnswerMessage):
-            routing_key = self.create_routing_key(
-                record.receiver_id, record.receiver_id)
-            logging.info(f"Awnser message to route: {routing_key}")
-        elif isinstance(record, AliveMessage):
-            routing_key = self.create_routing_key(1, self.medic_scale)
-            logging.info(f"Alive message to route: {routing_key}")
-        return self.EXCHANGE, routing_key
-
-
-class LeaderChecker:
-    comms: SystemCommunication
-    bully: Any  # TODO: Bully
-    heart_beat_timer_id: Any | None
-
-    def __init__(self, bully: Any, comms: SystemCommunication) -> None:
-        self.heart_beat_timer_id = None
-        self.bully = bully
-        self.comms = comms
-
-    def handle_heartbeat(self) -> None:
-        logging.info("Received leader heartbeat")
-        if self.heart_beat_timer_id is not None:
-            self.comms.cancel_timer(self.heart_beat_timer_id)
-        self.heart_beat_timer_id = self.comms.set_timer(self.leader_dead, 5)
-        # TODO: may be good to add variance to this time so that not all
-        # medics send their start election at the same time
-
-    def leader_dead(self) -> None:
-        self.comms.cancel_timer(self.heart_beat_timer_id)
-        logging.info("Leader dead")
-        if not self.bully.is_in_election():
-            self.bully.start_election()
-
-
-class LeaderHeartbeat:
-    send_heartbeat: bool
-    comms: SystemCommunication
-    id: int
-
-    def __init__(self, comms: SystemCommunication, id: int) -> None:
-        self.send_heartbeat = False
-        self.comms = comms
-        self.id = id
-
-    def start_hearbeat(self) -> None:
-        self.send_heartbeat = True
-        self.send_heartbeat_message()
-
-    def send_heartbeat_message(self) -> None:
-        if self.send_heartbeat:
-            logging.info("Sending leader heartbeat")
-            self.comms.send(AliveMessage(self.comms.id))
-            self.comms.set_timer(self.send_heartbeat_message, 1)
-
-    def stop_hearbeat(self) -> None:
-        self.send_heartbeat = False
+from .system_communication import SystemCommunication
 
 
 class Bully:

@@ -8,13 +8,19 @@ U = TypeVar("U", contravariant=True)
 
 
 @dataclass
+class AggregatedBase:
+    def get_routing_key(self) -> str:
+        return "aggregated"
+
+
+@dataclass
 class DateInfo:
     count: int
     average_duration: float
 
 
 @dataclass
-class PartialRainAverages:
+class PartialRainAverages(AggregatedBase):
     duration_averages: dict[str, DateInfo]  # start_date -> DateInfo
 
     def be_handled_by(self, handler: "AggregatedHandler[T, PartialRainAverages]") -> T:
@@ -25,7 +31,7 @@ PartialRainRecords = PartialRainAverages | End
 
 
 @dataclass
-class PartialYearCounts:
+class PartialYearCounts(AggregatedBase):
     counts_year_base: dict[str, int]  # station name -> trip count
     counts_year_compared: dict[str, int]  # station name -> trip count
 
@@ -43,7 +49,7 @@ class StationInfo:
 
 
 @dataclass
-class PartialCityAverages:
+class PartialCityAverages(AggregatedBase):
     distance_averages: dict[str, StationInfo]  # station name -> StationInfo
 
     def be_handled_by(self, handler: "AggregatedHandler[T, PartialCityAverages]") -> T:

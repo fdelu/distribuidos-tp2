@@ -3,7 +3,7 @@ import zmq
 
 from shared.log import setup_logs
 
-from .stats import Stats
+from .stats import StatsStorage
 from .stats.receiver import StatsReceiver
 from .handler import ClientHandler
 from .config import Config
@@ -15,7 +15,7 @@ def main() -> None:
     context = zmq.Context()
     context.setsockopt(zmq.LINGER, 0)  # Don't block on close
 
-    stats = Stats()
+    stats = StatsStorage()
     stat_receiver = StatsReceiver(config, stats)
     client_handler = ClientHandler(config, context, stats)
     stat_receiver.add_listener(client_handler)

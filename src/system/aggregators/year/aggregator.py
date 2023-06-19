@@ -26,7 +26,9 @@ class YearAggregator:
     def __add_to(self, counts: dict[str, int], trip: JoinedYearTrip) -> None:
         counts[trip.start_station_name] = counts.get(trip.start_station_name, 0) + 1
 
-    def get_value(self) -> PartialYearCounts:
+    def get_value(self) -> PartialYearCounts | None:
+        if len(self.counts_year_base) + len(self.counts_year_compared) == 0:
+            return None
         return PartialYearCounts(self.counts_year_base, self.counts_year_compared)
 
     def reset(self) -> None:

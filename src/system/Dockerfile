@@ -1,6 +1,9 @@
 FROM python:3.11.3-bullseye AS base
 SHELL ["/bin/bash", "-c"]
 
+# Install required packages
+RUN apt update && apt install dnsutils -y
+
 # Copy client-shared & system-common modules
 COPY shared /app/shared
 COPY system/common /app/system/common
@@ -15,18 +18,20 @@ ENV PYTHONPATH=/app:/app/system
 ENV STATUS_FILE=/status.txt
 HEALTHCHECK --interval=0.5s --timeout=3s --retries=50 CMD cat ${STATUS_FILE} | grep -q "OK" || exit 1
 
-# Copy service modules and install dependencies, if any
+# Copy service modules and install specific dependencies, if any
 ARG WORKDIR
 ENV WORKDIR=${WORKDIR}
 WORKDIR /app/system/${WORKDIR}
 COPY system/${WORKDIR} .
 RUN if test -e requirements.txt; then pip install -r requirements.txt; fi
 
+# Setup entrypoint, replacing the "/" in WORKDIR with "."
 WORKDIR /app
-# replace / in WORKDIR with .
 ENTRYPOINT python3 -m system.${WORKDIR//\//.}.app
 
-# Special cases:
+
+
+# Special cases that have more common modules:
 
 FROM base AS aggregators
 COPY system/aggregators/common /app/system/aggregators/common

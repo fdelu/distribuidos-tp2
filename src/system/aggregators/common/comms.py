@@ -1,31 +1,49 @@
-from abc import abstractmethod
-from uuid import uuid4
-from typing import Callable, Protocol
+import logging
+from typing import Callable, Generic
 
-from common.messages import RecordType
-from common.comms_base.protocol import CommsReceiveProtocol, CommsSendProtocol, IN, OUT
+from common.comms_base import ReliableSend, ReliableReceive, SystemCommunicationBase
+from common.messages import Message, End, Start
+from common.messages.joined import GenericJoinedTrip
+from common.messages.aggregated import GenericAggregatedRecord
 
-EXCHANGE = "{}_joined_records"
-TRIPS_QUEUE = "{}_joined_trips"
-END_QUEUE = "{}_aggregators_ends_" + str(uuid4())
-OUT_QUEUE = "{}_aggregated"
+from .config import Config
 
 
 class AggregatorComms(
-    CommsReceiveProtocol[IN], CommsSendProtocol[OUT], Protocol[IN, OUT]
+    Generic[GenericJoinedTrip, GenericAggregatedRecord],
+    ReliableReceive[Message[GenericJoinedTrip | End | Start]],
+    ReliableSend[Message[GenericAggregatedRecord | End]],
+    SystemCommunicationBase,
 ):
-    @abstractmethod
-    def set_all_trips_done_callback(self, callback: Callable[[], None]) -> None:
-        ...
+    config: Config
 
+    def __init__(self, config: Config) -> None:
+        self.config = config
+        super().__init__(config)
 
-def load_definitions(comms: AggregatorComms[IN, OUT], name: str) -> tuple[str, str]:
-    # in
-    trips_queue = TRIPS_QUEUE.format(name)
-    comms._start_consuming_from(trips_queue)
+    def _load_definitions(self) -> None:
+        # in
+        others_queue = self.config.in_others_queue_format.format(host_id=self.id)
+        self.channel.queue_declare(others_queue)  # end
+        for rk in self.config.in_others_queue_routing_keys:
+            self.channel.queue_bind(others_queue, self.config.in_exchange, rk)
+        self._start_consuming_from(others_queue)
 
-    end_queue = END_QUEUE.format(name)
-    comms.channel.queue_declare(end_queue, exclusive=True)  # end
-    comms.channel.queue_bind(end_queue, EXCHANGE.format(name), RecordType.END)
-    comms._start_consuming_from(end_queue)
-    return trips_queue, OUT_QUEUE.format(name)
+    def _get_routing_details(
+        self, msg: Message[GenericAggregatedRecord | End]
+    ) -> tuple[str, str]:
+        return self.config.out_exchange, self.config.out_queue
+
+    def start_consuming_trips(self, job_id: str) -> None:
+        self._start_consuming_from(self.__trips_queue(job_id))
+
+    def stop_consuming_trips(self, job_id: str) -> None:
+        self._stop_consuming_from(self.__trips_queue(job_id))
+
+    def set_all_trips_done_callback(
+        self, job_id: str, callback: Callable[[], None]
+    ) -> None:
+        self._set_empty_queue_callback(self.__trips_queue(job_id), callback)
+
+    def __trips_queue(self, job_id: str) -> str:
+        return self.config.in_trips_queue_format.format(job_id=job_id)

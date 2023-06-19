@@ -2,7 +2,7 @@ import logging
 from threading import Event
 import zmq
 
-TIMEOUT_MILLISECONDS = 1000
+TIMEOUT_MILLISECONDS = 500
 
 
 class SocketStopWrapper:

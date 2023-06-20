@@ -1,16 +1,17 @@
 from common.messages.aggregated import DateInfo, PartialRainAverages
 from common.messages.stats import RainAverages, StatsRecord
+from common.persistence import WithState
+
+Averages = dict[str, DateInfo]  # date -> info
 
 
-class RainReducer:
-    averages: dict[str, DateInfo]
-
+class RainReducer(WithState[Averages]):
     def __init__(self) -> None:
-        self.averages = {}
+        super().__init__({})
 
     def handle_aggregated(self, avg: PartialRainAverages) -> None:
         for date, date_average in avg.duration_averages.items():
-            current = self.averages.setdefault(date, DateInfo(0, 0))
+            current = self.state.setdefault(date, DateInfo(0, 0))
 
             total_count = current.count + date_average.count
             current_factor = current.count / total_count
@@ -23,4 +24,4 @@ class RainReducer:
             current.count = total_count
 
     def get_value(self) -> StatsRecord:
-        return RainAverages({x: y.average_duration for x, y in self.averages.items()})
+        return RainAverages({x: y.average_duration for x, y in self.state.items()})

@@ -89,6 +89,7 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
     def __send_messages(self) -> None:
         for exchange, routing_key, message in self.last_messages:
             self.channel.basic_publish(exchange, routing_key, message.encode())
+        self.last_messages = []
 
     @abstractmethod
     def _get_routing_details(self, record: OUT) -> tuple[str, str]:

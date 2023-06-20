@@ -14,10 +14,10 @@ from .aggregator import Aggregator
 class TimerSender(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
     job_id: str
     timer: Any
-    last: tuple[str, Message[GenericAggregatedRecord]] | None
     comms: AggregatorComms[GenericJoinedTrip, GenericAggregatedRecord]
     aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord]
     config: Config
+    aggregator_store_key: str
 
     def __init__(
         self,
@@ -25,13 +25,14 @@ class TimerSender(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         comms: AggregatorComms[GenericJoinedTrip, GenericAggregatedRecord],
         aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord],
         config: Config,
+        aggregator_store_key: str,
     ):
         self.job_id = job_id
         self.comms = comms
         self.aggregator = aggregator
         self.config = config
         self.timer = None
-        self.last = None
+        self.aggregator_store_key = aggregator_store_key
 
     def setup_timer(self) -> None:
         if self.timer is None:
@@ -57,8 +58,9 @@ class TimerSender(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         logging.debug(f"Job {self.job_id} | Sending partial results")
         msg = Message(self.job_id, data)
         id = str(uuid4())
-        self.last = (id, msg)
         self.aggregator.reset()
+        self.aggregator.store_to(self.aggregator_store_key)
+
         self.comms.send(msg, force_msg_id=id)
 
     def __set_timer(self) -> None:

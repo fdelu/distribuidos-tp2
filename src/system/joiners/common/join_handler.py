@@ -42,12 +42,14 @@ class JoinHandler(Generic[GenericJoinedTrip]):
     def handle_record(self, msg: Message[BasicRecord]) -> None:
         if msg.job_id not in self.jobs:
             logging.info(f"Starting job {msg.job_id}")
-            self.jobs[msg.job_id] = WeatherStationsPhase(
+            handler = WeatherStationsPhase[GenericJoinedTrip](
                 self.comms,
                 self.config,
                 self.joiner_factory(),
                 msg.job_id,
                 self.finished,
             )
+            handler.restore_state()
+            self.jobs[msg.job_id] = handler
         self.jobs[msg.job_id] = msg.payload.be_handled_by(self.jobs[msg.job_id])
         self.jobs[msg.job_id].store_state()

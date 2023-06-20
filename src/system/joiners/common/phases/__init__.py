@@ -92,15 +92,15 @@ class Phase(ABC, Generic[GenericJoinedTrip], WithState[State]):
         return self
 
     def store_state(self) -> "Phase[GenericJoinedTrip]":
-        self.store_to(self._phase_store_key())
+        self.store_to(self._control_store_key())
         self.joiner.store_to(self._joiner_store_key())
         return self
 
     def _send(self, record: GenericJoinedTrip | End | Start) -> None:
         self.comms.send(Message(self.job_id, record))
 
-    def _phase_store_key(self) -> str:
-        return f"phase_{self.job_id}"
+    def _control_store_key(self) -> str:
+        return f"control_{self.job_id}"
 
     def _joiner_store_key(self) -> str:
         return f"joiner_{self.job_id}"

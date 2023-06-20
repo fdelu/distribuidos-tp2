@@ -1,4 +1,5 @@
 import logging
+from typing import Generic
 
 from common.messages import End, Start
 from common.messages.basic import (
@@ -11,7 +12,7 @@ from common.persistence import StatePersistor
 from . import Phase, GenericJoinedTrip
 
 
-class TripsPhase(Phase[GenericJoinedTrip]):
+class TripsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip]):
     def handle_station(self, station: BasicStation) -> Phase[GenericJoinedTrip]:
         self.__warn("Station")
         return self
@@ -53,7 +54,7 @@ class TripsPhase(Phase[GenericJoinedTrip]):
         )
         self._send(End(self.comms.id))
         self.comms.stop_consuming_trips(self.job_id)
-        StatePersistor().remove(self._phase_store_key())
+        StatePersistor().remove(self._control_store_key())
         StatePersistor().remove(self._joiner_store_key())
         self.on_finish(self.job_id)
 

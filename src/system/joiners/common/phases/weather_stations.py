@@ -1,5 +1,7 @@
 import logging
+from typing import Generic
 
+from shared.serde import get_generic_types
 from common.messages import End, Start
 from common.messages.basic import (
     BasicStation,
@@ -11,7 +13,7 @@ from . import Phase, GenericJoinedTrip
 from .trips import TripsPhase
 
 
-class WeatherStationsPhase(Phase[GenericJoinedTrip]):
+class WeatherStationsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip]):
     def handle_station(self, station: BasicStation) -> Phase[GenericJoinedTrip]:
         self.joiner.handle_station(station)
         return self
@@ -35,7 +37,7 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip]):
         logging.info(f"Job {self.job_id} | Receiving trips")
         self.comms.start_consuming_trips(self.job_id)
         self._send(Start(self.comms.id))
-        trips_phase = TripsPhase(
+        trips_phase = TripsPhase[GenericJoinedTrip](
             self.comms, self.config, self.joiner, self.job_id, self.on_finish
         )
         trips_phase.check_ends()
@@ -56,7 +58,7 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip]):
         return self
 
     def restore_state(self) -> "Phase[GenericJoinedTrip]":
-        self.restore_from(self._phase_store_key())
+        self.restore_from(self._control_store_key())
         self.joiner.restore_from(self._joiner_store_key())
 
         if not self.state.trips_phase:

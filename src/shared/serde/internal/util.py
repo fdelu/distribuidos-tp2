@@ -7,9 +7,10 @@ from typing import (
     Any,
     get_type_hints,
     Union,
+    no_type_check,
 )
 import types
-from functools import reduce
+from functools import reduce, cache
 
 """
 Type alias for the types that can be serialized and deserialized.
@@ -71,7 +72,7 @@ def map_type(to_map: Type[Any], generic_map: TypeVarMap) -> Any:
     int | str | float
     """
     if isinstance(to_map, TypeVar):
-        return generic_map[to_map]
+        return generic_map.get(to_map, to_map)
     origin = get_origin(to_map)
     if origin is None:
         return to_map
@@ -82,6 +83,8 @@ def map_type(to_map: Type[Any], generic_map: TypeVarMap) -> Any:
     return origin[resolved_args]
 
 
+@no_type_check
+@cache
 def resolve_generic_types(base: Type[Any], parent: Type[Any]) -> tuple[Type[Any], ...]:
     """
     Returns an array of resolved generic types of parent class.
@@ -106,6 +109,7 @@ def resolve_generic_types(base: Type[Any], parent: Type[Any]) -> tuple[Type[Any]
     >>> resolve_generic_types(Example2, Example)
     (int, str)
     """
+    print("hello")
     return __resolve_generic_types_rec(base, parent, {}) or ()
 
 

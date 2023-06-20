@@ -29,7 +29,7 @@ class ReductionHandler(Generic[GenericAggregatedRecord]):
         self.comms = comms
         self.jobs = {}
         self.config = config
-        self.job_red_factory = lambda job_id: JobReducer(
+        self.job_red_factory = lambda job_id: JobReducer[GenericAggregatedRecord](
             comms, config, reducer_factory(), job_id, self.finished
         )
 
@@ -48,5 +48,9 @@ class ReductionHandler(Generic[GenericAggregatedRecord]):
     def handle_record(self, msg: Message[GenericAggregatedRecord | End]) -> None:
         if msg.job_id not in self.jobs:
             logging.info(f"Starting job {msg.job_id}")
-            self.jobs[msg.job_id] = self.job_red_factory(msg.job_id)
+            handler = self.job_red_factory(msg.job_id)
+            handler.restore_state()
+            self.jobs[msg.job_id] = handler
+
         msg.payload.be_handled_by(self.jobs[msg.job_id])
+        self.jobs[msg.job_id].store_state()

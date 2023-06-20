@@ -12,6 +12,7 @@ from .config import Config
 import logging
 from .system_communication import SystemCommunication
 import subprocess
+from common.comms_base.util import set_healthy
 
 
 class HealthMonitor:
@@ -98,8 +99,10 @@ class Bully:
         logging.info("Starting bully")
         if self.id == self.medic_scale:
             self.start_election()
+            # TODO: add timeout for receiving coordinator message
         self.comms.set_callback(self.handle_message)
         self.comms._start_consuming_from(self.comms.bully_queue)
+        set_healthy("HEALTHY")
         self.comms.start_consuming()
 
     def start_election(self) -> None:

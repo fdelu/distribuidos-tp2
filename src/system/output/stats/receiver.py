@@ -20,6 +20,9 @@ class StatListener(Protocol):
         ...
 
 
+STATS_STORAGE_KEY = "stats"
+
+
 class StatsReceiver:
     comms: SystemCommunication
     stats_storage: StatsStorage
@@ -27,6 +30,7 @@ class StatsReceiver:
 
     def __init__(self, config: Config, stats: StatsStorage) -> None:
         self.comms = SystemCommunication(config)
+        stats.restore_from(STATS_STORAGE_KEY)
         self.stats_storage = stats
         self.listeners = []
 
@@ -48,3 +52,5 @@ class StatsReceiver:
         self.__notify_listeners(msg.job_id, msg.payload.stat_type())
         if self.stats_storage.all_done(msg.job_id):
             logging.info(f"Job {msg.job_id} | Received all stats")
+
+        self.stats_storage.store_to(STATS_STORAGE_KEY)

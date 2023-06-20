@@ -32,4 +32,5 @@ class ParseHandler:
             self.jobs[msg.job_id] = parser
 
         msg.payload.be_handled_by(self.jobs[msg.job_id])
-        self.jobs[msg.job_id].store_state()
+        if msg.job_id in self.jobs:
+            self.jobs[msg.job_id].store_state()

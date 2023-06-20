@@ -52,10 +52,10 @@ class TripsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip]):
             f"Job {self.job_id} | Finished joining all trips. Total processed in this"
             f" node: {self.state.count}"
         )
-        self._send(End(self.comms.id))
         self.comms.stop_consuming_trips(self.job_id)
         StatePersistor().remove(self._control_store_key())
         StatePersistor().remove(self._joiner_store_key())
+        self._send(End(self.comms.id))
         self.on_finish(self.job_id)
 
     def __warn(self, name: str) -> None:

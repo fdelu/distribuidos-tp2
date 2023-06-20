@@ -116,7 +116,9 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Fails silently if the queue does not exist, logging a warning.
         """
         callback = partial(self.__handle_record, queue)
-        ctag = self.channel.basic_consume(queue=queue, on_message_callback=callback)
+        # Make sure others didn't delete it before I could consume
+        self.channel.queue_declare(queue)
+        ctag = self.channel.basic_consume(queue, on_message_callback=callback)
         self.ctags[queue] = ctag
 
     def _stop_consuming_from(self, queue: str, delete_if_unused: bool = True) -> None:

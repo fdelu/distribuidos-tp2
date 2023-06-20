@@ -36,9 +36,16 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip])
 
         logging.info(f"Job {self.job_id} | Receiving trips")
         self.comms.start_consuming_trips(self.job_id)
+        self.state.trips_phase = True
+        self.store_state()
         self._send(Start(self.comms.id))
         trips_phase = TripsPhase[GenericJoinedTrip](
-            self.comms, self.config, self.joiner, self.job_id, self.on_finish
+            self.comms,
+            self.config,
+            self.joiner,
+            self.job_id,
+            self.on_finish,
+            self.state,
         )
         trips_phase.check_ends()
         return trips_phase

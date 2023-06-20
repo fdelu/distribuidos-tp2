@@ -109,7 +109,6 @@ def resolve_generic_types(base: Type[Any], parent: Type[Any]) -> tuple[Type[Any]
     >>> resolve_generic_types(Example2, Example)
     (int, str)
     """
-    print("hello")
     return __resolve_generic_types_rec(base, parent, {}) or ()
 
 

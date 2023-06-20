@@ -49,7 +49,8 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
             self.jobs[msg.job_id] = handler
 
         msg.payload.be_handled_by(self.jobs[msg.job_id])
-        self.jobs[msg.job_id].store_state()
+        if msg.job_id in self.jobs:
+            self.jobs[msg.job_id].store_state()
 
     def _job_handler(
         self, job_id: str

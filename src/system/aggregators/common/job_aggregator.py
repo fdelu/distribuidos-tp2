@@ -70,7 +70,7 @@ class JobAggregator(
         )
         if len(self.state.ends_received) < self.config.joiners_count:
             return
-        logging.info("Waiting for all trips to be processed")
+        logging.info(f"Job {self.job_id} | Waiting for all trips to be processed")
         self.comms.set_all_trips_done_callback(self.job_id, self.finished)
 
     def finished(self) -> None:
@@ -80,10 +80,10 @@ class JobAggregator(
         )
 
         self.timer.remove_timer()
-        self.send(End(self.comms.id))
         self.comms.stop_consuming_trips(self.job_id)
         StatePersistor().remove(self._aggregator_store_key())
         StatePersistor().remove(self._control_store_key())
+        self.send(End(self.comms.id))
         self.on_finished(self.job_id)
 
     def send(self, record: GenericAggregatedRecord | End) -> None:

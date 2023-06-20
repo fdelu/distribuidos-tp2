@@ -53,11 +53,11 @@ class JobReducer(Generic[GenericAggregatedRecord], WithState[State]):
 
     def handle_end(self, end: End) -> None:
         if end.host is None:
-            logging.warn("Received End without host id")
+            logging.warn(f"Job {self.job_id} | Received End without host id")
             return
         self.state.ends_received.add(end.host)
         logging.debug(
-            f"Aggregator {end.host} finished sending averages"
+            f"Job {self.job_id} | Aggregator {end.host} finished sending averages"
             f" ({len(self.state.ends_received)}/{self.config.aggregators_count})"
         )
         if len(self.state.ends_received) < self.config.aggregators_count:

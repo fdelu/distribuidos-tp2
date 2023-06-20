@@ -90,12 +90,12 @@ class JobParser(WithState[State]):
             self.__send_start()
 
         logging.info(
-            f"Job {self.job_id} | Finished parsing all trips. Total processed in this"
+            f"Job {self.job_id} | Finished parsing. Total trips processed in this"
             f" node: {self.state.count}"
         )
-        self.comms.send(Message(self.job_id, End(self.comms.id)))
         self.comms.stop_consuming_job(self.job_id)
         StatePersistor().remove(self.job_id)
+        self.comms.send(Message(self.job_id, End(self.comms.id)))
         self.on_finish(self)
 
     def __send_start(self) -> None:

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import logging
 from threading import Event
 import time
-from typing import Callable, Protocol, TypeVar, Generic, Any, Type
+from typing import Callable, Protocol, TypeVar, Generic, Any
 import os
 from functools import partial
 from signal import signal, SIGTERM
@@ -30,7 +30,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     Comms with receive capabilities. See protocol.py for more details about the methods.
     """
 
-    __in_type: Type[Any] | None = None
+    __in_type: Any | None = None
     interrupted: Event
     stopped: Event
 
@@ -51,7 +51,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         self.__setup()
 
     @property
-    def in_type(self) -> Type[Any]:
+    def in_type(self) -> Any:
         """
         Input type (resolved IN TypeVar from CommsReceive[IN])
         """
@@ -168,10 +168,19 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     def _process_message(self, message: str) -> None:
         """
         Processes a message. Can be overridden by subclasses.
+
+        Deserializes the message and calls the callback if it's set.
         """
         decoded = self.__deserialize_record(message)
         if self.callback is not None:
             self.callback(decoded)
+
+    def _post_process(self) -> None:
+        """
+        Post-processes the message. Executed after sending the acknowledgement.
+        Can be overridden by subclasses.
+        """
+        pass
 
     def __deserialize_record(self, message: str) -> IN:
         """
@@ -235,6 +244,8 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
 
         if method.delivery_tag is not None:
             ch.basic_ack(delivery_tag=method.delivery_tag)
+
+        self._post_process()
 
     def __timeout_handler(self, info: "TimeoutInfo") -> None:
         """

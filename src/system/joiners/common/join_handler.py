@@ -30,9 +30,9 @@ class JoinHandler(Generic[GenericJoinedTrip]):
         self.jobs = {}
         self.joiner_factory = joiner_factory
 
-    def finished(self, job: Phase[GenericJoinedTrip]) -> None:
-        logging.info(f"Finished job {job.job_id}")
-        self.jobs.pop(job.job_id)
+    def finished(self, job_id: str) -> None:
+        logging.info(f"Finished job {job_id}")
+        self.jobs.pop(job_id)
 
     def run(self) -> None:
         self.comms.set_callback(self.handle_record)
@@ -50,3 +50,4 @@ class JoinHandler(Generic[GenericJoinedTrip]):
                 self.finished,
             )
         self.jobs[msg.job_id] = msg.payload.be_handled_by(self.jobs[msg.job_id])
+        self.jobs[msg.job_id].store_state()

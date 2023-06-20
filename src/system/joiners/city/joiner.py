@@ -3,8 +3,7 @@ import logging
 
 from common.messages.basic import BasicStation, BasicTrip, BasicWeather
 from common.messages.joined import JoinedCityTrip
-
-from .config import Config
+from common.persistence import WithState
 
 
 @dataclass
@@ -13,14 +12,13 @@ class StationData:
     coordinates: tuple[float, float]
 
 
-class CityJoiner:
-    # city -> (code, year) -> data
-    station_names: dict[str, dict[tuple[str, str], StationData]]
-    config: Config
+# city -> (code, year) -> data
+Stations = dict[str, dict[tuple[str, str], StationData]]
 
-    def __init__(self, config: Config) -> None:
-        self.station_names = {}
-        self.config = config
+
+class CityJoiner(WithState[Stations]):
+    def __init__(self) -> None:
+        super().__init__({})
 
     def handle_station(self, station: BasicStation) -> None:
         if station.latitude is None or station.longitude is None:
@@ -29,7 +27,7 @@ class CityJoiner:
                 f" {station.year}"
             )
             return
-        station_names = self.station_names.setdefault(station.city, {})
+        station_names = self.state.setdefault(station.city, {})
         station_names[(station.code, station.year)] = StationData(
             station.name, (station.latitude, station.longitude)
         )
@@ -54,7 +52,7 @@ class CityJoiner:
         return start, end
 
     def __get_station_data(self, code: str, year: str, city: str) -> StationData | None:
-        station = self.station_names[city].get((code, year), None)
+        station = self.state[city].get((code, year), None)
         if station is None:
             logging.debug(f"Missing station data for code {code}, year {year} ({city})")
         return station

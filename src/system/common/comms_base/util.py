@@ -1,6 +1,5 @@
 import subprocess
 import re
-import logging
 
 from .protocol import CommsProtocol
 
@@ -37,7 +36,6 @@ def get_host_id() -> str:
     p = subprocess.run(HOST_ID_COMMAND, stdout=subprocess.PIPE)
     res = p.stdout.decode()
     id_match = re.search(HOST_ID_REGEX, res)
-    logging.critical(res)
     if id_match is None:
         raise RuntimeError("Could not find ID in output")
     return id_match[1]

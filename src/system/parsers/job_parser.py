@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 from typing import Callable
 
@@ -5,16 +6,22 @@ from common.messages import Message, End, Start
 from common.messages.basic import BasicRecord
 from common.messages.raw import RawLines, RawRecord
 
+from common.persistence import WithState, StatePersistor
+
 from .parse import get_indexes, get_rows, parse_trip, parse_station, parse_weather
 from .comms import SystemCommunication
 
 
-class JobParser:
+@dataclass
+class State:
+    count: int = 0
+    receiving_trips: bool = False
+
+
+class JobParser(WithState[State]):
     comms: SystemCommunication
     job_id: str
     on_finish: Callable[["JobParser"], None]
-    count: int = 0
-    receiving_trips: bool = False
 
     def __init__(
         self,
@@ -22,9 +29,16 @@ class JobParser:
         job_id: str,
         on_finish: Callable[["JobParser"], None],
     ) -> None:
+        super().__init__(State())
         self.comms = comms
         self.job_id = job_id
         self.on_finish = on_finish
+
+    def restore_state(self) -> None:
+        self.restore_from(self.job_id)
+
+    def store_state(self) -> None:
+        self.store_to(self.job_id)
 
     def handle_start(self, start: Start) -> None:
         self.comms.start_consuming_job(self.job_id)
@@ -36,13 +50,13 @@ class JobParser:
         self.__send_parsed(batch, parse_weather)
 
     def handle_trip_batch(self, batch: RawLines) -> None:
-        if not self.receiving_trips:
+        if not self.state.receiving_trips:
             logging.info(f"Job {self.job_id} | Finished parsing weather & stations")
-            self.receiving_trips = True
+            self.state.receiving_trips = True
             self.__send_start()
 
         self.__send_parsed(batch, parse_trip)
-        self.count += len(batch.lines)
+        self.state.count += len(batch.lines)
 
     def handle_end(self, end: End) -> None:
         logging.info(
@@ -71,16 +85,17 @@ class JobParser:
             self.comms.send(msg)
 
     def __finished(self) -> None:
-        if not self.receiving_trips:
-            self.receiving_trips = True
+        if not self.state.receiving_trips:
+            self.state.receiving_trips = True
             self.__send_start()
 
         logging.info(
             f"Job {self.job_id} | Finished parsing all trips. Total processed in this"
-            f" node: {self.count}"
+            f" node: {self.state.count}"
         )
         self.comms.send(Message(self.job_id, End(self.comms.id)))
         self.comms.stop_consuming_job(self.job_id)
+        StatePersistor().remove(self.job_id)
         self.on_finish(self)
 
     def __send_start(self) -> None:

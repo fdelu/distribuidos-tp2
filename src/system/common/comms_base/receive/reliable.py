@@ -1,35 +1,27 @@
-from typing import Any, Callable, Generic
-from time import time
-from shutil import move
+from typing import Any, Generic
 import logging
-import os
 
 from shared.serde import deserialize
 from common.messages import Package
+from common.persistence.persistor import StatePersistor
 
 from . import CommsReceive, IN, ReceiveConfig
 
-MINUTES_TO_KEEP = 3
-
-LOG_FILE = "/received.log"
-LOG_FILE_TMP = "/tmp/received.log.tmp"
+RECEIVED_MESSAGES_KEY = "_received_messages"
 
 
 class ReliableReceive(Generic[IN], CommsReceive[IN]):
     current_msg_id: str | None = None
-    latest_messages: dict[int, list[str]]  # minuto -> lista de ids
-    batch_done_callback: Callable[[], None] | None = None
+    received_messages: set[str]
 
     def __init__(self, config: ReceiveConfig, with_interrupt: bool = True) -> None:
-        self.latest_messages = {}
-        self.__load_msg_ids()
+        self.received_messages = (
+            StatePersistor().load(RECEIVED_MESSAGES_KEY, set[str]) or set()
+        )
         super().__init__(config, with_interrupt)
 
     def current_message_id(self) -> str | None:
         return self.current_msg_id
-
-    def set_batch_done_callback(self, callback: Callable[[], None]) -> None:
-        self.batch_done_callback = callback
 
     def _process_message(self, message: str) -> None:
         batch = self.__deserialize_batch(message)
@@ -39,10 +31,9 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
         if self.callback is not None:
             for msg in batch.messages:
                 self.callback(msg)
-        if self.batch_done_callback:
-            self.batch_done_callback()
 
-        self.__post_process()
+    def _post_process(self) -> None:
+        self.current_msg_id = None
 
     def __deserialize_batch(self, message: str) -> Package[IN]:
         return deserialize(Package[self.in_type], message)  # type: ignore
@@ -51,44 +42,17 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
         self,
         package: Package[Any],
     ) -> bool:
-        if package.msg_id and self.__already_received(package.msg_id):
+        if package.msg_id is None:
+            self.current_msg_id = None
+            return True
+
+        if package.msg_id in self.received_messages:
             logging.warn(
                 f"Already received {package.msg_id}\n{str(package.messages)[:100]}"
             )
             return False
+
         self.current_msg_id = package.msg_id
-        if package.msg_id:
-            self.__add_msg_id(package.msg_id)
+        self.received_messages.add(package.msg_id)
+        StatePersistor().store(RECEIVED_MESSAGES_KEY, self.received_messages)
         return True
-
-    def __post_process(self) -> None:
-        if not os.path.exists(LOG_FILE_TMP):
-            # must have received batches without msg_id
-            return
-        move(LOG_FILE_TMP, LOG_FILE)
-        self.current_msg_id = None
-
-    def __already_received(self, msg_id: str) -> bool:
-        return any(msg_id in ids for ids in self.latest_messages.values())
-
-    def __add_msg_id(self, *msg_ids: str) -> None:
-        minute = int(time() // 60)
-        self.latest_messages.setdefault(minute, []).extend(msg_ids)
-
-        minute_to_remove = minute - MINUTES_TO_KEEP
-        while minute_to_remove in self.latest_messages:
-            self.latest_messages.pop(minute_to_remove)
-            minute_to_remove -= 1
-
-        with open(LOG_FILE_TMP, "w") as f:
-            for ids in self.latest_messages.values():
-                f.write("\n".join(ids) + "\n")
-
-    def __load_msg_ids(self) -> None:
-        if not os.path.exists(LOG_FILE):
-            logging.debug("No message ids log file found")
-            return
-
-        logging.debug("Loading previous message ids")
-        with open(LOG_FILE, "r") as f:
-            self.__add_msg_id(*f.read().splitlines())

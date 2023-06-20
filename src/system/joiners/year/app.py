@@ -14,7 +14,7 @@ def main() -> None:
     setup_logs(config.log_level)
 
     comms = JoinerComms[JoinedYearTrip](config)
-    handler = JoinHandler[JoinedYearTrip](config, comms, lambda: YearJoiner(config))
+    handler = JoinHandler[JoinedYearTrip](config, comms, lambda: YearJoiner())
     handler.run()
     logging.info("Exiting gracefully")
 

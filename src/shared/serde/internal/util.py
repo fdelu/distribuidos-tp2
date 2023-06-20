@@ -127,13 +127,13 @@ def get_generic_types(obj: T, parent: Type[Any]) -> tuple[Type[Any], ...]:
     >>> class Example(Generic[A, B]):
     ...     ...
     ...
-    >>> resolve_generic_types(Example[float, str](), Example)
+    >>> get_generic_types(Example[float, str](), Example)
     (float, str)
     ...
     >>> class Example2(Example[int, str]):
     ...     ...
     ...
-    >>> resolve_generic_types(Example2(), Example)
+    >>> get_generic_types(Example2(), Example)
     (int, str)
     """
     return resolve_generic_types(getattr(obj, "__orig_class__", type(obj)), parent)
@@ -143,8 +143,8 @@ def get_object_types(object_type: Type[Any]) -> dict[str, Type[Any]]:
     """
     Like typing.get_type_hints, but also resolves generic types.
     Does NOT work from within obj.__init__.
-    If this object is generic, it must have been instantiated with concrete types
-    (e.g. Example[int, str](), not Example()).
+    If this object is generic, it must have its types annotated
+    (e.g. Example[int, str], not Example).
     """
     map: dict[str, Type[Any]] = {}
     __resolve_object_types_rec(object_type, object_type, map)

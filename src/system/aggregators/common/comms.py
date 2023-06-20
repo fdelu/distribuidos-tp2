@@ -1,7 +1,6 @@
-import logging
 from typing import Callable, Generic
 
-from common.comms_base import ReliableSend, ReliableReceive, SystemCommunicationBase
+from common.comms_base import ReliableComms
 from common.messages import Message, End, Start
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
@@ -11,9 +10,9 @@ from .config import Config
 
 class AggregatorComms(
     Generic[GenericJoinedTrip, GenericAggregatedRecord],
-    ReliableReceive[Message[GenericJoinedTrip | End | Start]],
-    ReliableSend[Message[GenericAggregatedRecord | End]],
-    SystemCommunicationBase,
+    ReliableComms[
+        Message[GenericJoinedTrip | End | Start], Message[GenericAggregatedRecord | End]
+    ],
 ):
     config: Config
 

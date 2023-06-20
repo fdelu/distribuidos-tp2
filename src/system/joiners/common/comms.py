@@ -4,9 +4,7 @@ from common.messages import End, Message, Start
 from common.messages.basic import BasicRecord
 from common.messages.joined import GenericJoinedTrip
 from common.comms_base import (
-    ReliableSend,
-    SystemCommunicationBase,
-    ReliableReceive,
+    ReliableComms,
     setup_job_queues,
 )
 
@@ -17,9 +15,7 @@ __all__ = ["GenericJoinedTrip"]
 
 class JoinerComms(
     Generic[GenericJoinedTrip],
-    ReliableReceive[Message[BasicRecord]],
-    ReliableSend[Message[GenericJoinedTrip | End | Start]],
-    SystemCommunicationBase,
+    ReliableComms[Message[BasicRecord], Message[GenericJoinedTrip | End | Start]],
 ):
     config: Config
 

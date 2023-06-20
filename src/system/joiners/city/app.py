@@ -14,7 +14,7 @@ def main() -> None:
     setup_logs(config.log_level)
 
     comms = JoinerComms[JoinedCityTrip](config)
-    handler = JoinHandler[JoinedCityTrip](config, comms, lambda: CityJoiner(config))
+    handler = JoinHandler[JoinedCityTrip](config, comms, lambda: CityJoiner())
     handler.run()
     logging.info("Exiting gracefully")
 

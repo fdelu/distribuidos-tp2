@@ -1,9 +1,7 @@
 from typing import Callable
 
 from common.comms_base import (
-    SystemCommunicationBase,
-    ReliableReceive,
-    ReliableSend,
+    ReliableComms,
     setup_job_queues,
 )
 from common.messages import Message
@@ -14,9 +12,7 @@ from .config import Config
 
 
 class SystemCommunication(
-    ReliableReceive[Message[RawRecord]],
-    ReliableSend[Message[BasicRecord]],
-    SystemCommunicationBase,
+    ReliableComms[Message[RawRecord], Message[BasicRecord]],
 ):
     config: Config
 

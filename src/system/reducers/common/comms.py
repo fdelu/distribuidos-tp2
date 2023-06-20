@@ -1,6 +1,6 @@
 from typing import Generic
 
-from common.comms_base import ReliableSend, ReliableReceive, SystemCommunicationBase
+from common.comms_base import ReliableComms
 from common.messages import Message, End
 from common.messages.aggregated import GenericAggregatedRecord
 from common.messages.stats import StatsRecord
@@ -10,9 +10,7 @@ from .config import Config
 
 class ReducerComms(
     Generic[GenericAggregatedRecord],
-    ReliableReceive[Message[GenericAggregatedRecord | End]],
-    ReliableSend[Message[StatsRecord]],
-    SystemCommunicationBase,
+    ReliableComms[Message[GenericAggregatedRecord | End], Message[StatsRecord]],
 ):
     config: Config
 

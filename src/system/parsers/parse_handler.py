@@ -27,5 +27,9 @@ class ParseHandler:
     def handle_record(self, msg: Message[RawRecord]) -> None:
         if msg.job_id not in self.jobs:
             logging.info(f"Starting job {msg.job_id}")
-            self.jobs[msg.job_id] = JobParser(self.comms, msg.job_id, self.finished)
+            parser = JobParser(self.comms, msg.job_id, self.finished)
+            parser.restore_state()
+            self.jobs[msg.job_id] = parser
+
         msg.payload.be_handled_by(self.jobs[msg.job_id])
+        self.jobs[msg.job_id].store_state()

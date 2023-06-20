@@ -5,11 +5,60 @@ from .messages.bully_messages import (
     CoordinatorMessage,
     AnswerMessage,
     AliveMessage,
+    AliveLeaderMessage,
 )
 from .leader_heartbeat import LeaderChecker, LeaderHeartbeat
 from .config import Config
 import logging
 from .system_communication import SystemCommunication
+import subprocess
+
+
+class HealthMonitor:
+    comms: SystemCommunication
+    is_leader: bool
+    id: int
+    timer_dict: dict[str, Any]
+
+    def __init__(self, comms: SystemCommunication, id: int) -> None:
+        self.comms = comms
+        self.is_leader = True
+        self.id = id
+        self.timer_dict = {}
+
+    def im_leader(self) -> None:
+        self.is_leader = True
+        self.comms.bind_heartbeat_route()
+
+    def im_not_leader(self) -> None:
+        if self.is_leader:
+            self.is_leader = False
+            self.comms.unbind_heartbeat_route()
+            self.start_heartbeat()
+
+    def send_heartbeat(self) -> None:
+        if not self.is_leader:
+            logging.info("Sending heartbeat")
+            self.comms.send(AliveMessage(f"distribuidos-tp2-medic{self.id}-1"))
+            self.comms.set_timer(self.send_heartbeat, 1)
+
+    def start_heartbeat(self) -> None:
+        self.comms.set_timer(self.send_heartbeat, 1)
+
+    def handle_heartbeat(self, message: AliveMessage) -> None:
+        logging.info(f"Received heartbeat from {message.container_name}")
+        if message.container_name in self.timer_dict:
+            self.comms.cancel_timer(self.timer_dict[message.container_name])
+        self.timer_dict[message.container_name] = self.comms.set_timer(
+            lambda: self.container_dead(message.container_name), 5)
+
+    def container_dead(self, container_name: str) -> None:
+        logging.info(f"Container {container_name} dead")
+        result = subprocess.run(['docker', 'start', container_name],
+                                check=False, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        # TODO: check if can do this async and check errors
+        logging.info(f"Command executed. Result={result.returncode}. Output={result.stdout}. Error={result.stderr}")
 
 
 class Bully:
@@ -24,6 +73,7 @@ class Bully:
     coordination_timer_id: Any | None
     leader_checker: LeaderChecker
     leader_heartbeat: LeaderHeartbeat
+    health_monitor: HealthMonitor
 
     timer: Any | None
 
@@ -31,10 +81,12 @@ class Bully:
         self.id = config.medic_id
         self.medic_scale = config.medic_scale
         self.is_leader = False
+        self.election_started = False
         self.comms = SystemCommunication(config, self.id)
         self.coordination_timer_id = None
         self.leader_checker = LeaderChecker(self, self.comms)
         self.leader_heartbeat = LeaderHeartbeat(self.comms, self.id)
+        self.health_monitor = HealthMonitor(self.comms, self.id)
 
     def is_in_election(self) -> bool:
         return self.election_started
@@ -60,6 +112,7 @@ class Bully:
     def win_election(self) -> None:
         logging.info("I won the election")
         self.is_leader = True
+        self.health_monitor.im_leader()
         self.leader_heartbeat.start_hearbeat()
         self.current_leader = self.id
         self.send_coordinator_message()
@@ -109,10 +162,14 @@ class Bully:
         self.current_leader = message.id_coordinator
         self.election_started = False
         self.is_leader = False
+        self.health_monitor.im_not_leader()
         self.leader_heartbeat.stop_hearbeat()
         if self.coordination_timer_id is not None:
             self.comms.cancel_timer(self.coordination_timer_id)
             self.coordination_timer_id = None
 
-    def handle_alive(self, message: AliveMessage) -> None:
+    def handle_alive_leader(self, message: AliveLeaderMessage) -> None:
         self.leader_checker.handle_heartbeat()
+
+    def handle_alive(self, message: AliveMessage) -> None:
+        self.health_monitor.handle_heartbeat(message)

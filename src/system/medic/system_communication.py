@@ -6,6 +6,7 @@ from .messages.bully_messages import (
     CoordinatorMessage,
     AnswerMessage,
     AliveMessage,
+    AliveLeaderMessage,
 )
 import logging
 
@@ -29,6 +30,12 @@ class SystemCommunication(
         self.channel.queue_declare(queue=self.bully_queue, exclusive=True)
         self.channel.queue_bind(self.bully_queue, self.EXCHANGE, f"#.{self.id}.#")
 
+    def bind_heartbeat_route(self) -> None:
+        self.channel.queue_bind(self.bully_queue, self.EXCHANGE, "heartbeat")
+
+    def unbind_heartbeat_route(self) -> None:
+        self.channel.queue_unbind(self.bully_queue, self.EXCHANGE, "heartbeat")
+
     def create_routing_key(self, start: int, end: int) -> str:
         routing_key = ""
         for i in range(start, end + 1):
@@ -49,7 +56,10 @@ class SystemCommunication(
             routing_key = self.create_routing_key(
                 record.receiver_id, record.receiver_id)
             logging.info(f"Awnser message to route: {routing_key}")
-        elif isinstance(record, AliveMessage):
+        elif isinstance(record, AliveLeaderMessage):
             routing_key = self.create_routing_key(1, self.medic_scale)
+            # logging.info(f"Alive leader message to route: {routing_key}")
+        elif isinstance(record, AliveMessage):
+            routing_key = "heartbeat"
             logging.info(f"Alive message to route: {routing_key}")
         return self.EXCHANGE, routing_key

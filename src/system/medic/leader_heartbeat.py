@@ -1,5 +1,5 @@
 from .system_communication import SystemCommunication
-from .messages.bully_messages import AliveMessage
+from .messages.bully_messages import AliveLeaderMessage
 from typing import Any
 import logging
 
@@ -15,7 +15,7 @@ class LeaderChecker:
         self.comms = comms
 
     def handle_heartbeat(self) -> None:
-        logging.info("Received leader heartbeat")
+        # logging.info("Received leader heartbeat")
         if self.heart_beat_timer_id is not None:
             self.comms.cancel_timer(self.heart_beat_timer_id)
         self.heart_beat_timer_id = self.comms.set_timer(self.leader_dead, 5)
@@ -46,8 +46,8 @@ class LeaderHeartbeat:
 
     def send_heartbeat_message(self) -> None:
         if self.send_heartbeat:
-            logging.info("Sending leader heartbeat")
-            self.comms.send(AliveMessage(self.comms.id))
+            # logging.info("Sending leader heartbeat")
+            self.comms.send(AliveLeaderMessage(self.comms.id))
             self.comms.set_timer(self.send_heartbeat_message, 1)
 
     def stop_hearbeat(self) -> None:

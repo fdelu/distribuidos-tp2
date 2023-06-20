@@ -28,7 +28,7 @@ class AnswerMessage:
 
 
 class AnswerMessageHandler(Protocol[T]):
-    def handle_answer(self, election_message: AnswerMessage) -> T:
+    def handle_answer(self, awnser_message: AnswerMessage) -> T:
         ...
 
 
@@ -41,21 +41,35 @@ class CoordinatorMessage:
 
 
 class CoordinatorMessageHandler(Protocol[T]):
-    def handle_coordinator(self, election_message: CoordinatorMessage) -> T:
+    def handle_coordinator(self, coordinator_message: CoordinatorMessage) -> T:
         ...
 
 
 @dataclass
 class AliveMessage:
-    id: int
+    container_name: str
 
     def be_handled_by(self, handler: "AliveMessageHandler[T]") -> T:
         return handler.handle_alive(self)
 
 
 class AliveMessageHandler(Protocol[T]):
-    def handle_alive(self, election_message: AliveMessage) -> T:
+    def handle_alive(self, alive_message: AliveMessage) -> T:
         ...
 
 
-BullyMessage = ElectionMessage | AnswerMessage | CoordinatorMessage | AliveMessage
+@dataclass
+class AliveLeaderMessage:
+    id: int
+
+    def be_handled_by(self, handler: "AliveLeaderMessageHandler[T]") -> T:
+        return handler.handle_alive_leader(self)
+
+
+class AliveLeaderMessageHandler(Protocol[T]):
+    def handle_alive_leader(self, alive_leader_message: AliveLeaderMessage) -> T:
+        ...
+
+
+BullyMessage = ElectionMessage | AnswerMessage | CoordinatorMessage | AliveMessage \
+    | AliveLeaderMessage

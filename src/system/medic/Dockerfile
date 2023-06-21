@@ -24,4 +24,3 @@ RUN pip install -r requirements.txt
 
 WORKDIR /app
 ENTRYPOINT python3 -m system.medic.app
-# CMD ["/bin/bash"]

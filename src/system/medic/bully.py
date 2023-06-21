@@ -30,6 +30,7 @@ class HealthMonitor:
         self.id = id
         self.timer_dict = {}
         self.container_list = self.get_medic_list(id, medic_scale)
+        # TODO: auto start main medic
 
     def get_medic_list(self, id: int, medic_scale: int) -> list[str]:
         medic_list = []
@@ -78,7 +79,7 @@ class HealthMonitor:
             lambda: self.container_dead(container_name), time)
 
     def handle_heartbeat(self, message: AliveMessage) -> None:
-        logging.info(f"Received heartbeat from {message.container_name}")
+        logging.debug(f"Received heartbeat from {message.container_name}")
         self.restart_container_timer(message.container_name, 5)
         # time to consider a container dead
 
@@ -86,6 +87,7 @@ class HealthMonitor:
         logging.info(f"Container {container_name} dead")
         subprocess.Popen(["docker", "start", container_name])
         self.restart_container_timer(container_name, 10)
+        logging.info(f"Container resurrected {container_name}")
         # time to consider a container dead after restarting it
 
 
@@ -116,6 +118,7 @@ class Bully:
         self.leader_checker = LeaderChecker(self, self.comms)
         self.leader_heartbeat = LeaderHeartbeat(self.comms, self.id)
         self.health_monitor = HealthMonitor(self.comms, self.id, config.medic_scale)
+        self.awnser_timer_id = None
 
     def is_in_election(self) -> bool:
         return self.election_started
@@ -125,10 +128,11 @@ class Bully:
 
     def run(self) -> None:
         logging.info("Starting bully")
-        if self.id == self.medic_scale:
-            self.start_election()
-        else:
-            self.comms.set_timer(self.start_election_no_leader_yet, 3)
+        # if self.id == self.medic_scale:
+        #     self.start_election()
+        # else:
+        #     self.comms.set_timer(self.start_election_no_leader_yet, 3)
+        self.start_election()
         self.comms.set_callback(self.handle_message)
         self.comms._start_consuming_from(self.comms.bully_queue)
         set_healthy("HEALTHY")
@@ -201,6 +205,9 @@ class Bully:
         self.is_leader = False
         self.health_monitor.im_not_leader()
         self.leader_heartbeat.stop_hearbeat()
+        if self.awnser_timer_id is not None:
+            self.comms.cancel_timer(self.awnser_timer_id)
+            self.awnser_timer_id = None
         if self.coordination_timer_id is not None:
             self.comms.cancel_timer(self.coordination_timer_id)
             self.coordination_timer_id = None

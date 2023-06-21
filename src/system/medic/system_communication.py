@@ -61,5 +61,5 @@ class SystemCommunication(
             # logging.info(f"Alive leader message to route: {routing_key}")
         elif isinstance(record, AliveMessage):
             routing_key = "heartbeat"
-            logging.info(f"Alive message to route: {routing_key}")
+            logging.debug(f"Alive message to route: {routing_key}")
         return self.EXCHANGE, routing_key

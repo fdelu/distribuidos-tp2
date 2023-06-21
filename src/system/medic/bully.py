@@ -45,7 +45,8 @@ class HealthMonitor:
     def start_timers(self) -> None:
         for container_name in self.container_list:
             self.timer_dict[container_name] = self.comms.set_timer(
-                lambda: self.container_dead(container_name), 10)
+                lambda: self.container_dead(container_name), 10
+            )
             # time to consider a container dead after starting it
 
     def im_leader(self) -> None:
@@ -78,7 +79,8 @@ class HealthMonitor:
         if container_name in self.timer_dict:
             self.comms.cancel_timer(self.timer_dict[container_name])
         self.timer_dict[container_name] = self.comms.set_timer(
-            lambda: self.container_dead(container_name), time)
+            lambda: self.container_dead(container_name), time
+        )
 
     def handle_heartbeat(self, message: AliveMessage) -> None:
         logging.debug(f"Received heartbeat from {message.container_name}")
@@ -111,7 +113,7 @@ class Bully:
 
     def __init__(self, config: Config) -> None:
         self.comms = SystemCommunication(config)
-        self.id = self.comms.id
+        self.id = int(self.comms.id)
         self.medic_scale = config.medic_scale
         self.is_leader = False
         self.election_started = False

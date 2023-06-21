@@ -1,6 +1,7 @@
 from typing import Protocol, TypeVar
 from dataclasses import dataclass
 
+from common.comms_base import AliveMessage as AliveMessageBase
 
 T = TypeVar("T", covariant=True)
 
@@ -46,9 +47,7 @@ class CoordinatorMessageHandler(Protocol[T]):
 
 
 @dataclass
-class AliveMessage:
-    container_name: str
-
+class AliveMessage(AliveMessageBase):
     def be_handled_by(self, handler: "AliveMessageHandler[T]") -> T:
         return handler.handle_alive(self)
 
@@ -71,5 +70,10 @@ class AliveLeaderMessageHandler(Protocol[T]):
         ...
 
 
-BullyMessage = ElectionMessage | AnswerMessage | CoordinatorMessage | AliveMessage \
+BullyMessage = (
+    ElectionMessage
+    | AnswerMessage
+    | CoordinatorMessage
+    | AliveMessage
     | AliveLeaderMessage
+)

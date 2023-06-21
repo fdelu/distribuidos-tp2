@@ -10,7 +10,8 @@ from .send import CommsSend
 from .send.reliable import ReliableSend
 from .receive import CommsReceive
 from .receive.reliable import ReliableReceive
-from .util import setup_job_queues, get_host_id
+from .util import setup_job_queues, get_host_data
+from .heartbeat import HeartbeatSender, AliveMessage
 
 __all__ = [
     "CommsProtocol",
@@ -19,6 +20,8 @@ __all__ = [
     "ReliableSend",
     "ReliableReceive",
     "setup_job_queues",
+    "HeartbeatSender",
+    "AliveMessage",
 ]
 
 ID_FILE_PATH = "/host_id.txt"
@@ -28,7 +31,7 @@ ID_FILE_PATH = "/host_id.txt"
 class SystemCommunicationBase(CommsProtocol):
     __conn: BlockingConnection
     __ch: BlockingChannel
-    __id: str | None = None
+    __data: tuple[str, str] | None = None
 
     @property
     def connection(self) -> BlockingConnection:
@@ -40,9 +43,15 @@ class SystemCommunicationBase(CommsProtocol):
 
     @property
     def id(self) -> str:
-        if self.__id is None:
-            self.__id = get_host_id()
-        return self.__id
+        if self.__data is None:
+            self.__data = get_host_data()
+        return self.__data[1]
+
+    @property
+    def name(self) -> str:
+        if self.__data is None:
+            self.__data = get_host_data()
+        return self.__data[0]
 
     def __init__(self, config: ConfigProtocol) -> None:
         logging.info(f"Host ID: {self.id}")

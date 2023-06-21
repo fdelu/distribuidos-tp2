@@ -47,7 +47,7 @@ class LeaderHeartbeat:
 
     def send_heartbeat_message(self) -> None:
         if self.send_heartbeat:
-            self.comms.send(AliveLeaderMessage(self.comms.id))
+            self.comms.send(AliveLeaderMessage(int(self.comms.id)))
             self.comms.set_timer(self.send_heartbeat_message, 1)
             # time between leader heartbeats
 

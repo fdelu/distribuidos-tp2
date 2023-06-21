@@ -1,4 +1,5 @@
 version: "3"
+name: distribuidos_tp2
 services:
   rabbitmq:
     build:
@@ -193,7 +194,7 @@ services:
       dockerfile: ./system/medic/Dockerfile
     deploy:
       mode: replicated
-      replicas: ${MEDIC_SCALE}  
+      replicas: ${MEDIC_SCALE}
     networks:
       - internal_net
     volumes:

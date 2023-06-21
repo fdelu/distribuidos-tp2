@@ -5,6 +5,7 @@ from common.comms_base import (
     ReliableReceive,
     ReliableSend,
     setup_job_queues,
+    HeartbeatSender,
 )
 from common.messages import Message
 from common.messages.raw import RawRecord
@@ -23,6 +24,7 @@ class SystemCommunication(
     def __init__(self, config: Config) -> None:
         self.config = config
         super().__init__(config)
+        HeartbeatSender(self, config).setup_timer()
 
     def _load_definitions(self) -> None:
         # in

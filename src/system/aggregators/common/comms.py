@@ -1,7 +1,11 @@
-import logging
 from typing import Callable, Generic
 
-from common.comms_base import ReliableSend, ReliableReceive, SystemCommunicationBase
+from common.comms_base import (
+    ReliableSend,
+    ReliableReceive,
+    SystemCommunicationBase,
+    HeartbeatSender,
+)
 from common.messages import Message, End, Start
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
@@ -20,6 +24,7 @@ class AggregatorComms(
     def __init__(self, config: Config) -> None:
         self.config = config
         super().__init__(config)
+        HeartbeatSender(self, config).setup_timer()
 
     def _load_definitions(self) -> None:
         # in

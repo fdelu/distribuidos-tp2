@@ -1,6 +1,5 @@
 import subprocess
 import re
-import logging
 from .protocol import CommsProtocol
 import os
 
@@ -9,7 +8,7 @@ HOST_ID_COMMAND = [
     "-c",
     r'nslookup $(hostname -i | grep -o -E "^[^ ]*") | head -n 1',
 ]
-HOST_ID_REGEX = r" = [^\.]*-(\d+)\..*"
+HOST_ID_REGEX = r" = (?P<name>[^\.]*-(?P<id>\d+))\..*"
 
 STATUS_FILE = os.getenv("STATUS_FILE", "status.txt")
 
@@ -37,14 +36,13 @@ def setup_job_queues(
             )
 
 
-def get_host_id() -> str:
+def get_host_data() -> tuple[str, str]:
     """
-    Gets this node's host id
+    Gets this node's host name and id
     """
     p = subprocess.run(HOST_ID_COMMAND, stdout=subprocess.PIPE)
     res = p.stdout.decode()
-    id_match = re.search(HOST_ID_REGEX, res)
-    logging.critical(res)
-    if id_match is None:
-        raise RuntimeError("Could not find ID in output")
-    return id_match[1]
+    groups = re.search(HOST_ID_REGEX, res)
+    if not groups:
+        raise RuntimeError("Could not find host data in output")
+    return groups["name"], groups["id"]

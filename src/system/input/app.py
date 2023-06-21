@@ -1,9 +1,8 @@
 import logging
-import zmq
 
 from shared.log import setup_logs
 
-from .handler import ClientHandler
+from .input_server import InputServer
 from .config import Config
 
 
@@ -11,12 +10,8 @@ def main() -> None:
     config = Config()
     setup_logs(config.log_level)
 
-    context = zmq.Context()
-    context.setsockopt(zmq.LINGER, 0)  # Don't block on close
-
-    handler = ClientHandler(config, context)
-    handler.run()
-    context.term()
+    server = InputServer(config)
+    server.run()
 
     logging.info("Exiting gracefully")
 

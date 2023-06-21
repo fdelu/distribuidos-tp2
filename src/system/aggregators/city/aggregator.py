@@ -20,7 +20,9 @@ class CityAggregator:
         delta = (distance - station_average.average_distance) / station_average.count
         station_average.average_distance += delta
 
-    def get_value(self) -> PartialCityAverages:
+    def get_value(self) -> PartialCityAverages | None:
+        if len(self.averages) == 0:
+            return None
         return PartialCityAverages(self.averages)
 
     def reset(self) -> None:

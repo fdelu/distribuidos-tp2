@@ -1,19 +1,27 @@
 from threading import Lock
-from dataclasses import dataclass
 
-from common.messages.stats import RainAverages, CityAverages, YearCounts
+from shared.messages import Stat
+from common.messages.stats import (
+    StatType,
+    StatsRecord,
+)
 
 
-@dataclass
-class Stats:
-    rain_averages: RainAverages | None = None
-    year_counts: YearCounts | None = None
-    city_averages: CityAverages | None = None
+class StatsStorage:
+    stats: dict[str, dict[StatType, Stat]] = {}
     lock: Lock = Lock()
 
-    def all_done(self) -> bool:
-        return (
-            self.rain_averages is not None
-            and self.year_counts is not None
-            and self.city_averages is not None
-        )
+    def store(self, job_id: str, stat: StatsRecord) -> None:
+        with self.lock:
+            stats = self.stats.setdefault(job_id, {})
+            stats[stat.stat_type()] = stat
+
+    def get(self, job_id: str, stat_type: StatType) -> Stat | None:
+        with self.lock:
+            if job_id not in self.stats:
+                return None
+            return self.stats[job_id].get(stat_type, None)
+
+    def all_done(self, job_id: str) -> bool:
+        with self.lock:
+            return job_id in self.stats and len(self.stats[job_id]) == len(StatType)

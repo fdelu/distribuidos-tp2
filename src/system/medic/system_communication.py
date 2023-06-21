@@ -15,13 +15,11 @@ class SystemCommunication(
     CommsReceive[BullyMessage], CommsSend[BullyMessage], SystemCommunicationBase
 ):
     EXCHANGE = "medics"
-    id: int
     bully_queue: str
     config: Config
     medic_scale: int
 
-    def __init__(self, config: Config, id: int) -> None:
-        self.id = id
+    def __init__(self, config: Config) -> None:
         self.bully_queue = f"bully_{self.id}"
         self.medic_scale = config.medic_scale
         super().__init__(config)
@@ -39,7 +37,7 @@ class SystemCommunication(
     def create_routing_key(self, start: int, end: int) -> str:
         routing_key = ""
         for i in range(start, end + 1):
-            if i == self.id:
+            if i == int(self.id):
                 continue
             routing_key += str(i) + "."
         return routing_key[:-1]
@@ -47,7 +45,7 @@ class SystemCommunication(
     def _get_routing_details(self, record: BullyMessage) -> tuple[str, str]:
         routing_key = self.create_routing_key(1, self.medic_scale)
         if isinstance(record, ElectionMessage):
-            routing_key = self.create_routing_key(self.id + 1, self.medic_scale)
+            routing_key = self.create_routing_key(int(self.id) + 1, self.medic_scale)
             logging.info(f"Election message to route: {routing_key}")
         elif isinstance(record, CoordinatorMessage):
             routing_key = self.create_routing_key(1, self.medic_scale)

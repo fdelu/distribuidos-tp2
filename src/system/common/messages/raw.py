@@ -1,16 +1,16 @@
 from typing import Protocol, TypeVar
 from dataclasses import dataclass
 
-from common.messages import End, RecordType
+from common.messages import End, RecordType, Start
 
 T = TypeVar("T", covariant=True)
 
 
 @dataclass
-class RawBatch:
+class RawLines:
     record_type: RecordType
     city: str
-    headers: str
+    columns: str
     lines: list[str]
 
     def get_routing_key(self) -> str:
@@ -28,14 +28,14 @@ class RawBatch:
 
 
 class RawRecordHandler(Protocol[T]):
-    def handle_weather_batch(self, batch: RawBatch) -> T:
+    def handle_weather_batch(self, batch: RawLines) -> T:
         ...
 
-    def handle_station_batch(self, batch: RawBatch) -> T:
+    def handle_station_batch(self, batch: RawLines) -> T:
         ...
 
-    def handle_trip_batch(self, batch: RawBatch) -> T:
+    def handle_trip_batch(self, batch: RawLines) -> T:
         ...
 
 
-RawRecord = RawBatch | End
+RawRecord = RawLines | End | Start

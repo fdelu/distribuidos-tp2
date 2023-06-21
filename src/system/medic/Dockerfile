@@ -1,6 +1,9 @@
 FROM python:3.11.3-bullseye AS base
 SHELL ["/bin/bash", "-c"]
 
+# Install required packages
+RUN apt update && apt install dnsutils -y
+
 RUN curl -fsSL https://get.docker.com | sh
 
 # Copy client-shared & system-common modules

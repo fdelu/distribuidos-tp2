@@ -3,7 +3,6 @@ import logging
 from common.messages.basic import BasicStation, BasicTrip, BasicWeather
 from common.messages.joined import JoinedRainTrip
 
-from ..common.comms import JoinerComms
 from .config import Config
 
 
@@ -11,12 +10,10 @@ class RainJoiner:
     # city -> day -> precipitation
     weather: dict[str, dict[str, float]]
     config: Config
-    comms: JoinerComms[JoinedRainTrip]
 
-    def __init__(self, config: Config, comms: JoinerComms[JoinedRainTrip]) -> None:
+    def __init__(self, config: Config) -> None:
         self.weather = {}
         self.config = config
-        self.comms = comms
 
     def handle_station(self, station: BasicStation) -> None:
         logging.warn("Unexpected Station received on rain joiner")
@@ -25,16 +22,15 @@ class RainJoiner:
         weathers = self.weather.setdefault(weather.city, {})
         weathers[weather.date] = weather.precipitation
 
-    def handle_trip(self, trip: BasicTrip) -> None:
+    def handle_trip(self, trip: BasicTrip) -> JoinedRainTrip | None:
         precipitation = self._get_join_data(trip)
         if (
             precipitation is None
             or precipitation <= self.config.precipitation_threshold
         ):
-            return
+            return None
 
-        joined_trip = JoinedRainTrip(trip.start_date, trip.duration_sec)
-        self.comms.send(joined_trip)
+        return JoinedRainTrip(trip.start_date, trip.duration_sec)
 
     def _get_join_data(self, trip: BasicTrip) -> float | None:
         weather = self.weather[trip.city].get(trip.start_date, None)

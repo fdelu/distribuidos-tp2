@@ -73,3 +73,10 @@ GenericJoinedTrip = TypeVar(
     JoinedCityTrip,
     contravariant=True,
 )
+GenericJoinedTripCov = TypeVar(
+    "GenericJoinedTripCov",
+    JoinedRainTrip,
+    JoinedYearTrip,
+    JoinedCityTrip,
+    covariant=True,
+)

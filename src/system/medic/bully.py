@@ -31,13 +31,15 @@ class HealthMonitor:
         self.timer_dict = {}
         self.container_list = self.get_medic_list(id, medic_scale)
         # TODO: auto start main medic
+        # docker compose ps --all --format json
+        # ignore client and rabbitmq
 
     def get_medic_list(self, id: int, medic_scale: int) -> list[str]:
         medic_list = []
         for i in range(1, medic_scale + 1):
             if i == id:
                 continue
-            medic_list.append(f"distribuidos-tp2-medic{i}-1")
+            medic_list.append(f"distribuidos-tp2-medic-{i}")
         return medic_list
 
     def start_timers(self) -> None:
@@ -66,7 +68,7 @@ class HealthMonitor:
 
     def send_heartbeat(self) -> None:
         if not self.is_leader:
-            self.comms.send(AliveMessage(f"distribuidos-tp2-medic{self.id}-1"))
+            self.comms.send(AliveMessage(f"distribuidos-tp2-medic-{self.id}"))
             self.comms.set_timer(self.send_heartbeat, 1)  # time between heartbeats
 
     def start_heartbeat(self) -> None:
@@ -108,12 +110,12 @@ class Bully:
     timer: Any | None
 
     def __init__(self, config: Config) -> None:
-        self.id = config.medic_id
+        self.comms = SystemCommunication(config)
+        self.id = self.comms.id
         self.medic_scale = config.medic_scale
         self.is_leader = False
         self.election_started = False
         self.current_leader = -1
-        self.comms = SystemCommunication(config, self.id)
         self.coordination_timer_id = None
         self.leader_checker = LeaderChecker(self, self.comms)
         self.leader_heartbeat = LeaderHeartbeat(self.comms, self.id)

@@ -1,9 +1,8 @@
 from threading import Event
 import zmq
 
-from shared.socket import SocketStopWrapper
-
 from . import Comms
+from .socket import ClientSocket
 from ..config import BikeRidesAnalyzerConfig
 
 
@@ -15,8 +14,5 @@ class CommsOutput(Comms):
         config: BikeRidesAnalyzerConfig,
         interrupt_event: Event,
     ) -> None:
-        super().__init__()
-        self.job_id = job_id
-        socket = context.socket(zmq.REQ)
-        socket.connect(config.output_address)
-        self.socket = SocketStopWrapper(socket, interrupt_event)
+        socket = ClientSocket(context, config.output_address, interrupt_event)
+        super().__init__(socket, job_id)

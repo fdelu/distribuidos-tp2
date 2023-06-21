@@ -27,7 +27,7 @@ class RecordStart:
 
 @dataclass
 class LinesBatch:
-    batch_id: int
+    batch_number: int
     lines: list[str]
 
 
@@ -56,7 +56,7 @@ class Message(Generic[T]):
 
 @dataclass
 class Ack:
-    batch_id: int | None = None
+    batch_number: int | None = None
 
 
 @dataclass

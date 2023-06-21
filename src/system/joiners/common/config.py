@@ -6,7 +6,6 @@ SECTION = "joiners"
 class Config(ConfigBase):
     parsers_count: int
     prefetch_count: int
-    name: str
 
     in_exchange: str
     in_trips_queue_format: str
@@ -19,7 +18,6 @@ class Config(ConfigBase):
         super().__init__(ConfigBase.subsection(SECTION, name))
         self.parsers_count = self.get_int("ParsersCount")
         self.prefetch_count = self.get_int("PrefetchCount")
-        self.name = name
 
         self.in_exchange = self.get("InExchange")
         self.in_trips_queue_format = self.get("InTripsQueueFormat")

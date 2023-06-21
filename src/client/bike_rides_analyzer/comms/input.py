@@ -4,9 +4,9 @@ from threading import Event
 import zmq
 
 from shared.messages import RecordStart, LinesBatch, RecordType
-from shared.socket import SocketStopWrapper
 
 from . import Comms
+from .socket import ClientSocket
 from ..config import BikeRidesAnalyzerConfig
 
 
@@ -20,30 +20,30 @@ class CommsInput(Comms):
         config: BikeRidesAnalyzerConfig,
         interrupt_event: Event,
     ) -> None:
-        super().__init__()
-        self.job_id = job_id
-        socket = context.socket(zmq.REQ)
-        socket.connect(config.input_address)
-        self.socket = SocketStopWrapper(socket, interrupt_event)
+        socket = ClientSocket(context, config.input_address, interrupt_event)
+        super().__init__(socket, job_id)
         self.batch_size = config.batch_size
 
     def send_batchs(
         self, city: str, all_lines: Iterable[str], record_type: RecordType
     ) -> int:
         count = 0
-        batch_id = 0
+        batch_number = 0
         csv_header, *data = all_lines
 
         start = RecordStart(record_type, city, csv_header)
+        logging.debug(f"Sending RecordStart - {city=} - {record_type=}")
         self.send(start)
+        logging.debug("Waiting for RecordStart ACK")
         self.recv_ack()
 
+        logging.debug("Sending batchs")
         for batch in self.__batch(data):
-            lines = LinesBatch(batch_id, batch)
+            lines = LinesBatch(batch_number, batch)
             self.send(lines)
-            self.recv_ack(batch_id)
+            self.recv_ack(batch_number)
             count += len(batch)
-            batch_id += 1
+            batch_number += 1
 
         logging.info(f"{record_type} | {city} | Sent {count} {record_type} records")
         return count

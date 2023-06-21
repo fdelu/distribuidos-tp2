@@ -3,12 +3,16 @@ from abc import ABC
 from shared.serde import serialize, deserialize
 from shared.messages import Ack, ClientPayloads, ServerMessages, Message
 
-from shared.socket import SocketStopWrapper
+from .socket import ClientSocket
 
 
 class Comms(ABC):
     job_id: str
-    socket: SocketStopWrapper
+    socket: ClientSocket
+
+    def __init__(self, socket: ClientSocket, job_id: str) -> None:
+        self.socket = socket
+        self.job_id = job_id
 
     def send(self, payload: ClientPayloads) -> None:
         self.socket.send(serialize(Message(self.job_id, payload)))
@@ -19,9 +23,9 @@ class Comms(ABC):
     def close(self) -> None:
         self.socket.close()
 
-    def recv_ack(self, batch_id: int | None = None) -> None:
+    def recv_ack(self, batch_number: int | None = None) -> None:
         ack = self.recv()
         if not isinstance(ack, Ack) or (
-            batch_id is not None and ack.batch_id != batch_id
+            batch_number is not None and ack.batch_number != batch_number
         ):
             raise RuntimeError("Did not receive ACK for this message")

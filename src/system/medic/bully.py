@@ -43,6 +43,7 @@ class HealthMonitor:
         for container_name in self.container_list:
             self.timer_dict[container_name] = self.comms.set_timer(
                 lambda: self.container_dead(container_name), 10)
+            # time to consider a container dead after starting it
 
     def im_leader(self) -> None:
         if not self.is_leader or not self.started:
@@ -65,25 +66,27 @@ class HealthMonitor:
     def send_heartbeat(self) -> None:
         if not self.is_leader:
             self.comms.send(AliveMessage(f"distribuidos-tp2-medic{self.id}-1"))
-            self.comms.set_timer(self.send_heartbeat, 1)
+            self.comms.set_timer(self.send_heartbeat, 1)  # time between heartbeats
 
     def start_heartbeat(self) -> None:
-        self.comms.set_timer(self.send_heartbeat, 1)
+        self.send_heartbeat()
+
+    def restart_container_timer(self, container_name: str, time: int) -> None:
+        if container_name in self.timer_dict:
+            self.comms.cancel_timer(self.timer_dict[container_name])
+        self.timer_dict[container_name] = self.comms.set_timer(
+            lambda: self.container_dead(container_name), time)
 
     def handle_heartbeat(self, message: AliveMessage) -> None:
         logging.info(f"Received heartbeat from {message.container_name}")
-        if message.container_name in self.timer_dict:
-            self.comms.cancel_timer(self.timer_dict[message.container_name])
-        self.timer_dict[message.container_name] = self.comms.set_timer(
-            lambda: self.container_dead(message.container_name), 5)
+        self.restart_container_timer(message.container_name, 5)
+        # time to consider a container dead
 
     def container_dead(self, container_name: str) -> None:
         logging.info(f"Container {container_name} dead")
         subprocess.Popen(['docker', 'start', container_name])
-        if container_name in self.timer_dict:
-            self.comms.cancel_timer(self.timer_dict[container_name])
-        self.timer_dict[container_name] = self.comms.set_timer(
-            lambda: self.container_dead(container_name), 10)
+        self.restart_container_timer(container_name, 10)
+        # time to consider a container dead after restarting it
 
 
 class Bully:
@@ -124,7 +127,6 @@ class Bully:
         logging.info("Starting bully")
         if self.id == self.medic_scale:
             self.start_election()
-            # TODO: add timeout for receiving coordinator message
         else:
             self.comms.set_timer(self.start_election_no_leader_yet, 3)
         self.comms.set_callback(self.handle_message)
@@ -150,7 +152,7 @@ class Bully:
         self.leader_heartbeat.start_hearbeat()
         self.current_leader = self.id
         self.send_coordinator_message()
-        self.election_started = False  # TODO: set timer for this
+        self.election_started = False
 
     def __timer_awnser(self) -> None:
         logging.info("Awnser timeout")
@@ -162,6 +164,7 @@ class Bully:
         self.comms.send(ElectionMessage(self.id))
         # also set timer that waits for a AnswerMessage or declare itself as the leader
         self.awnser_timer_id = self.comms.set_timer(self.__timer_awnser, 10)
+        # time to wait for a AnswerMessage or declare itself as the leader
         self.received_awnser = False
 
     def send_answer_message(self, id: int) -> None:
@@ -189,7 +192,7 @@ class Bully:
             self.comms.cancel_timer(self.awnser_timer_id)
             self.awnser_timer_id = None
         self.coordination_timer_id = self.comms.set_timer(self.__timer_coordinator, 10)
-        # sets timer that waits for a CoordinatorMessage or restart election
+        # time that waits for a CoordinatorMessage or restart election
 
     def handle_coordinator(self, message: CoordinatorMessage) -> None:
         logging.info(f"Election won by medic {message.id_coordinator}")

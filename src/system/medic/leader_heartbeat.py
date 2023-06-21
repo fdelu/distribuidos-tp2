@@ -15,7 +15,6 @@ class LeaderChecker:
         self.comms = comms
 
     def handle_heartbeat(self) -> None:
-        # logging.info("Received leader heartbeat")
         if self.heart_beat_timer_id is not None:
             self.comms.cancel_timer(self.heart_beat_timer_id)
         self.heart_beat_timer_id = self.comms.set_timer(self.leader_dead, 5)
@@ -23,6 +22,7 @@ class LeaderChecker:
         # medics send their start election at the same time
 
     def leader_dead(self) -> None:
+        # the leader has died, starts an election if it is not already in one
         self.comms.cancel_timer(self.heart_beat_timer_id)
         logging.info("Leader dead")
         if not self.bully.is_in_election():
@@ -31,6 +31,7 @@ class LeaderChecker:
 
 
 class LeaderHeartbeat:
+    # used by the leader to send heartbeats to the other medics
     send_heartbeat: bool
     comms: SystemCommunication
     id: int
@@ -46,9 +47,9 @@ class LeaderHeartbeat:
 
     def send_heartbeat_message(self) -> None:
         if self.send_heartbeat:
-            # logging.info("Sending leader heartbeat")
             self.comms.send(AliveLeaderMessage(self.comms.id))
             self.comms.set_timer(self.send_heartbeat_message, 1)
+            # time between leader heartbeats
 
     def stop_hearbeat(self) -> None:
         self.send_heartbeat = False

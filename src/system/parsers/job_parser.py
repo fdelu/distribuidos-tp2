@@ -16,6 +16,7 @@ from .comms import SystemCommunication
 class State:
     count: int = 0
     receiving_trips: bool = False
+    received_end: bool = False
 
 
 class JobParser(WithState[State]):
@@ -37,6 +38,8 @@ class JobParser(WithState[State]):
 
     def restore_state(self) -> None:
         self.restore_from(self.job_id)
+        if self.state.received_end:
+            self.comms.set_all_batchs_done_callback(self.job_id, self.__finished)
 
     def store_state(self) -> None:
         self.store_to(self.job_id)
@@ -51,18 +54,21 @@ class JobParser(WithState[State]):
         self.__send_parsed(batch, parse_weather)
 
     def handle_trip_batch(self, batch: RawLines) -> None:
+        self.__send_parsed(batch, parse_trip)
+        self.state.count += len(batch.lines)
+
         if not self.state.receiving_trips:
             logging.info(f"Job {self.job_id} | Finished parsing weather & stations")
             self.state.receiving_trips = True
+            self.store_state()
             self.__send_start()
-
-        self.__send_parsed(batch, parse_trip)
-        self.state.count += len(batch.lines)
 
     def handle_end(self, end: End) -> None:
         logging.info(
             f"Job {self.job_id} | Received End, waiting for all batchs to be processed"
         )
+        self.state.received_end = True
+        self.store_state()
         self.comms.set_all_batchs_done_callback(self.job_id, self.__finished)
 
     def handle_record(self, raw_record: RawRecord) -> None:
@@ -86,10 +92,6 @@ class JobParser(WithState[State]):
             self.comms.send(msg)
 
     def __finished(self) -> None:
-        if not self.state.receiving_trips:
-            self.state.receiving_trips = True
-            self.__send_start()
-
         logging.info(
             f"Job {self.job_id} | Finished parsing. Total trips processed in this"
             f" node: {self.state.count}"

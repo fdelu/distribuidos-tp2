@@ -25,17 +25,20 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip])
         if start.host is None:
             logging.warn("Received Start without host id")
             return self
-        self.state.starts_received.add(start.host)
+        return self.__handle_start(start.host)
+
+    def __handle_start(self, host: str) -> Phase[GenericJoinedTrip]:
+        self.state.starts_received.add(host)
         logging.debug(
-            f"Job {self.job_id} | Parser {start.host} finished sending weather &"
+            f"Job {self.job_id} | Parser {host} finished sending weather &"
             f" stations ({len(self.state.starts_received)}/{self.config.parsers_count})"
         )
         if len(self.state.starts_received) < self.config.parsers_count:
             return self
 
         logging.info(f"Job {self.job_id} | Receiving trips")
-        self.comms.start_consuming_trips(self.job_id)
         self.state.trips_phase = True
+        self.store_state()
         self._send(Start(self.comms.id))
         return self.__next_phase()
 
@@ -51,17 +54,24 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip])
         logging.debug(
             f"Job {self.job_id} | Received End from parser {end.host} before all Starts"
         )
+        if end.host is not None and end.host not in self.state.starts_received:
+            logging.debug(
+                f"Job {self.job_id} | Received End from parser {end.host} before Start,"
+                " considering it as both"
+            )
+            return self.__handle_start(end.host)
         return self
 
     def restore_state(self) -> "Phase[GenericJoinedTrip]":
         self.restore_from(self._control_store_key())
         self.joiner.restore_from(self._joiner_store_key())
 
-        if not self.state.trips_phase:
-            return self
-        return self.__next_phase()
+        if self.state.trips_phase:
+            return self.__next_phase()
+        return self
 
     def __next_phase(self) -> TripsPhase[GenericJoinedTrip]:
+        self.comms.start_consuming_trips(self.job_id)
         phase = TripsPhase(
             self.comms,
             self.config,

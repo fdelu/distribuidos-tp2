@@ -48,8 +48,7 @@ class JoinHandler(Generic[GenericJoinedTrip]):
                 self.joiner_factory(),
                 msg.job_id,
                 self.finished,
-            )
-            handler.restore_state()
+            ).restore_state()
             self.jobs[msg.job_id] = handler
         self.jobs[msg.job_id] = msg.payload.be_handled_by(self.jobs[msg.job_id])
         if msg.job_id in self.jobs:

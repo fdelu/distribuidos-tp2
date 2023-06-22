@@ -44,11 +44,11 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
     def send(self, record: OUT, force_msg_id: str | None | _Unset = _Unset()) -> None:
         key = self._get_routing_details(record)
 
-        if not isinstance(force_msg_id, _Unset):
-            package = Package([record], force_msg_id)
-        else:
+        if isinstance(force_msg_id, _Unset):
             package = self.packages.get(key) or Package([], self.__next_message_id())
             package.messages.append(record)
+        else:
+            package = Package([record], force_msg_id)
 
         self.packages[key] = package
         if package.msg_id in (None, force_msg_id):

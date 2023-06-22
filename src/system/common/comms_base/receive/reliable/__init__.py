@@ -11,7 +11,7 @@ __all__ = ["FilterConfig"]
 
 class ReliableReceive(Generic[IN], CommsReceive[IN]):
     current_msg_id: str | None = None
-    duplicate_filter: DuplicateFilter[IN] | None
+    duplicate_filter: DuplicateFilter[IN]
 
     def __init__(
         self,
@@ -26,7 +26,7 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
             )
             self.duplicate_filter.load_definitions()
         else:
-            self.duplicate_filter = None
+            self.duplicate_filter = DuplicateFilterSimple(self)
 
     def current_message_id(self) -> str | None:
         return self.current_msg_id
@@ -41,11 +41,9 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
         self._post_process(delivery_tag)
 
     def _process_message(
-        self, data: str, delivery_tag: int | None, redelivered: bool
+        self, data: str, queue: str, delivery_tag: int | None, redelivered: bool
     ) -> None:
-        if self.duplicate_filter is None:
-            self.duplicate_filter = DuplicateFilterSimple(self)
-        self.duplicate_filter.received_message(data, delivery_tag, redelivered)
+        self.duplicate_filter.received_message(data, queue, delivery_tag, redelivered)
 
     def _post_process(self, delivery_tag: int | None) -> None:
         """
@@ -54,3 +52,12 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
         if delivery_tag is not None:
             self.channel.basic_ack(delivery_tag)
         self.current_msg_id = None
+
+    def _messages_left(self, queue: str) -> int | None:
+        """
+        Returns the number of messages left in the given queue
+        """
+        c = self.channel.queue_declare(queue).method.message_count
+        if c is None:
+            return None
+        return c + self.duplicate_filter.pending_count(queue)

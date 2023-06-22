@@ -12,7 +12,7 @@ __all__ = ["DuplicateFilter"]
 
 class DuplicateFilterSimple(DuplicateFilter[IN], Generic[IN]):
     def received_message(
-        self, message: str, delivery_tag: int | None, redelivered: bool
+        self, message: str, queue: str, delivery_tag: int | None, redelivered: bool
     ) -> None:
         package = self.__deserialize_package(message)
         if package.msg_id:
@@ -29,3 +29,6 @@ class DuplicateFilterSimple(DuplicateFilter[IN], Generic[IN]):
 
     def __deserialize_package(self, message: str) -> Package[IN]:
         return deserialize(Package[self.comms.in_type], message)  # type: ignore
+
+    def pending_count(self, queue: str) -> int:
+        return 0

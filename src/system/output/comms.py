@@ -18,7 +18,7 @@ class SystemCommunication(
         self._start_consuming_from(self.config.in_queue)
 
     def _process_message(
-        self, message: str, delivery_tag: int | None, redelivered: bool
+        self, message: str, queue: str, delivery_tag: int | None, redelivered: bool
     ) -> None:
-        super()._process_message(message, delivery_tag, redelivered)
+        super()._process_message(message, queue, delivery_tag, redelivered)
         StatePersistor().save()

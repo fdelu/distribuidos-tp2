@@ -90,12 +90,12 @@ class JobAggregator(
         self.comms.send(Message(self.job_id, record))
 
     def restore_state(self) -> None:
-        self.restore_from(self._aggregator_store_key())
-        self.aggregator.restore_from(self._control_store_key())
+        self.restore_from(self._control_store_key())
+        self.aggregator.restore_from(self._aggregator_store_key())
 
     def store_state(self) -> None:
-        self.store_to(self._aggregator_store_key())
-        self.aggregator.store_to(self._control_store_key())
+        self.store_to(self._control_store_key())
+        self.aggregator.store_to(self._aggregator_store_key())
 
     def _control_store_key(self) -> str:
         return f"control_{self.job_id}"

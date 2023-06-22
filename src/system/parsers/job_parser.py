@@ -33,6 +33,7 @@ class JobParser(WithState[State]):
         self.comms = comms
         self.job_id = job_id
         self.on_finish = on_finish
+        self.comms.start_consuming_job(self.job_id)
 
     def restore_state(self) -> None:
         self.restore_from(self.job_id)
@@ -41,7 +42,7 @@ class JobParser(WithState[State]):
         self.store_to(self.job_id)
 
     def handle_start(self, start: Start) -> None:
-        self.comms.start_consuming_job(self.job_id)
+        pass
 
     def handle_station_batch(self, batch: RawLines) -> None:
         self.__send_parsed(batch, parse_station)

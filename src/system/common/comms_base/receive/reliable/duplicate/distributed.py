@@ -26,6 +26,7 @@ class FilterConfig(Protocol):
 
 @dataclass
 class PendingCheck(Generic[IN]):
+    queue: str
     package: Package[IN]
     responses: set[str]
     delivery_tag: int | None
@@ -50,20 +51,31 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
                 )
 
     def received_message(
-        self, data: str, delivery_tag: int | None, redelivered: bool
+        self, data: str, queue: str, delivery_tag: int | None, redelivered: bool
     ) -> None:
         message = self.__deserialize_package(data)
-        self.handle_message(message, delivery_tag, redelivered)
+        self.handle_message(message, queue, delivery_tag, redelivered)
+
+    def pending_count(self, queue: str) -> int:
+        return sum(1 for c in self.pending_checks.values() if c.queue == queue)
 
     @singledispatchmethod
     def handle_message(
-        self, message: CommsMessage[IN], delivery_tag: int | None, redelivered: bool
+        self,
+        message: CommsMessage[IN],
+        queue: str,
+        delivery_tag: int | None,
+        redelivered: bool,
     ) -> None:
         raise NotImplementedError("Unknown message type")
 
     @handle_message.register(Package)
     def handle_package(
-        self, package: Package[IN], delivery_tag: int | None, redelivered: bool
+        self,
+        package: Package[IN],
+        queue: str,
+        delivery_tag: int | None,
+        redelivered: bool,
     ) -> None:
         if not package.msg_id or not (redelivered or package.maybe_redelivered):
             self.__process(package, delivery_tag)
@@ -76,16 +88,24 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             )
             self._ack(delivery_tag)
             return
+        elif self.config.host_count == 1:
+            # this is the only node and it wasn't processed here
+            self.__process(package, delivery_tag)
+            return
 
         logging.warn(
             f"Received package {package.msg_id} that may have already been processed,"
             " sending check to other nodes"
         )
-        self.__send_check(package, delivery_tag)
+        self.__send_check(package, queue, delivery_tag)
 
     @handle_message.register
     def handle_check_processed(
-        self, check: CheckProcessed, delivery_tag: int | None, redelivered: bool
+        self,
+        check: CheckProcessed,
+        queue: str,
+        delivery_tag: int | None,
+        redelivered: bool,
     ) -> None:
         if check.host_id == self.comms.id:
             self._ack(delivery_tag)
@@ -105,6 +125,7 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
     def handle_check_processed_response(
         self,
         response: CheckProcessedResponse,
+        queue: str,
         delivery_tag: int | None,
         redelivered: bool,
     ) -> None:
@@ -136,11 +157,13 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
         self.__process(check.package, check.delivery_tag)
         self._ack(delivery_tag)
 
-    def __send_check(self, msg: Package[IN], delivery_tag: int | None) -> None:
+    def __send_check(
+        self, msg: Package[IN], queue: str, delivery_tag: int | None
+    ) -> None:
         if not msg.msg_id or msg.msg_id in self.pending_checks:
             return
 
-        self.pending_checks[msg.msg_id] = PendingCheck(msg, set(), delivery_tag)
+        self.pending_checks[msg.msg_id] = PendingCheck(queue, msg, set(), delivery_tag)
         check = CheckProcessed(msg.msg_id, self.comms.id)
         self.comms.channel.basic_publish(
             self.config.filters_exchange,

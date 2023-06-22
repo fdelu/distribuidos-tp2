@@ -126,13 +126,14 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Stops consuming from the given queue.
         Optionally deletes it if it's no longer used (no consumers and no messages).
         """
+        # so that it doesn't fail if it doesn't exist
+        self.channel.queue_declare(queue)
         if queue in self.ctags:
             self.channel.basic_cancel(self.ctags.pop(queue))
         if (
             delete_if_unused
-            # No pongo passive=True porque podria llegar a darse el caso en que
-            # dos cancelen al mismo tiempo, uno borre la cola y el otro intente
-            # el queue_declare que fallaria porque la cola ya no existe
+            # Don't use passive=True in case two nodes cancel it's consumption
+            # at the same time and one deletes before the other one declares it
             and self.channel.queue_declare(queue).method.consumer_count == 0
         ):
             self.channel.queue_delete(queue, if_empty=True)
@@ -168,7 +169,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         )
 
     def _process_message(
-        self, message: str, delivery_tag: int | None, redelivered: bool
+        self, message: str, queue: str, delivery_tag: int | None, redelivered: bool
     ) -> None:
         """
         Processes a message. Can be overridden by subclasses.
@@ -182,6 +183,12 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
 
         if delivery_tag is not None:
             self.channel.basic_ack(delivery_tag)
+
+    def _messages_left(self, queue: str) -> int | None:
+        """
+        Returns the number of messages left in the given queue
+        """
+        return self.channel.queue_declare(queue).method.message_count
 
     def __stop(self) -> None:
         """
@@ -235,7 +242,9 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         if timeout_info is not None:
             timeout_info.last_message_on = time.time()
 
-        self._process_message(body.decode(), method.delivery_tag, method.redelivered)
+        self._process_message(
+            body.decode(), queue, method.delivery_tag, method.redelivered
+        )
 
     def __timeout_handler(self, info: "TimeoutInfo") -> None:
         """
@@ -263,22 +272,18 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
                 seconds_remaining, lambda: self.__timeout_handler(info)
             )
 
-    def __check_messages_left(
-        self, queue: str, callback: Callable[[], None], **queue_kwargs: Any
-    ) -> None:
+    def __check_messages_left(self, queue: str, callback: Callable[[], None]) -> None:
         """
         Checks if there are messages left in the given queue. If not, calls the
         callback. If there are, calls _set_empty_queue_callback() again.
         """
-        res = self.channel.queue_declare(queue=queue, passive=True, **queue_kwargs)
-
-        if res.method.message_count == 0:
+        if self._messages_left(queue) == 0:
             callback()
             return
 
         # for some reason the queue is not empty but the timeout expired
         # set the timer again:
-        self._set_empty_queue_callback(queue, callback, **queue_kwargs)
+        self._set_empty_queue_callback(queue, callback)
         return
 
     @dataclass

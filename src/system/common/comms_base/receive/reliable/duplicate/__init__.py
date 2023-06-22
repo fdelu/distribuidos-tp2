@@ -42,6 +42,13 @@ class DuplicateFilter(Generic[IN], ABC):
 
     @abstractmethod
     def received_message(
-        self, message: str, delivery_tag: int | None, redelivered: bool
+        self, message: str, queue: str, delivery_tag: int | None, redelivered: bool
     ) -> None:
+        ...
+
+    @abstractmethod
+    def pending_count(self, queue: str) -> int:
+        """
+        Returns the amount of pending checks for the given queue.
+        """
         ...

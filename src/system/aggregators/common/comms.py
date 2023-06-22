@@ -23,10 +23,12 @@ class AggregatorComms(
 
     def _load_definitions(self) -> None:
         # in
+        for id in range(1, self.config.host_count + 1):
+            others_queue = self.config.in_others_queue_format.format(host_id=id)
+            self.channel.queue_declare(others_queue)
+            for rk in self.config.in_others_queue_routing_keys:
+                self.channel.queue_bind(others_queue, self.config.in_exchange, rk)
         others_queue = self.config.in_others_queue_format.format(host_id=self.id)
-        self.channel.queue_declare(others_queue)  # end
-        for rk in self.config.in_others_queue_routing_keys:
-            self.channel.queue_bind(others_queue, self.config.in_exchange, rk)
         self._start_consuming_from(others_queue)
 
     def _get_routing_details(

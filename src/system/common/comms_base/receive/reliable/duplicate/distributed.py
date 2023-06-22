@@ -42,7 +42,7 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
         self.pending_checks = {}
 
     def load_definitions(self) -> None:
-        for i in range(self.config.host_count):
+        for i in range(1, self.config.host_count + 1):
             q = self.config.in_others_queue_format.format(host_id=i)
             for rk in self.config.filters_routing_keys_format:
                 self.comms.channel.queue_bind(
@@ -61,11 +61,11 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
     ) -> None:
         raise NotImplementedError("Unknown message type")
 
-    @handle_message.register
+    @handle_message.register(Package)
     def handle_package(
         self, package: Package[IN], delivery_tag: int | None, redelivered: bool
     ) -> None:
-        if package.msg_id and not redelivered and not package.maybe_redelivered:
+        if not package.msg_id or not (redelivered or package.maybe_redelivered):
             self.__process(package, delivery_tag)
             return
 

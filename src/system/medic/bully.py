@@ -34,25 +34,6 @@ class HealthMonitor:
         # logging.info(f"container list: {self.container_list}")
         # TODO: auto start main medic
 
-    def parse_container_list(self, containers: list[str]) -> list[str]:
-        container_list = []
-        for container in containers:
-            if "client" in container:
-                continue
-            if "rabbitmq" in container:
-                continue
-            if "distribuidos_tp2" in container:
-                container_list.append(container)
-        return container_list
-
-    def get_medic_list(self, id: int, medic_scale: int) -> list[str]:
-        medic_list = []
-        for i in range(1, medic_scale + 1):
-            if i == id:
-                continue
-            medic_list.append(f"distribuidos_tp2-medic-{i}")
-        return medic_list
-
     def start_timers(self) -> None:
         for container_name in self.container_list:
             self.timer_dict[container_name] = self.comms.set_timer(

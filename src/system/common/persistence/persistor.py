@@ -1,23 +1,22 @@
+import logging
 import os
 from typing import TypeVar, Any
 
 from shared.serde import serialize, deserialize
+from common.util import singleton
 
 PATH_BASE = "/state"
 PATH_TEMP = os.path.join(PATH_BASE, "temp")
 PATH_CURRENT = os.path.join(PATH_BASE, "current")
 T = TypeVar("T")
+KEEP = object()
 
 
+@singleton
 class StatePersistor:
     # Key -> (value)
     in_progress: dict[str, Any]
     current: dict[str, str]
-
-    def __new__(cls) -> "StatePersistor":
-        if not hasattr(cls, "instance"):
-            cls.instance = super(StatePersistor, cls).__new__(cls)
-        return cls.instance
 
     def __init__(self) -> None:
         self.in_progress = {}
@@ -30,7 +29,10 @@ class StatePersistor:
             return
 
         with open(PATH_CURRENT, "r") as f:
-            self.current = deserialize(dict[str, str], f.read())
+            self.current: dict[str, str] = deserialize(dict[str, str], f.read())
+            self.in_progress = {x: KEEP for x in self.current}
+
+        logging.info("Loaded state from disk")
 
     def store(self, key: str, value: T) -> None:
         """
@@ -61,7 +63,10 @@ class StatePersistor:
         """
         Commits all stored values.
         """
-        self.current = {x: serialize(y) for x, y in self.in_progress.items()}
+        self.current = {
+            x: self.current[x] if y == KEEP else serialize(y)
+            for x, y in self.in_progress.items()
+        }
         with open(PATH_TEMP, "w") as f:
             f.write(serialize(self.current))
 

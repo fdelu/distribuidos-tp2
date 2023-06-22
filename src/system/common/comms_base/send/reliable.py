@@ -98,7 +98,7 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
     def __send_pending(self) -> None:
         out_type = get_generic_types(self, ReliableComms)[1]
         pending: dict[tuple[str, str], Package[OUT]] | None = (
-            StatePersistor().load(PENDING_MESSAGES_KEY, dict[tuple[str, str], out_type]) or []  # type: ignore # noqa
+            StatePersistor().load(PENDING_MESSAGES_KEY, dict[tuple[str, str], Package[out_type]]) or []  # type: ignore # noqa
         )
         if pending:
             self.pending_packages = pending

@@ -20,6 +20,9 @@ class CityJoiner(WithState[Stations]):
     def __init__(self) -> None:
         super().__init__({})
 
+    def restore_from(self, key: str) -> None:
+        super().restore_from(key)
+
     def handle_station(self, station: BasicStation) -> None:
         if station.latitude is None or station.longitude is None:
             logging.debug(

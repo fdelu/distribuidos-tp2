@@ -28,4 +28,4 @@ class DuplicateFilterSimple(DuplicateFilter[IN], Generic[IN]):
         self.comms.handle_package(package, delivery_tag)
 
     def __deserialize_package(self, message: str) -> Package[IN]:
-        return deserialize(Package[self.in_type], message)  # type: ignore
+        return deserialize(Package[self.comms.in_type], message)  # type: ignore

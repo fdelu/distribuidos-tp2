@@ -19,6 +19,8 @@ __all__ = ["DuplicateFilter"]
 
 class FilterConfig(Protocol):
     filters_exchange: str
+    in_others_queue_format: str
+    filters_routing_keys_format: list[str]
     host_count: int
 
 
@@ -38,6 +40,14 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
         super().__init__(package_handler)
         self.config = config
         self.pending_checks = {}
+
+    def load_definitions(self) -> None:
+        for i in range(self.config.host_count):
+            q = self.config.in_others_queue_format.format(host_id=i)
+            for rk in self.config.filters_routing_keys_format:
+                self.comms.channel.queue_bind(
+                    q, self.config.filters_exchange, rk.format(host_id=i)
+                )
 
     def received_message(
         self, data: str, delivery_tag: int | None, redelivered: bool
@@ -77,6 +87,10 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
     def handle_check_processed(
         self, check: CheckProcessed, delivery_tag: int | None, redelivered: bool
     ) -> None:
+        if check.host_id == self.comms.id:
+            self._ack(delivery_tag)
+            return
+
         response = CheckProcessedResponse(
             check.msg_id, check.msg_id in self.received_messages, self.comms.id
         )
@@ -138,7 +152,7 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
         return package.msg_id is not None and package.msg_id in self.received_messages
 
     def __deserialize_package(self, message: str) -> CommsMessage[IN]:
-        return deserialize(CommsMessage[self.in_type], message)  # type: ignore
+        return deserialize(CommsMessage[self.comms.in_type], message)  # type: ignore
 
     def __process(self, package: Package[IN], delivery_tag: int | None) -> None:
         if package.msg_id:

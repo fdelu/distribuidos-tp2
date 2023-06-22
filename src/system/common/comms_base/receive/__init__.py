@@ -16,7 +16,7 @@ from shared.serde import deserialize, get_generic_types
 from common.config_base import ConfigProtocol
 from ..protocol import TIMEOUT_SECONDS, CommsProtocol
 
-IN = TypeVar("IN")
+IN = TypeVar("IN", contravariant=True)
 STATUS_FILE = os.getenv("STATUS_FILE", "status.txt")
 T = TypeVar("T")
 
@@ -176,18 +176,12 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Deserializes the message and calls the callback if it's set.
         Should acknowledge the message.
         """
-        decoded = self.__deserialize_record(message)
+        decoded = deserialize(self.in_type, message)  # type: ignore
         if self.callback is not None:
             self.callback(decoded)
 
         if delivery_tag is not None:
             self.channel.basic_ack(delivery_tag)
-
-    def __deserialize_record(self, message: str) -> IN:
-        """
-        Deserializes a record from the given message
-        """
-        return deserialize(self.in_type, message)  # type: ignore
 
     def __stop(self) -> None:
         """

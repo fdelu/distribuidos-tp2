@@ -2,8 +2,11 @@ from typing import Generic
 
 from common.messages.comms import Package
 
-from . import CommsReceive, IN, ReceiveConfig
+from .. import CommsReceive, IN, ReceiveConfig
 from .duplicate.simple import DuplicateFilter, DuplicateFilterSimple
+from .duplicate.distributed import DuplicateFilterDistributed, FilterConfig
+
+__all__ = ["FilterConfig"]
 
 
 class ReliableReceive(Generic[IN], CommsReceive[IN]):
@@ -13,11 +16,17 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
     def __init__(
         self,
         config: ReceiveConfig,
-        duplicate_filter: DuplicateFilter[IN] | None = None,
+        distributed_filter_config: FilterConfig | None = None,
         with_interrupt: bool = True,
     ) -> None:
         super().__init__(config, with_interrupt)
-        self.duplicate_filter = duplicate_filter
+        if distributed_filter_config:
+            self.duplicate_filter = DuplicateFilterDistributed(
+                self, distributed_filter_config
+            )
+            self.duplicate_filter.load_definitions()
+        else:
+            self.duplicate_filter = None
 
     def current_message_id(self) -> str | None:
         return self.current_msg_id
@@ -35,7 +44,7 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
         self, data: str, delivery_tag: int | None, redelivered: bool
     ) -> None:
         if self.duplicate_filter is None:
-            self.duplicate_filter = DuplicateFilterSimple[self.in_type](self)  # type: ignore # noqa
+            self.duplicate_filter = DuplicateFilterSimple(self)
         self.duplicate_filter.received_message(data, delivery_tag, redelivered)
 
     def _post_process(self, delivery_tag: int | None) -> None:

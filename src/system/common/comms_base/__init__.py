@@ -4,7 +4,10 @@ from .base import SystemCommunicationBase
 from .send import CommsSend
 from .send.reliable import ReliableComms
 from .receive import CommsReceive
-from .receive.reliable import ReliableReceive
+from .receive.reliable import (
+    ReliableReceive,
+    FilterConfig,
+)
 from .util import setup_job_queues
 
 __all__ = [
@@ -15,6 +18,5 @@ __all__ = [
     "ReliableReceive",
     "ReliableComms",
     "setup_job_queues",
+    "FilterConfig",
 ]
-
-ID_FILE_PATH = "/host_id.txt"

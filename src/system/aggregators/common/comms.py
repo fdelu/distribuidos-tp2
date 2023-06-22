@@ -9,16 +9,17 @@ from .config import Config
 
 
 class AggregatorComms(
-    Generic[GenericJoinedTrip, GenericAggregatedRecord],
     ReliableComms[
-        Message[GenericJoinedTrip | End | Start], Message[GenericAggregatedRecord | End]
+        Message[GenericJoinedTrip | End | Start],
+        Message[GenericAggregatedRecord | End],
     ],
+    Generic[GenericJoinedTrip, GenericAggregatedRecord],
 ):
     config: Config
 
     def __init__(self, config: Config) -> None:
         self.config = config
-        super().__init__(config)
+        super().__init__(config, duplicate_filter_config=config)
 
     def _load_definitions(self) -> None:
         # in

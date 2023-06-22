@@ -7,13 +7,13 @@ from common.messages.comms import Package
 from common.persistence.persistor import StatePersistor
 
 from ..receive import ReceiveConfig
-from ..receive.reliable import ReliableReceive
+from ..receive.reliable import ReliableReceive, FilterConfig
 from ..base import SystemCommunicationBase
 from ..protocol import OUT
 
 
 PENDING_MESSAGES_KEY = "_pending_messages"
-IN = TypeVar("IN")
+IN = TypeVar("IN", contravariant=True)
 
 
 class _Unset:
@@ -32,8 +32,12 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
     packages: dict[tuple[str, str], Package[OUT]]
     routing_count: int = 0
 
-    def __init__(self, config: ReceiveConfig) -> None:
-        super().__init__(config)
+    def __init__(
+        self,
+        config: ReceiveConfig,
+        duplicate_filter_config: FilterConfig | None = None,
+    ) -> None:
+        super().__init__(config, duplicate_filter_config)
         self.packages = {}
         self.pending_packages = {}
 

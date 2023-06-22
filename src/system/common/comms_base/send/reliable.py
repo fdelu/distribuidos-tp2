@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
-from shared.serde import serialize
+from shared.serde import serialize, get_generic_types
 
 from common.messages import Package
 from common.persistence.persistor import StatePersistor
@@ -12,7 +12,7 @@ from ..base import SystemCommunicationBase
 from ..protocol import OUT
 
 
-LAST_SENT_KEY = "_last_sent"
+PENDING_MESSAGES_KEY = "_pending_messages"
 IN = TypeVar("IN")
 
 
@@ -27,17 +27,15 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
     done.
     """
 
-    last_messages: list[tuple[str, str, str]]  # exchange, routing key, message
-    packages: dict[tuple[str, str], "Package[OUT]"]  # exchange, routing_key -> batch
+    # exchange, routing_key -> batch
+    pending_packages: dict[tuple[str, str], Package[OUT]]
+    packages: dict[tuple[str, str], Package[OUT]]
     routing_count: int = 0
 
     def __init__(self, config: ReceiveConfig) -> None:
         super().__init__(config)
         self.packages = {}
-        self.last_messages = (
-            StatePersistor().load(LAST_SENT_KEY, list[tuple[str, str, str]]) or []
-        )
-        self.__send_messages()
+        self.pending_packages = {}
 
     def send(self, record: OUT, force_msg_id: str | None | _Unset = _Unset()) -> None:
         key = self._get_routing_details(record)
@@ -53,6 +51,10 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
             self.__save_state()
             self.__send_messages()
 
+    def start_consuming(self) -> None:
+        self.__send_pending()
+        super().start_consuming()
+
     def _process_message(self, message: str) -> None:
         super()._process_message(message)
         self.__save_state()
@@ -62,8 +64,8 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
         self.__send_messages()
 
     def __save_state(self) -> None:
-        self.__prepare_messages()
-        StatePersistor().store(LAST_SENT_KEY, self.last_messages)
+        self.__prepare_send()
+        StatePersistor().store(PENDING_MESSAGES_KEY, self.pending_packages)
         StatePersistor().save()
 
     def __next_message_id(self) -> str | None:
@@ -79,17 +81,27 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
         self.routing_count += 1
         return ret
 
-    def __prepare_messages(self) -> None:
-        self.last_messages = [
-            (*key, serialize(package)) for key, package in self.packages.items()
-        ]
-        self.packages.clear()
+    def __prepare_send(self) -> None:
+        self.pending_packages = self.packages
+        self.packages = {}
         self.routing_count = 0
 
-    def __send_messages(self) -> None:
-        for exchange, routing_key, message in self.last_messages:
-            self.channel.basic_publish(exchange, routing_key, message.encode())
-        self.last_messages = []
+    def __send_messages(self, maybe_redelivered: bool = False) -> None:
+        for (exchange, routing_key), package in self.pending_packages.items():
+            package.maybe_redelivered = maybe_redelivered
+            self.channel.basic_publish(
+                exchange, routing_key, serialize(package).encode()
+            )
+        self.pending_packages = {}
+
+    def __send_pending(self) -> None:
+        out_type = get_generic_types(self, ReliableComms)[1]
+        pending: dict[tuple[str, str], Package[OUT]] | None = (
+            StatePersistor().load(PENDING_MESSAGES_KEY, dict[tuple[str, str], out_type]) or []  # type: ignore # noqa
+        )
+        if pending:
+            self.pending_packages = pending
+            self.__send_messages(maybe_redelivered=True)
 
     @abstractmethod
     def _get_routing_details(self, record: OUT) -> tuple[str, str]:

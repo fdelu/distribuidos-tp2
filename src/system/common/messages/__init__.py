@@ -24,6 +24,7 @@ class WithRoutingKey(Protocol):
 class Package(Generic[T]):
     messages: list[T]
     msg_id: str | None
+    maybe_redelivered: bool = False
 
 
 P = TypeVar("P", covariant=True, bound=WithRoutingKey)

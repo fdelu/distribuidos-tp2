@@ -204,6 +204,9 @@ services:
       - type: bind
         source: ./config.ini
         target: /config.ini
+      - type: bind
+        source: ./compose.yaml
+        target: /app/compose.yaml
     env_file: ./.env
     depends_on:
       rabbitmq:

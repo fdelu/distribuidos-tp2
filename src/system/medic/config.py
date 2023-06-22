@@ -8,6 +8,5 @@ class Config(ConfigBase):
 
     def __init__(self) -> None:
         super().__init__("medic")
-        # self.medic_scale = int(cast(int, os.environ.get("MEDIC_SCALE")))
         self.medic_scale = self.get_int("MEDIC_SCALE")
         self.prefetch_count = self.get_int("PrefetchCount")

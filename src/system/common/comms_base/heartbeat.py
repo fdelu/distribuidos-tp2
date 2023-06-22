@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from shared.serde import serialize
-from . import SystemCommunicationBase
+from .system_communication_base import SystemCommunicationBase
 from ..config_base import ConfigBase
 
 

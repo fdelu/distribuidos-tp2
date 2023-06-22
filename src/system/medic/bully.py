@@ -13,6 +13,7 @@ import logging
 from .system_communication import SystemCommunication
 import subprocess
 from common.comms_base.util import set_healthy
+from .compose_parser import get_containers
 
 
 class HealthMonitor:
@@ -23,23 +24,33 @@ class HealthMonitor:
     timer_dict: dict[str, Any]
     container_list: list[str]
 
-    def __init__(self, comms: SystemCommunication, id: int, medic_scale: int) -> None:
+    def __init__(self, comms: SystemCommunication, id: int, config: Config) -> None:
         self.comms = comms
         self.is_leader = True
         self.started = False
         self.id = id
         self.timer_dict = {}
-        self.container_list = self.get_medic_list(id, medic_scale)
+        self.container_list = get_containers(config, id)
+        # logging.info(f"container list: {self.container_list}")
         # TODO: auto start main medic
-        # docker compose ps --all --format json
-        # ignore client and rabbitmq
+
+    def parse_container_list(self, containers: list[str]) -> list[str]:
+        container_list = []
+        for container in containers:
+            if "client" in container:
+                continue
+            if "rabbitmq" in container:
+                continue
+            if "distribuidos_tp2" in container:
+                container_list.append(container)
+        return container_list
 
     def get_medic_list(self, id: int, medic_scale: int) -> list[str]:
         medic_list = []
         for i in range(1, medic_scale + 1):
             if i == id:
                 continue
-            medic_list.append(f"distribuidos-tp2-medic-{i}")
+            medic_list.append(f"distribuidos_tp2-medic-{i}")
         return medic_list
 
     def start_timers(self) -> None:
@@ -69,7 +80,7 @@ class HealthMonitor:
 
     def send_heartbeat(self) -> None:
         if not self.is_leader:
-            self.comms.send(AliveMessage(f"distribuidos-tp2-medic-{self.id}"))
+            self.comms.send(AliveMessage(self.comms.name))
             self.comms.set_timer(self.send_heartbeat, 1)  # time between heartbeats
 
     def start_heartbeat(self) -> None:
@@ -91,7 +102,6 @@ class HealthMonitor:
         logging.info(f"Container {container_name} dead")
         subprocess.Popen(["docker", "start", container_name])
         self.restart_container_timer(container_name, 10)
-        logging.info(f"Container resurrected {container_name}")
         # time to consider a container dead after restarting it
 
 
@@ -121,7 +131,7 @@ class Bully:
         self.coordination_timer_id = None
         self.leader_checker = LeaderChecker(self, self.comms)
         self.leader_heartbeat = LeaderHeartbeat(self.comms, self.id)
-        self.health_monitor = HealthMonitor(self.comms, self.id, config.medic_scale)
+        self.health_monitor = HealthMonitor(self.comms, self.id, config)
         self.awnser_timer_id = None
 
     def is_in_election(self) -> bool:
@@ -132,10 +142,6 @@ class Bully:
 
     def run(self) -> None:
         logging.info("Starting bully")
-        # if self.id == self.medic_scale:
-        #     self.start_election()
-        # else:
-        #     self.comms.set_timer(self.start_election_no_leader_yet, 3)
         self.start_election()
         self.comms.set_callback(self.handle_message)
         self.comms._start_consuming_from(self.comms.bully_queue)
@@ -199,7 +205,7 @@ class Bully:
         if self.awnser_timer_id is not None:
             self.comms.cancel_timer(self.awnser_timer_id)
             self.awnser_timer_id = None
-        self.coordination_timer_id = self.comms.set_timer(self.__timer_coordinator, 10)
+        self.coordination_timer_id = self.comms.set_timer(self.__timer_coordinator, 15)
         # time that waits for a CoordinatorMessage or restart election
 
     def handle_coordinator(self, message: CoordinatorMessage) -> None:

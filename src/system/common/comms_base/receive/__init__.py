@@ -167,22 +167,21 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             lambda: self.__check_messages_left(queue, callback, **queue_kwargs),
         )
 
-    def _process_message(self, message: str) -> None:
+    def _process_message(
+        self, message: str, delivery_tag: int | None, redelivered: bool
+    ) -> None:
         """
         Processes a message. Can be overridden by subclasses.
 
         Deserializes the message and calls the callback if it's set.
+        Should acknowledge the message.
         """
         decoded = self.__deserialize_record(message)
         if self.callback is not None:
             self.callback(decoded)
 
-    def _post_process(self) -> None:
-        """
-        Post-processes the message. Executed after sending the acknowledgement.
-        Can be overridden by subclasses.
-        """
-        pass
+        if delivery_tag is not None:
+            self.channel.basic_ack(delivery_tag)
 
     def __deserialize_record(self, message: str) -> IN:
         """
@@ -242,12 +241,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         if timeout_info is not None:
             timeout_info.last_message_on = time.time()
 
-        self._process_message(body.decode())
-
-        if method.delivery_tag is not None:
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-
-        self._post_process()
+        self._process_message(body.decode(), method.delivery_tag, method.redelivered)
 
     def __timeout_handler(self, info: "TimeoutInfo") -> None:
         """

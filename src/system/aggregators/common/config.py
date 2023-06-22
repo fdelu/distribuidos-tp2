@@ -17,7 +17,7 @@ class Config(ConfigBase):
     def __init__(self, name: str) -> None:
         super().__init__(f"aggregators.{name}")
         self.send_interval_seconds = self.get_float("SendIntervalSeconds")
-        self.joiners_count = self.get_int("JoinersCount")
+        self.joiners_count = self.get_int(f"{name.upper()}_JOINERS_SCALE")
         self.prefetch_count = self.get_int("PrefetchCount")
         self.name = name
 

@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 
 from shared.serde import serialize, get_generic_types
 
-from common.messages import Package
+from common.messages.comms import Package
 from common.persistence.persistor import StatePersistor
 
 from ..receive import ReceiveConfig
@@ -55,12 +55,9 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
         self.__send_pending()
         super().start_consuming()
 
-    def _process_message(self, message: str) -> None:
-        super()._process_message(message)
+    def _post_process(self, delivery_tag: int | None) -> None:
         self.__save_state()
-
-    def _post_process(self) -> None:
-        super()._post_process()
+        super()._post_process(delivery_tag)
         self.__send_messages()
 
     def __save_state(self) -> None:

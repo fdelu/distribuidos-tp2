@@ -1,5 +1,6 @@
 from common.comms_base import SystemCommunicationBase, CommsSend, setup_job_queues
-from common.messages import Package, Message
+from common.messages import Message
+from common.messages.comms import Package
 from common.messages.raw import RawRecord
 from common.persistence import StatePersistor
 

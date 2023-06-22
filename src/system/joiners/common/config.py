@@ -16,7 +16,7 @@ class Config(ConfigBase):
 
     def __init__(self, name: str) -> None:
         super().__init__(ConfigBase.subsection(SECTION, name))
-        self.parsers_count = self.get_int("ParsersCount")
+        self.parsers_count = self.get_int("PARSERS_SCALE")
         self.prefetch_count = self.get_int("PrefetchCount")
 
         self.in_exchange = self.get("InExchange")

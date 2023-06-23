@@ -1,23 +1,27 @@
+import logging
+from typing import Any
+from .config import Config
 from .system_communication import SystemCommunication
 from .messages.bully_messages import AliveLeaderMessage
-from typing import Any
-import logging
 
 
 class LeaderChecker:
     comms: SystemCommunication
     bully: Any
     heart_beat_timer_id: Any | None
+    config: Config
 
-    def __init__(self, bully: Any, comms: SystemCommunication) -> None:
+    def __init__(self, bully: Any, comms: SystemCommunication, config: Config) -> None:
         self.heart_beat_timer_id = None
         self.bully = bully
         self.comms = comms
+        self.config = config
 
     def handle_heartbeat(self) -> None:
         if self.heart_beat_timer_id is not None:
             self.comms.cancel_timer(self.heart_beat_timer_id)
-        self.heart_beat_timer_id = self.comms.set_timer(self.leader_dead, 5)
+        self.heart_beat_timer_id = self.comms.set_timer(
+            self.leader_dead, self.config.leader_heartbeat_timeout)
         # TODO: may be good to add variance to this time so that not all
         # medics send their start election at the same time
 
@@ -35,11 +39,13 @@ class LeaderHeartbeat:
     send_heartbeat: bool
     comms: SystemCommunication
     id: int
+    config: Config
 
-    def __init__(self, comms: SystemCommunication, id: int) -> None:
+    def __init__(self, comms: SystemCommunication, id: int, config: Config) -> None:
         self.send_heartbeat = False
         self.comms = comms
         self.id = id
+        self.config = config
 
     def start_hearbeat(self) -> None:
         self.send_heartbeat = True
@@ -48,7 +54,8 @@ class LeaderHeartbeat:
     def send_heartbeat_message(self) -> None:
         if self.send_heartbeat:
             self.comms.send(AliveLeaderMessage(int(self.comms.id)))
-            self.comms.set_timer(self.send_heartbeat_message, 1)
+            self.comms.set_timer(
+                self.send_heartbeat_message, self.config.leader_heartbeat_interval)
             # time between leader heartbeats
 
     def stop_hearbeat(self) -> None:

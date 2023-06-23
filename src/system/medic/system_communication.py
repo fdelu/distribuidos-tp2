@@ -1,5 +1,6 @@
-from common.comms_base import SystemCommunicationBase, CommsReceive, CommsSend
+import logging
 from .config import Config
+from common.comms_base import SystemCommunicationBase, CommsReceive, CommsSend
 from .messages.bully_messages import (
     BullyMessage,
     ElectionMessage,
@@ -8,13 +9,12 @@ from .messages.bully_messages import (
     AliveMessage,
     AliveLeaderMessage,
 )
-import logging
 
 
 class SystemCommunication(
     CommsReceive[BullyMessage], CommsSend[BullyMessage], SystemCommunicationBase
 ):
-    EXCHANGE = "medics"
+    EXCHANGE: str
     bully_queue: str
     config: Config
     medic_scale: int
@@ -22,6 +22,7 @@ class SystemCommunication(
     def __init__(self, config: Config) -> None:
         self.bully_queue = f"bully_{self.id}"
         self.medic_scale = config.medic_scale
+        self.EXCHANGE = config.heartbeat_exchange
         super().__init__(config)
 
     def _load_definitions(self) -> None:
@@ -29,10 +30,12 @@ class SystemCommunication(
         self.channel.queue_bind(self.bully_queue, self.EXCHANGE, f"#.{self.id}.#")
 
     def bind_heartbeat_route(self) -> None:
-        self.channel.queue_bind(self.bully_queue, self.EXCHANGE, "heartbeat")
+        self.channel.queue_bind(self.bully_queue, self.EXCHANGE,
+                                self.config.heartbeat_routing_key)
 
     def unbind_heartbeat_route(self) -> None:
-        self.channel.queue_unbind(self.bully_queue, self.EXCHANGE, "heartbeat")
+        self.channel.queue_unbind(self.bully_queue, self.EXCHANGE,
+                                  self.config.heartbeat_routing_key)
 
     def create_routing_key(self, start: int, end: int) -> str:
         routing_key = ""
@@ -58,6 +61,6 @@ class SystemCommunication(
             routing_key = self.create_routing_key(1, self.medic_scale)
             # logging.info(f"Alive leader message to route: {routing_key}")
         elif isinstance(record, AliveMessage):
-            routing_key = "heartbeat"
+            routing_key = self.config.heartbeat_routing_key
             logging.debug(f"Alive message to route: {routing_key}")
         return self.EXCHANGE, routing_key

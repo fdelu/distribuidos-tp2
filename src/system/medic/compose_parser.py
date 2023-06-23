@@ -3,10 +3,12 @@ import yaml
 from typing import Any, cast
 from .config import Config
 
+COMPOSE_FILE = "compose.yaml"
+
 
 def parse_compose() -> dict[str, Any]:
     # get the json of the compose file
-    with open("compose.yaml", "r") as stream:
+    with open(COMPOSE_FILE, "r") as stream:
         try:
             return yaml.safe_load(stream)
         except yaml.YAMLError as exc:

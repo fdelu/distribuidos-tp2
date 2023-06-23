@@ -1,7 +1,7 @@
 import logging
 from shared.log import setup_logs
-from .bully import Bully
 from .config import Config
+from .bully import Bully
 
 
 def main() -> None:

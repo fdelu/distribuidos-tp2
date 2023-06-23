@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from typing import Callable
 
 from shared.serde import serialize
 from shared.messages import RecordStart, Ack, LinesBatch, RecordType as RecordTypeBase
@@ -7,7 +8,7 @@ from shared.socket import SocketStopWrapper
 
 from common.messages import RecordType, End, Start
 from common.messages.raw import RawLines
-from common.persistence import StatePersistor
+from common.persistence import StatePersistor, WithState
 
 from ..config import Config
 from ..comms import SystemCommunication
@@ -22,14 +23,15 @@ class State:
     # (record_type, city) -> latest batch number
     latest_batchs: dict[tuple[RecordTypeBase, str], int]
     latest_start: RecordStart | None = None
+    all_sent: bool = False
 
 
-class ClientHandler:
+class ClientHandler(WithState[State]):
     job_id: str
     config: Config
     comms: SystemCommunication
     socket: SocketStopWrapper
-    state: State
+    on_finish: Callable[[str], None]
 
     def __init__(
         self,
@@ -37,35 +39,34 @@ class ClientHandler:
         config: Config,
         comms: SystemCommunication,
         socket: SocketStopWrapper,
+        on_finish: Callable[[str], None],
     ) -> None:
+        super().__init__(State(Phase(job_id), {}))
         self.job_id = job_id
         self.config = config
         self.comms = comms
         self.socket = socket
-        self.state = StatePersistor().load(job_id, State) or State(
-            Phase(self.job_id), {}
-        )
+        self.restore_from(job_id)
+        self.on_finish = on_finish
+        if not self.state.all_sent:
+            comms.setup_job_queue(job_id)
+            self.comms.send_msg(self.job_id, Start())
+            self.comms.flush()
 
-        logging.info(f"Starting job {job_id} - Sending Start to parsers")
-        comms.setup_job_queue(job_id)
-        self.comms.send_msg(self.job_id, Start())
-        self.comms.flush()
-
-    def handle_start(self, msg: RecordStart) -> bool:
+    def handle_start(self, msg: RecordStart) -> None:
         if not self.state.phase.validate_phase(msg):
-            return False
+            return
         self.latest_start = msg
         self.state.latest_batchs[(msg.record_type, msg.city)] = -1
         self.__save()
         self.__ack()
-        return True
 
-    def handle_batch(self, msg: LinesBatch) -> bool:
+    def handle_batch(self, msg: LinesBatch) -> None:
         if self.latest_start is None:
             logging.warn(
                 f"Job {self.job_id} | Received a batch of lines without its start"
             )
-            return False
+            return
         count = 0
         if not self.__already_processed(msg.batch_number):
             raw = RawLines(
@@ -80,21 +81,21 @@ class ClientHandler:
             self.comms.send_msg(self.job_id, raw, msg_id)
         self.__save()
         self.__ack(msg.batch_number)
-        return True
 
-    def handle_all_sent(self) -> bool:
+    def handle_all_sent(self) -> None:
         self.comms.send_msg(self.job_id, End())
         StatePersistor().remove(self.job_id)
+        self.state.all_sent = True
         self.comms.flush()
-        self.__ack()
+        self.on_finish(self.job_id)
         logging.info(f"Job {self.job_id} | Finished sending input data")
-        return False
+        self.__ack()
 
     def __ack(self, batch_number: int | None = None) -> None:
         self.socket.send(serialize(Ack(batch_number)))
 
     def __save(self) -> None:
-        StatePersistor().store(self.job_id, self.state)
+        self.store_to(self.job_id)
         self.comms.flush()
 
     def __already_processed(self, batch_number: int) -> bool:

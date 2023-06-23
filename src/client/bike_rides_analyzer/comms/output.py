@@ -1,6 +1,9 @@
 from threading import Event
 import zmq
 
+from shared.messages import ServerMessagesOutput
+from shared.serde import deserialize
+
 from . import Comms
 from .socket import ClientSocket
 from ..config import BikeRidesAnalyzerConfig
@@ -16,3 +19,6 @@ class CommsOutput(Comms):
     ) -> None:
         socket = ClientSocket(context, config.output_address, interrupt_event)
         super().__init__(socket, job_id)
+
+    def recv(self) -> ServerMessagesOutput:
+        return deserialize(ServerMessagesOutput, self.socket.recv())

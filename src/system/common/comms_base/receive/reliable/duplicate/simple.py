@@ -18,7 +18,8 @@ class DuplicateFilterSimple(DuplicateFilter[IN], Generic[IN]):
         if package.msg_id:
             if package.msg_id in self.received_messages:
                 logging.warn(
-                    f"Already received {package.msg_id}\n{str(package.messages)[:100]}"
+                    f"Already received {package.msg_id} -"
+                    f" {str(package.messages)[:100]}..."
                 )
                 self._ack(delivery_tag)
                 return

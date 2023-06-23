@@ -28,7 +28,7 @@ class SystemCommunicationBase(CommsProtocol):
 
     def __init__(self, config: ConfigProtocol) -> None:
         self.__id = get_host_id()
-        logging.info(f"Host ID: {self.id}")
+        logging.info(f"Starting. Host ID: {self.id}")
         self.__conn = BlockingConnection(ConnectionParameters(host=config.rabbit_host))
         self.__ch = self.connection.channel()
 

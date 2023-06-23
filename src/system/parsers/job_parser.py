@@ -34,6 +34,7 @@ class JobParser(WithState[State]):
         self.comms = comms
         self.job_id = job_id
         self.on_finish = on_finish
+        self.restore_state()
         self.comms.start_consuming_job(self.job_id)
 
     def restore_state(self) -> None:
@@ -98,8 +99,8 @@ class JobParser(WithState[State]):
         )
         self.comms.stop_consuming_job(self.job_id)
         StatePersistor().remove(self.job_id)
-        self.comms.send(Message(self.job_id, End(self.comms.id)))
         self.on_finish(self)
+        self.comms.send(Message(self.job_id, End(self.comms.id)))
 
     def __send_start(self) -> None:
         self.comms.send(Message(self.job_id, Start(self.comms.id)), force_msg_id=None)

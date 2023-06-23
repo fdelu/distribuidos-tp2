@@ -55,8 +55,8 @@ class TripsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip]):
         self.comms.stop_consuming_trips(self.job_id)
         StatePersistor().remove(self._control_store_key())
         StatePersistor().remove(self._joiner_store_key())
-        self._send(End(self.comms.id))
         self.on_finish(self.job_id)
+        self._send(End(self.comms.id))
 
     def __warn(self, name: str) -> None:
         logging.warn(

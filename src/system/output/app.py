@@ -18,7 +18,6 @@ def main() -> None:
     stats = StatsStorage()
     stat_receiver = StatsReceiver(config, stats)
     client_handler = ClientHandler(config, context, stats)
-    stat_receiver.add_listener(client_handler)
 
     client_handler.start()
     stat_receiver.run()

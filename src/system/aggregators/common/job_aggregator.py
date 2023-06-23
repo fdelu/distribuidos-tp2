@@ -83,8 +83,8 @@ class JobAggregator(
         self.comms.stop_consuming_trips(self.job_id)
         StatePersistor().remove(self._aggregator_store_key())
         StatePersistor().remove(self._control_store_key())
-        self.send(End(self.comms.id))
         self.on_finished(self.job_id)
+        self.send(End(self.comms.id))
 
     def send(self, record: GenericAggregatedRecord | End) -> None:
         self.comms.send(Message(self.job_id, record))

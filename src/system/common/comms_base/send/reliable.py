@@ -52,6 +52,7 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
 
         self.packages[key] = package
         if package.msg_id in (None, force_msg_id):
+            self.__prepare_send()
             self.__save_state()
             self.__send_messages()
 
@@ -60,12 +61,13 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
         super().start_consuming()
 
     def _post_process(self, delivery_tag: int | None) -> None:
+        self.__prepare_send()
         self.__save_state()
         super()._post_process(delivery_tag)
         self.__send_messages()
+        self.__save_state()
 
     def __save_state(self) -> None:
-        self.__prepare_send()
         StatePersistor().store(PENDING_MESSAGES_KEY, self.pending_packages)
         StatePersistor().save()
 

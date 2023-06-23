@@ -65,10 +65,10 @@ class JobReducer(Generic[GenericAggregatedRecord], WithState[State]):
 
         StatePersistor().remove(self._control_store_key())
         StatePersistor().remove(self._joiner_store_key())
+        self.on_finish(self)
         self.comms.send(
             Message(self.job_id, self.reducer.get_value()), force_msg_id=None
         )
-        self.on_finish(self)
 
     def store_state(self) -> None:
         self.store_to(self._control_store_key())

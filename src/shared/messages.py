@@ -84,5 +84,12 @@ class CityAverages:
         return StatType.CITY
 
 
+@dataclass
+class NotAvailable:
+    ...
+
+
 Stat = RainAverages | YearCounts | CityAverages
-ServerMessages = Ack | Stat
+ServerMessagesInput = Ack
+ServerMessagesOutput = NotAvailable | Stat
+ServerMessages = ServerMessagesInput | ServerMessagesOutput

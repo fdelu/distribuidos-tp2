@@ -3,7 +3,14 @@ from typing import Iterable
 from threading import Event
 import zmq
 
-from shared.messages import RecordStart, LinesBatch, RecordType
+from shared.messages import (
+    RecordStart,
+    LinesBatch,
+    RecordType,
+    ServerMessagesInput,
+    Ack,
+)
+from shared.serde import deserialize
 
 from . import Comms
 from .socket import ClientSocket
@@ -23,6 +30,9 @@ class CommsInput(Comms):
         socket = ClientSocket(context, config.input_address, interrupt_event)
         super().__init__(socket, job_id)
         self.batch_size = config.batch_size
+
+    def recv(self) -> ServerMessagesInput:
+        return deserialize(ServerMessagesInput, self.socket.recv())
 
     def send_batchs(
         self, city: str, all_lines: Iterable[str], record_type: RecordType
@@ -57,3 +67,10 @@ class CommsInput(Comms):
                 batch = []
         if batch:
             yield batch
+
+    def recv_ack(self, batch_number: int | None = None) -> None:
+        ack = self.recv()
+        if not isinstance(ack, Ack) or (
+            batch_number is not None and ack.batch_number != batch_number
+        ):
+            raise RuntimeError("Did not receive ACK for this message")

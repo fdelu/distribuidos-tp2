@@ -111,12 +111,15 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             self._ack(delivery_tag)
             return
 
-        response = CheckProcessedResponse(
-            check.msg_id, check.msg_id in self.received_messages, self.comms.id
+        processed = check.msg_id in self.received_messages
+        logging.debug(
+            f"Received CheckProcessed from host {check.host_id} for {check.msg_id}."
+            f" Processed locally: {processed}"
         )
+        response = CheckProcessedResponse(check.msg_id, processed, self.comms.id)
         self.comms.channel.basic_publish(
             self.config.filters_exchange,
-            f"{response.get_routing_key()}.{self.comms.id}",
+            f"{response.get_routing_key()}.{check.host_id}",
             serialize(response).encode(),
         )
         self._ack(delivery_tag)
@@ -145,6 +148,10 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             return
 
         check.responses.add(response.host_id)
+        logging.debug(
+            f"Received negative CheckProcessedResponse from host {response.host_id} for"
+            f" {response.msg_id} ({len(check.responses)}/{self.config.host_count - 1})"
+        )
         if len(check.responses) < self.config.host_count - 1:
             self._ack(delivery_tag)
             return

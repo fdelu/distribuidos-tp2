@@ -23,6 +23,7 @@ class SystemCommunication(
         self.bully_queue = f"bully_{self.id}"
         self.medic_scale = config.medic_scale
         self.EXCHANGE = config.heartbeat_exchange
+        self.config = config
         super().__init__(config)
 
     def _load_definitions(self) -> None:

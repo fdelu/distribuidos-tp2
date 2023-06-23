@@ -3,6 +3,7 @@ from typing import Any
 from .config import Config
 from .system_communication import SystemCommunication
 from .messages.bully_messages import AliveLeaderMessage
+from random import uniform
 
 
 class LeaderChecker:
@@ -21,8 +22,8 @@ class LeaderChecker:
         if self.heart_beat_timer_id is not None:
             self.comms.cancel_timer(self.heart_beat_timer_id)
         self.heart_beat_timer_id = self.comms.set_timer(
-            self.leader_dead, self.config.leader_heartbeat_timeout)
-        # TODO: may be good to add variance to this time so that not all
+            self.leader_dead, self.config.leader_heartbeat_timeout + uniform(0, 2))
+        # adds variance to this time so that not all
         # medics send their start election at the same time
 
     def leader_dead(self) -> None:

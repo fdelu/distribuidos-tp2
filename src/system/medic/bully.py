@@ -34,7 +34,7 @@ class HealthMonitor:
         self.container_list = get_containers(config, id)
         self.config = config
         # logging.info(f"container list: {self.container_list}")
-        # TODO: auto start main medic
+        # TODO: maybe auto start main medic
 
     def start_timers(self) -> None:
         # start a timer for each container
@@ -202,17 +202,17 @@ class Bully:
 
     def handle_coordinator(self, message: CoordinatorMessage) -> None:
         logging.info(f"Election won by medic {message.id_coordinator}")
+        if self.coordination_timer_id is not None:
+            self.comms.cancel_timer(self.coordination_timer_id)
+            self.coordination_timer_id = None
+        if self.awnser_timer_id is not None:
+            self.comms.cancel_timer(self.awnser_timer_id)
+            self.awnser_timer_id = None
         self.current_leader = message.id_coordinator
         self.election_started = False
         self.is_leader = False
         self.health_monitor.im_not_leader()
         self.leader_heartbeat.stop_hearbeat()
-        if self.awnser_timer_id is not None:
-            self.comms.cancel_timer(self.awnser_timer_id)
-            self.awnser_timer_id = None
-        if self.coordination_timer_id is not None:
-            self.comms.cancel_timer(self.coordination_timer_id)
-            self.coordination_timer_id = None
 
     def handle_alive_leader(self, message: AliveLeaderMessage) -> None:
         self.leader_checker.handle_heartbeat()

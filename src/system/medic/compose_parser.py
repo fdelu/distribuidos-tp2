@@ -28,7 +28,7 @@ def get_replication_factor(service_compose: Any, config: Config) -> int:
         replica_env = cast(str, service_compose["deploy"]["replicas"])
         replica_strip = replica_env.split("{")[1].split("}")[0]
     except Exception as e:
-        logging.info(f"error getting replica factor: {e}")
+        logging.debug(f"error getting replica factor: {e}")
         return 1
     replica_int = config.get_int(replica_strip)
     return replica_int

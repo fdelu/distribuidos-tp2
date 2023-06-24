@@ -1,6 +1,8 @@
 from common.config_base import ConfigBase
+from common.util import singleton
 
 
+@singleton
 class Config(ConfigBase):
     address: str
 

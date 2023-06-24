@@ -22,12 +22,15 @@ class ParseHandler:
     def run(self) -> None:
         self.comms.set_callback(self.handle_record)
         self.comms.start_consuming()
+
+    def cleanup(self) -> None:
         self.comms.close()
 
     def finished(self, job: JobParser) -> None:
         logging.info(f"Finished job {job.job_id}")
         self.jobs.pop(job.job_id)
         self.job_tracker.finished_job(job.job_id)
+        self.comms.finished_job(job.job_id)
 
     def handle_record(self, msg: Message[RawRecord]) -> None:
         if msg.job_id in self.job_tracker.state.completed:

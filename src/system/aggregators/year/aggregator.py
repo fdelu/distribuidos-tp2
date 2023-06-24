@@ -16,16 +16,13 @@ class Counts:
 
 
 class YearAggregator(WithState[Counts]):
-    config: Config
-
-    def __init__(self, config: Config) -> None:
+    def __init__(self) -> None:
         super().__init__(Counts({}, {}))
-        self.config = config
 
     def handle_joined(self, trip: JoinedYearTrip) -> None:
-        if trip.year == self.config.year_base:
+        if trip.year == Config().year_base:
             self.__add_to(self.state.counts_year_base, trip)
-        elif trip.year == self.config.year_compared:
+        elif trip.year == Config().year_compared:
             self.__add_to(self.state.counts_year_compared, trip)
         else:
             logging.warning(f"Received trip from unexpected year: {trip.year}")

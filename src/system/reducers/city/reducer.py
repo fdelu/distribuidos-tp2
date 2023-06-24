@@ -8,11 +8,8 @@ Averages = dict[str, StationInfo]  # station name -> info
 
 
 class CityReducer(WithState[Averages]):
-    config: Config
-
-    def __init__(self, config: Config) -> None:
+    def __init__(self) -> None:
         super().__init__({})
-        self.config = config
 
     def handle_aggregated(self, avg: PartialCityAverages) -> None:
         for station, station_average in avg.distance_averages.items():
@@ -31,6 +28,6 @@ class CityReducer(WithState[Averages]):
     def get_value(self) -> StatsRecord:
         result = {}
         for name, average in self.state.items():
-            if average.average_distance >= self.config.min_distance_km:
+            if average.average_distance >= Config().min_distance_km:
                 result[name] = average.average_distance
         return CityAverages(result)

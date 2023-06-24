@@ -2,22 +2,22 @@ import logging
 from shared.log import setup_logs
 
 from common.messages.aggregated import PartialYearCounts
+from common.util import process_loop
 
 from ..common.reduction_handler import ReductionHandler
 from ..common.comms import ReducerComms
-from .year import YearReducer
 from .config import Config
+from .reducer import YearReducer
 
 
 def main() -> None:
-    config = Config()
-    setup_logs(config.log_level)
+    setup_logs(Config().log_level)
 
-    comms = ReducerComms[PartialYearCounts](config)
-    handler = ReductionHandler[PartialYearCounts](
-        comms, config, lambda: YearReducer(config)
+    process_loop(
+        lambda: ReductionHandler[PartialYearCounts](
+            ReducerComms[PartialYearCounts](Config()), Config(), lambda: YearReducer()
+        )
     )
-    handler.run()
     logging.info("Exiting gracefully")
 
 

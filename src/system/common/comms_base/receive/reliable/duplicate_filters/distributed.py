@@ -10,16 +10,15 @@ from common.messages.comms import (
     CheckProcessed,
     CheckProcessedResponse,
 )
-from common.persistence import StatePersistor
 
-from . import DuplicateFilter, IN, RECEIVED_MESSAGES_KEY, PackageComms
+from . import DuplicateFilter, IN, PackageComms
 
 __all__ = ["DuplicateFilter"]
 
 
 class FilterConfig(Protocol):
     filters_exchange: str
-    in_others_queue_format: str
+    filters_queue_format: str
     filters_routing_keys_format: list[str]
     host_count: int
 
@@ -44,11 +43,14 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
 
     def load_definitions(self) -> None:
         for i in range(1, self.config.host_count + 1):
-            q = self.config.in_others_queue_format.format(host_id=i)
+            q = self.config.filters_queue_format.format(host_id=i)
             for rk in self.config.filters_routing_keys_format:
+                self.comms.channel.queue_declare(q)
                 self.comms.channel.queue_bind(
                     q, self.config.filters_exchange, rk.format(host_id=i)
                 )
+        filters_queue = self.config.filters_queue_format.format(host_id=self.comms.id)
+        self.comms._start_consuming_from(filters_queue)
 
     def received_message(
         self, data: str, queue: str, delivery_tag: int | None, redelivered: bool
@@ -81,7 +83,7 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             self.__process(package, delivery_tag)
             return
 
-        if self.__processed_local(package):
+        if package.msg_id and self._was_processed(package.job_id, package.msg_id):
             logging.warn(
                 f"Received package {package.msg_id} already processed locally,"
                 " acknowledging"
@@ -111,12 +113,14 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             self._ack(delivery_tag)
             return
 
-        processed = check.msg_id in self.received_messages
+        processed = self._was_processed(check.job_id, check.msg_id)
         logging.debug(
-            f"Received CheckProcessed from host {check.host_id} for {check.msg_id}."
-            f" Processed locally: {processed}"
+            f"Job {check.job_id} | Received CheckProcessed from host"
+            f" {check.host_id} for {check.msg_id}. Processed locally: {processed}"
         )
-        response = CheckProcessedResponse(check.msg_id, processed, self.comms.id)
+        response = CheckProcessedResponse(
+            check.job_id, check.msg_id, processed, self.comms.id
+        )
         self.comms.channel.basic_publish(
             self.config.filters_exchange,
             f"{response.get_routing_key()}.{check.host_id}",
@@ -138,8 +142,9 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
 
         check = self.pending_checks[response.msg_id]
         if response.processed:
-            logging.warn(
-                f"Check finished: Package {check.package.msg_id} had been processed by"
+            logging.info(
+                f"Job {check.package.job_id} | Check finished: Package"
+                f" {check.package.msg_id} had been processed by"
                 f" {response.host_id}, acknowledging"
             )
             self.pending_checks.pop(response.msg_id)
@@ -149,15 +154,17 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
 
         check.responses.add(response.host_id)
         logging.debug(
-            f"Received negative CheckProcessedResponse from host {response.host_id} for"
+            f"Job {check.package.job_id} | Received negative CheckProcessedResponse"
+            f" from host {response.host_id} for"
             f" {response.msg_id} ({len(check.responses)}/{self.config.host_count - 1})"
         )
         if len(check.responses) < self.config.host_count - 1:
             self._ack(delivery_tag)
             return
 
-        logging.warn(
-            f"Check finished: Package {check.package.msg_id} hadn't been processed by"
+        logging.info(
+            f"Job {check.package.job_id} | Check finished: Package"
+            f" {check.package.msg_id} hadn't been processed by"
             " any other node, processing locally"
         )
         check = self.pending_checks.pop(response.msg_id)
@@ -171,21 +178,17 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             return
 
         self.pending_checks[msg.msg_id] = PendingCheck(queue, msg, set(), delivery_tag)
-        check = CheckProcessed(msg.msg_id, self.comms.id)
+        check = CheckProcessed(msg.job_id, msg.msg_id, self.comms.id)
         self.comms.channel.basic_publish(
             self.config.filters_exchange,
             check.get_routing_key(),
             serialize(check).encode(),
         )
 
-    def __processed_local(self, package: Package[IN]) -> bool:
-        return package.msg_id is not None and package.msg_id in self.received_messages
-
     def __deserialize_package(self, message: str) -> CommsMessage[IN]:
         return deserialize(CommsMessage[self.comms.in_type], message)  # type: ignore
 
     def __process(self, package: Package[IN], delivery_tag: int | None) -> None:
         if package.msg_id:
-            self.received_messages.add(package.msg_id)
-            StatePersistor().store(RECEIVED_MESSAGES_KEY, self.received_messages)
+            self._processed(package.job_id, package.msg_id)
         self.comms.handle_package(package, delivery_tag)

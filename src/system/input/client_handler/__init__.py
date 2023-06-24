@@ -2,15 +2,20 @@ import logging
 from dataclasses import dataclass
 from typing import Callable
 
-from shared.serde import serialize
-from shared.messages import RecordStart, Ack, LinesBatch, RecordType as RecordTypeBase
+from shared.messages import (
+    RecordStart,
+    Ack,
+    LinesBatch,
+    RecordType as RecordTypeBase,
+    ServerMessagesInput,
+    Error,
+)
 from shared.socket import SocketStopWrapper
 
 from common.messages import RecordType, End, Start
 from common.messages.raw import RawLines
 from common.persistence import StatePersistor, WithState
 
-from ..config import Config
 from ..comms import SystemCommunication
 from .phase import Phase
 
@@ -28,7 +33,6 @@ class State:
 
 class ClientHandler(WithState[State]):
     job_id: str
-    config: Config
     comms: SystemCommunication
     socket: SocketStopWrapper
     on_finish: Callable[[str], None]
@@ -36,14 +40,12 @@ class ClientHandler(WithState[State]):
     def __init__(
         self,
         job_id: str,
-        config: Config,
         comms: SystemCommunication,
         socket: SocketStopWrapper,
         on_finish: Callable[[str], None],
     ) -> None:
         super().__init__(State(Phase(job_id), {}))
         self.job_id = job_id
-        self.config = config
         self.comms = comms
         self.socket = socket
         self.restore_from(job_id)
@@ -53,20 +55,23 @@ class ClientHandler(WithState[State]):
             self.comms.send_msg(self.job_id, Start())
             self.comms.flush()
 
-    def handle_start(self, msg: RecordStart) -> None:
+    def handle_start(self, msg: RecordStart) -> ServerMessagesInput:
         if not self.state.phase.validate_phase(msg):
-            return
+            return Error("Invalid phase for this RecordStart")
         self.latest_start = msg
         self.state.latest_batchs[(msg.record_type, msg.city)] = -1
+        logging.info(
+            f"Job {self.job_id} | Receiving {msg.record_type}s from {msg.city}"
+        )
         self.__save()
-        self.__ack()
+        return Ack()
 
-    def handle_batch(self, msg: LinesBatch) -> None:
+    def handle_batch(self, msg: LinesBatch) -> ServerMessagesInput:
         if self.latest_start is None:
             logging.warn(
                 f"Job {self.job_id} | Received a batch of lines without its start"
             )
-            return
+            return Error("Received a batch of lines without its start")
         count = 0
         if not self.__already_processed(msg.batch_number):
             raw = RawLines(
@@ -80,19 +85,16 @@ class ClientHandler(WithState[State]):
             self.__set_latest_batch(msg.batch_number)
             self.comms.send_msg(self.job_id, raw, msg_id)
         self.__save()
-        self.__ack(msg.batch_number)
+        return Ack(msg.batch_number)
 
-    def handle_all_sent(self) -> None:
+    def handle_all_sent(self) -> ServerMessagesInput:
         self.comms.send_msg(self.job_id, End())
         StatePersistor().remove(self.job_id)
         self.state.all_sent = True
         self.comms.flush()
         self.on_finish(self.job_id)
         logging.info(f"Job {self.job_id} | Finished sending input data")
-        self.__ack()
-
-    def __ack(self, batch_number: int | None = None) -> None:
-        self.socket.send(serialize(Ack(batch_number)))
+        return Ack()
 
     def __save(self) -> None:
         self.store_to(self.job_id)
@@ -118,4 +120,4 @@ class ClientHandler(WithState[State]):
     def __get_msg_id(self, batch_number: int | str) -> str | None:
         if not self.latest_start or self.latest_start.record_type != RecordType.TRIP:
             return None
-        return f"{self.job_id};{self.latest_start.city};{batch_number}"
+        return f"{self.latest_start.city};{batch_number}"

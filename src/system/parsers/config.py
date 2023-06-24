@@ -1,6 +1,8 @@
 from common.config_base import ConfigBase
+from common.util import singleton
 
 
+@singleton
 class Config(ConfigBase):
     prefetch_count: int
 
@@ -14,6 +16,7 @@ class Config(ConfigBase):
     host_count: int
     filters_exchange: str
     filters_routing_keys_format: list[str]
+    filters_queue_format: str
 
     def __init__(self) -> None:
         super().__init__("parsers")
@@ -27,3 +30,4 @@ class Config(ConfigBase):
         self.host_count = self.get_int("PARSERS_SCALE")
         self.filters_exchange = self.get("FiltersExchange")
         self.filters_routing_keys_format = self.get_json("FiltersRoutingKeysFormat")
+        self.filters_queue_format = self.get("FiltersQueueFormat")

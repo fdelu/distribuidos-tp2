@@ -6,7 +6,6 @@ from common.messages.stats import (
 )
 
 from . import StatsStorage
-from ..config import Config
 from ..comms import SystemCommunication
 
 
@@ -17,14 +16,16 @@ class StatsReceiver:
     comms: SystemCommunication
     stats_storage: StatsStorage
 
-    def __init__(self, config: Config, stats: StatsStorage) -> None:
-        self.comms = SystemCommunication(config)
+    def __init__(self, stats: StatsStorage) -> None:
+        self.comms = SystemCommunication()
         stats.restore_from(STATS_STORAGE_KEY)
         self.stats_storage = stats
 
     def run(self) -> None:
         self.comms.set_callback(self.handle_record)
         self.comms.start_consuming()
+
+    def cleanup(self) -> None:
         self.comms.close()
 
     def handle_record(self, msg: Message[StatsRecord]) -> None:

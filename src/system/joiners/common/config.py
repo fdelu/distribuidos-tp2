@@ -17,6 +17,7 @@ class Config(ConfigBase):
     host_count: int
     filters_exchange: str
     filters_routing_keys_format: list[str]
+    filters_queue_format: str
 
     def __init__(self, name: str) -> None:
         super().__init__(ConfigBase.subsection(SECTION, name))
@@ -32,3 +33,4 @@ class Config(ConfigBase):
         self.host_count = self.get_int(f"{name.upper()}_JOINERS_SCALE")
         self.filters_exchange = self.get("FiltersExchange")
         self.filters_routing_keys_format = self.get_json("FiltersRoutingKeysFormat")
+        self.filters_queue_format = self.get("FiltersQueueFormat")

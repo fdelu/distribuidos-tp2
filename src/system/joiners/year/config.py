@@ -1,8 +1,11 @@
+from common.util import singleton
+
 from ..common.config import Config as JoinerConfig
 
 NAME = "year"
 
 
+@singleton
 class Config(JoinerConfig):
     year_base: int
     year_compared: int

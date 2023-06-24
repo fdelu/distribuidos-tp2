@@ -18,8 +18,6 @@ class Phase:
         self.inner = Phases.STATIONS_WEATHER
         self.job_id = job_id
 
-        logging.info(f"Job {job_id} | Receiving weather & stations")
-
     def validate_phase(self, message: RecordStart) -> bool:
         record_type = message.record_type
         if self.inner == Phases.END or (

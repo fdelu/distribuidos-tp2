@@ -3,6 +3,7 @@ from typing import Generic, TypeVar
 
 from shared.serde import serialize, get_generic_types
 
+from common.messages import P
 from common.messages.comms import Package
 from common.persistence.persistor import StatePersistor
 
@@ -20,7 +21,7 @@ class _Unset:
     ...
 
 
-class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OUT]):
+class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]):
     """
     Comms with send batching capabilities. It will group messages in packages
     with the same routing key and send them when the batch being received is
@@ -31,24 +32,33 @@ class ReliableComms(ReliableReceive[IN], SystemCommunicationBase, Generic[IN, OU
     pending_packages: dict[tuple[str, str], Package[OUT]]
     packages: dict[tuple[str, str], Package[OUT]]
     routing_count: int = 0
+    add_job_id_to_routing_key: bool
 
     def __init__(
         self,
         config: ReceiveConfig,
         duplicate_filter_config: FilterConfig | None = None,
+        add_job_id_to_routing_key: bool = True,
     ) -> None:
         super().__init__(config, duplicate_filter_config)
         self.packages = {}
         self.pending_packages = {}
+        self.add_job_id_to_routing_key = add_job_id_to_routing_key
 
-    def send(self, record: OUT, force_msg_id: str | None | _Unset = _Unset()) -> None:
+    def send(
+        self, job_id: str, record: OUT, force_msg_id: str | None | _Unset = _Unset()
+    ) -> None:
         key = self._get_routing_details(record)
+        if self.add_job_id_to_routing_key:
+            key = key[0], f"{job_id}.{key[1]}"
 
         if isinstance(force_msg_id, _Unset):
-            package = self.packages.get(key) or Package([], self.__next_message_id())
+            package = self.packages.get(key) or Package(
+                [], self.__next_message_id(), job_id
+            )
             package.messages.append(record)
         else:
-            package = Package([record], force_msg_id)
+            package = Package([record], force_msg_id, job_id)
 
         self.packages[key] = package
         if package.msg_id in (None, force_msg_id):

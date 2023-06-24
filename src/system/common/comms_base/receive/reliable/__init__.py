@@ -1,17 +1,20 @@
-from typing import Generic
+from typing import Generic, Any
+from functools import cached_property
 
+from shared.serde import get_generic_types
+from common.messages import Message, P
 from common.messages.comms import Package
 
-from .. import CommsReceive, IN, ReceiveConfig
-from .duplicate.simple import DuplicateFilter, DuplicateFilterSimple
-from .duplicate.distributed import DuplicateFilterDistributed, FilterConfig
+from .. import CommsReceive, ReceiveConfig
+from .duplicate_filters.simple import DuplicateFilter, DuplicateFilterSimple
+from .duplicate_filters.distributed import DuplicateFilterDistributed, FilterConfig
 
 __all__ = ["FilterConfig"]
 
 
-class ReliableReceive(Generic[IN], CommsReceive[IN]):
+class ReliableReceive(Generic[P], CommsReceive[Message[P]]):
     current_msg_id: str | None = None
-    duplicate_filter: DuplicateFilter[IN]
+    duplicate_filter: DuplicateFilter[P]
 
     def __init__(
         self,
@@ -28,17 +31,27 @@ class ReliableReceive(Generic[IN], CommsReceive[IN]):
         else:
             self.duplicate_filter = DuplicateFilterSimple(self)
 
+    @cached_property
+    def in_type(self) -> Any:
+        """
+        Input type (resolved P TypeVar from ReliableReceive[IN])
+        """
+        return get_generic_types(self, ReliableReceive)[0]
+
     def current_message_id(self) -> str | None:
         return self.current_msg_id
 
-    def handle_package(self, package: Package[IN], delivery_tag: int | None) -> None:
+    def handle_package(self, package: Package[P], delivery_tag: int | None) -> None:
         self.current_msg_id = package.msg_id
 
         if self.callback is not None:
             for msg in package.messages:
-                self.callback(msg)
+                self.callback(Message(package.job_id, msg))
 
         self._post_process(delivery_tag)
+
+    def finished_job(self, job_id: str) -> None:
+        self.duplicate_filter.clear_job(job_id)
 
     def _process_message(
         self, data: str, queue: str, delivery_tag: int | None, redelivered: bool

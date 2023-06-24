@@ -1,6 +1,6 @@
 from typing import Callable, Generic
 
-from common.messages import End, Message, Start
+from common.messages import End, Start
 from common.messages.basic import BasicRecord
 from common.messages.joined import GenericJoinedTrip
 from common.comms_base import ReliableComms, setup_job_queues
@@ -12,7 +12,7 @@ __all__ = ["GenericJoinedTrip"]
 
 class JoinerComms(
     Generic[GenericJoinedTrip],
-    ReliableComms[Message[BasicRecord], Message[GenericJoinedTrip | End | Start]],
+    ReliableComms[BasicRecord, GenericJoinedTrip | End | Start],
 ):
     config: Config
 
@@ -32,7 +32,7 @@ class JoinerComms(
         self._start_consuming_from(others_queue)
 
     def _get_routing_details(
-        self, msg: Message[GenericJoinedTrip | End | Start]
+        self, msg: GenericJoinedTrip | End | Start
     ) -> tuple[str, str]:
         return self.config.out_exchange, msg.get_routing_key()
 

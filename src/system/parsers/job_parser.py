@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import logging
 from typing import Callable
 
-from common.messages import Message, End, Start
+from common.messages import End, Start
 from common.messages.basic import BasicRecord
 from common.messages.raw import RawLines, RawRecord
 
@@ -89,8 +89,8 @@ class JobParser(WithState[State]):
                     " records"
                 )
                 break
-            msg = Message(self.job_id, parse_func(row, indexes, batch.city))
-            self.comms.send(msg)
+            msg = parse_func(row, indexes, batch.city)
+            self.comms.send(self.job_id, msg)
 
     def __finished(self) -> None:
         logging.info(
@@ -100,7 +100,7 @@ class JobParser(WithState[State]):
         self.comms.stop_consuming_job(self.job_id)
         StatePersistor().remove(self.job_id)
         self.on_finish(self)
-        self.comms.send(Message(self.job_id, End(self.comms.id)))
+        self.comms.send(self.job_id, End(self.comms.id))
 
     def __send_start(self) -> None:
-        self.comms.send(Message(self.job_id, Start(self.comms.id)), force_msg_id=None)
+        self.comms.send(self.job_id, Start(self.comms.id), force_msg_id=None)

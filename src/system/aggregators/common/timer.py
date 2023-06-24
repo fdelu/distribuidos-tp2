@@ -2,7 +2,6 @@ import logging
 from uuid import uuid4
 from typing import Any, Generic
 
-from common.messages import Message
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
 
@@ -56,12 +55,11 @@ class TimerSender(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
             return
 
         logging.debug(f"Job {self.job_id} | Sending partial results")
-        msg = Message(self.job_id, data)
         id = str(uuid4())
         self.aggregator.reset()
         self.aggregator.store_to(self.aggregator_store_key)
 
-        self.comms.send(msg, force_msg_id=id)
+        self.comms.send(self.job_id, data, force_msg_id=id)
 
     def __set_timer(self) -> None:
         self.timer = self.comms.set_timer(

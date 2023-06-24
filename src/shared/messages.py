@@ -89,7 +89,12 @@ class NotAvailable:
     ...
 
 
+@dataclass
+class Error:
+    msg: str
+
+
 Stat = RainAverages | YearCounts | CityAverages
-ServerMessagesInput = Ack
+ServerMessagesInput = Ack | Error
 ServerMessagesOutput = NotAvailable | Stat
 ServerMessages = ServerMessagesInput | ServerMessagesOutput

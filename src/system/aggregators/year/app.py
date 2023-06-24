@@ -3,6 +3,7 @@ from shared.log import setup_logs
 
 from common.messages.joined import JoinedYearTrip
 from common.messages.aggregated import PartialYearCounts
+from common.util import process_loop
 
 from ..common.aggregation_handler import AggregationHandler
 from ..common.comms import AggregatorComms
@@ -11,14 +12,15 @@ from .config import Config
 
 
 def main() -> None:
-    config = Config()
-    setup_logs(config.log_level)
+    setup_logs(Config().log_level)
 
-    comms = AggregatorComms[JoinedYearTrip, PartialYearCounts](config)
-    handler = AggregationHandler[JoinedYearTrip, PartialYearCounts](
-        comms, lambda: YearAggregator(config), config
+    process_loop(
+        lambda: AggregationHandler[JoinedYearTrip, PartialYearCounts](
+            AggregatorComms[JoinedYearTrip, PartialYearCounts](Config()),
+            lambda: YearAggregator(),
+            Config(),
+        )
     )
-    handler.run()
     logging.info("Exiting gracefully")
 
 

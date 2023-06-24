@@ -47,10 +47,9 @@ class CommsProtocol(Protocol):
         ...
 
     @abstractmethod
-    def reset_channel(self) -> None:
+    def process_data_events(self) -> None:
         """
-        Creates a new channel and replaces the old one.
-        Does not close the old channel.
+        Processes all data events on the connection
         """
         ...
 

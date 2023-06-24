@@ -19,12 +19,10 @@ CHECK_STOP_MS = 1000
 class ClientHandler(Thread):
     context: zmq.Context[zmq.Socket[None]]
     stats: StatsStorage
-    config: Config
     stop_event: Event
 
     def __init__(
         self,
-        config: Config,
         context: zmq.Context[zmq.Socket[None]],
         stats: StatsStorage,
     ) -> None:
@@ -34,7 +32,6 @@ class ClientHandler(Thread):
         super().__init__()
         self.stats = stats
         self.context = context
-        self.config = config
         self.stop_event = Event()
 
     def stop(self) -> None:
@@ -47,7 +44,6 @@ class ClientHandler(Thread):
         logging.info("Client handler started")
         ClientHandlerInternal(
             self.context,
-            self.config,
             self.stats,
             self.stop_event,
         ).run()
@@ -65,12 +61,11 @@ class ClientHandlerInternal:
     def __init__(
         self,
         context: zmq.Context[zmq.Socket[None]],
-        config: Config,
         stats: StatsStorage,
         stop_event: Event,
     ) -> None:
         self.clients_socket = context.socket(zmq.REP)
-        self.clients_socket.bind(config.address)
+        self.clients_socket.bind(Config().address)
         self.stop_event = stop_event
         self.stats = stats
 

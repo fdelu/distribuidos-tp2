@@ -1,7 +1,7 @@
 from typing import Callable, Generic
 
 from common.comms_base import ReliableComms
-from common.messages import Message, End, Start
+from common.messages import End, Start
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
 
@@ -10,8 +10,8 @@ from .config import Config
 
 class AggregatorComms(
     ReliableComms[
-        Message[GenericJoinedTrip | End | Start],
-        Message[GenericAggregatedRecord | End],
+        GenericJoinedTrip | End | Start,
+        GenericAggregatedRecord | End,
     ],
     Generic[GenericJoinedTrip, GenericAggregatedRecord],
 ):
@@ -19,7 +19,9 @@ class AggregatorComms(
 
     def __init__(self, config: Config) -> None:
         self.config = config
-        super().__init__(config, duplicate_filter_config=config)
+        super().__init__(
+            config, duplicate_filter_config=config, add_job_id_to_routing_key=False
+        )
 
     def _load_definitions(self) -> None:
         # in
@@ -32,7 +34,7 @@ class AggregatorComms(
         self._start_consuming_from(others_queue)
 
     def _get_routing_details(
-        self, msg: Message[GenericAggregatedRecord | End]
+        self, msg: GenericAggregatedRecord | End
     ) -> tuple[str, str]:
         return self.config.out_exchange, self.config.out_queue
 

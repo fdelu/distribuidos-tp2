@@ -11,11 +11,8 @@ Weather = dict[str, dict[str, float]]
 
 
 class RainJoiner(WithState[Weather]):
-    config: Config
-
-    def __init__(self, config: Config) -> None:
+    def __init__(self) -> None:
         super().__init__({})
-        self.config = config
 
     def handle_station(self, station: BasicStation) -> None:
         logging.warn("Unexpected Station received on rain joiner")
@@ -26,10 +23,7 @@ class RainJoiner(WithState[Weather]):
 
     def handle_trip(self, trip: BasicTrip) -> JoinedRainTrip | None:
         precipitation = self._get_join_data(trip)
-        if (
-            precipitation is None
-            or precipitation <= self.config.precipitation_threshold
-        ):
+        if precipitation is None or precipitation <= Config().precipitation_threshold:
             return None
 
         return JoinedRainTrip(trip.start_date, trip.duration_sec)

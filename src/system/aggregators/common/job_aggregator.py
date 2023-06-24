@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Callable, Generic
 
-from common.messages import End, Message, Start
+from common.messages import End, Start
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
 from common.persistence import WithState, StatePersistor
@@ -87,7 +87,7 @@ class JobAggregator(
         self.send(End(self.comms.id))
 
     def send(self, record: GenericAggregatedRecord | End) -> None:
-        self.comms.send(Message(self.job_id, record))
+        self.comms.send(self.job_id, record)
 
     def restore_state(self) -> None:
         self.restore_from(self._control_store_key())

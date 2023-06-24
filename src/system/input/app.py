@@ -1,17 +1,16 @@
 import logging
 
 from shared.log import setup_logs
+from common.util import process_loop
 
 from .input_server import InputServer
 from .config import Config
 
 
 def main() -> None:
-    config = Config()
-    setup_logs(config.log_level)
+    setup_logs(Config().log_level)
 
-    server = InputServer(config)
-    server.run()
+    process_loop(lambda: InputServer())
 
     logging.info("Exiting gracefully")
 

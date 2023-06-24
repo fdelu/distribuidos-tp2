@@ -5,12 +5,11 @@ from threading import Event
 import time
 from typing import Callable, Protocol, TypeVar, Generic, Any
 import os
-from functools import partial
+from functools import partial, cached_property
 from signal import signal, SIGTERM
 
 from pika import spec
 from pika.adapters.blocking_connection import BlockingChannel
-from pika.exceptions import ChannelClosedByBroker
 
 from shared.serde import deserialize, get_generic_types
 from common.config_base import ConfigProtocol
@@ -30,7 +29,6 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     Comms with receive capabilities. See protocol.py for more details about the methods.
     """
 
-    __in_type: Any | None = None
     interrupted: Event
     stopped: Event
 
@@ -50,25 +48,18 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             self.__setup_interrupt()
         self.__setup()
 
-    @property
+    @cached_property
     def in_type(self) -> Any:
         """
         Input type (resolved IN TypeVar from CommsReceive[IN])
         """
-        if self.__in_type is None:
-            self.__in_type = get_generic_types(self, CommsReceive)[0]
-        return self.__in_type
+        return get_generic_types(self, CommsReceive)[0]
 
     def start_consuming(self) -> None:
         """
         Start consuming messages from the queues
         """
-        while not self.is_stopped():
-            try:
-                self.channel.start_consuming()
-                return
-            except ChannelClosedByBroker:
-                pass
+        self.channel.start_consuming()
 
     def stop_consuming(self) -> None:
         """
@@ -238,7 +229,6 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             return
 
         timeout_info = self.timeout_callbacks.get(queue, None)
-
         if timeout_info is not None:
             timeout_info.last_message_on = time.time()
 

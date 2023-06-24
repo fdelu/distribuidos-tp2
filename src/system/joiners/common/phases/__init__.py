@@ -3,7 +3,7 @@ import logging
 from typing import Generic, Callable, Protocol
 from dataclasses import dataclass
 
-from common.messages import End, Message, Start
+from common.messages import End, Start
 from common.messages.basic import (
     BasicStation,
     BasicTrip,
@@ -97,7 +97,7 @@ class Phase(ABC, Generic[GenericJoinedTrip], WithState[State]):
         return self
 
     def _send(self, record: GenericJoinedTrip | End | Start) -> None:
-        self.comms.send(Message(self.job_id, record))
+        self.comms.send(self.job_id, record)
 
     def _control_store_key(self) -> str:
         return f"control_{self.job_id}"

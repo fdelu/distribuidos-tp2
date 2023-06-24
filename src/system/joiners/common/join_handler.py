@@ -37,10 +37,13 @@ class JoinHandler(Generic[GenericJoinedTrip]):
         logging.info(f"Finished job {job_id}")
         self.jobs.pop(job_id)
         self.job_tracker.finished_job(job_id)
+        self.comms.finished_job(job_id)
 
     def run(self) -> None:
         self.comms.set_callback(self.handle_record)
         self.comms.start_consuming()
+
+    def cleanup(self) -> None:
         self.comms.close()
 
     def handle_record(self, msg: Message[BasicRecord]) -> None:

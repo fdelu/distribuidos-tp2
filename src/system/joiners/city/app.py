@@ -2,6 +2,7 @@ import logging
 from shared.log import setup_logs
 
 from common.messages.joined import JoinedCityTrip
+from common.util import process_loop
 
 from ..common.comms import JoinerComms
 from ..common.join_handler import JoinHandler
@@ -10,12 +11,13 @@ from .config import Config
 
 
 def main() -> None:
-    config = Config()
-    setup_logs(config.log_level)
+    setup_logs(Config().log_level)
 
-    comms = JoinerComms[JoinedCityTrip](config)
-    handler = JoinHandler[JoinedCityTrip](config, comms, lambda: CityJoiner())
-    handler.run()
+    process_loop(
+        lambda: JoinHandler[JoinedCityTrip](
+            Config(), JoinerComms[JoinedCityTrip](Config()), lambda: CityJoiner()
+        )
+    )
     logging.info("Exiting gracefully")
 
 

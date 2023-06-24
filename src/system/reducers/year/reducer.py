@@ -15,11 +15,8 @@ class Counts:
 
 
 class YearReducer(WithState[Counts]):
-    config: Config
-
-    def __init__(self, config: Config) -> None:
+    def __init__(self) -> None:
         super().__init__(Counts({}, {}))
-        self.config = config
 
     def handle_aggregated(self, counts: PartialYearCounts) -> None:
         self.__merge_counts(self.state.counts_year_base, counts.counts_year_base)
@@ -39,7 +36,7 @@ class YearReducer(WithState[Counts]):
             count_year_base = self.state.counts_year_base.get(station, None)
             if (
                 count_year_base is not None
-                and count_year_compared > count_year_base * self.config.factor
+                and count_year_compared > count_year_base * Config().factor
             ):
                 result[station] = (count_year_base, count_year_compared)
         return YearCounts(result)

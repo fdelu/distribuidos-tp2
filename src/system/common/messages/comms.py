@@ -9,11 +9,13 @@ S = TypeVar("S", contravariant=True)
 class Package(Generic[T]):
     messages: list[T]
     msg_id: str | None
+    job_id: str
     maybe_redelivered: bool = False
 
 
 @dataclass
 class CheckProcessed:
+    job_id: str
     msg_id: str
     host_id: str
 
@@ -23,6 +25,7 @@ class CheckProcessed:
 
 @dataclass
 class CheckProcessedResponse:
+    job_id: str
     msg_id: str
     processed: bool
     host_id: str

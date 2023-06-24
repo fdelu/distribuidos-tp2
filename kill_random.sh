@@ -4,15 +4,14 @@
 restart_random_container() {
     container_name=$(docker ps --format "{{.Names}}" | grep -v -e "rabbitmq" -e "client" | shuf -n 1)
     docker kill "$container_name"
-    docker restart "$container_name"
-    echo "Restarted container: $container_name (Waited: $random_wait seconds)"
+    echo "Killed: $container_name (Waited: $random_wait seconds)"
 }
 
 # Main script
-wait_seconds=10  # Default wait time in seconds
-percentage_range=0.1  # Default percentage range
+wait_seconds=60         # Default wait time in seconds
+percentage_range=0.3    # Default percentage range
 if [ -n "$1" ]; then
-    wait_seconds=$1  # Use provided wait time if available
+    wait_seconds=$1     # Use provided wait time if available
 fi
 if [ -n "$2" ]; then
     percentage_range=$2  # Use provided percentage range if available

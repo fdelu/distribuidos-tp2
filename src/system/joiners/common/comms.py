@@ -3,7 +3,7 @@ from typing import Callable, Generic
 from common.messages import End, Start
 from common.messages.basic import BasicRecord
 from common.messages.joined import GenericJoinedTrip
-from common.comms_base import ReliableComms, setup_job_queues
+from common.comms_base import ReliableComms, setup_job_queues, HeartbeatSender
 
 from .config import Config
 
@@ -19,6 +19,7 @@ class JoinerComms(
     def __init__(self, config: Config) -> None:
         self.config = config
         super().__init__(config, duplicate_filter_config=config)
+        HeartbeatSender(self, config).setup_timer()
 
     def _load_definitions(self) -> None:
         # in

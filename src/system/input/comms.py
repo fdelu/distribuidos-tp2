@@ -1,7 +1,12 @@
 from threading import Event, Thread
 from typing import Callable
 
-from common.comms_base import SystemCommunicationBase, CommsSend, setup_job_queues
+from common.comms_base import (
+    SystemCommunicationBase,
+    CommsSend,
+    setup_job_queues,
+    HeartbeatSender,
+)
 from common.messages.comms import Package
 from common.messages.raw import RawRecord
 from common.persistence import StatePersistor
@@ -11,19 +16,18 @@ from .config import Config
 PENDING_KEY = "_pending"
 
 
-class SystemCommunication(
-    CommsSend[Package[RawRecord]], SystemCommunicationBase, Thread
-):
+class SystemCommunication(CommsSend[Package[RawRecord]], SystemCommunicationBase):
     pending_package: Package[RawRecord] | None = None
     stop_event: Event
+    thread: Thread | None
 
     def __init__(self) -> None:
-        Thread.__init__(self)
         super().__init__(Config())
         self.pending_package = StatePersistor().load(
             PENDING_KEY, Package[RawRecord] | None
         )
         self.stop_event = Event()
+        HeartbeatSender(self, Config()).setup_timer()
 
     def _get_routing_details(self, msg: Package[RawRecord]) -> tuple[str, str]:
         return (
@@ -39,7 +43,10 @@ class SystemCommunication(
         )
 
     def start(self) -> None:
-        super().start()
+        if self.thread is not None:
+            raise RuntimeError("Already started")
+        self.thread = Thread(target=self.run)
+        self.thread.start()
         self.__send_pending(maybe_redelivered=True)
 
     def run(self) -> None:
@@ -48,7 +55,10 @@ class SystemCommunication(
 
     def stop(self) -> None:
         self.stop_event.set()
-        self.__wait_until(lambda: None)  # make process_data_events return
+        if self.thread is not None:
+            self.__wait_until(lambda: None)  # make process_data_events return
+            self.thread.join()
+            self.thread = None
 
     def send_msg(
         self, job_id: str, record: RawRecord, msg_id: str | None = None

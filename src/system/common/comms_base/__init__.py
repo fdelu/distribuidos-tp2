@@ -9,6 +9,7 @@ from .receive.reliable import (
     FilterConfig,
 )
 from .util import setup_job_queues
+from .heartbeat import HeartbeatSender, AliveMessage
 
 __all__ = [
     "SystemCommunicationBase",
@@ -19,4 +20,9 @@ __all__ = [
     "ReliableComms",
     "setup_job_queues",
     "FilterConfig",
+    "HeartbeatSender",
+    "AliveMessage",
+    "SystemCommunicationBase",
 ]
+
+ID_FILE_PATH = "/host_id.txt"

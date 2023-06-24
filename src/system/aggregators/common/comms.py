@@ -1,6 +1,6 @@
 from typing import Callable, Generic
 
-from common.comms_base import ReliableComms
+from common.comms_base import ReliableComms, HeartbeatSender
 from common.messages import End, Start
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
@@ -22,6 +22,7 @@ class AggregatorComms(
         super().__init__(
             config, duplicate_filter_config=config, add_job_id_to_routing_key=False
         )
+        HeartbeatSender(self, config).setup_timer()
 
     def _load_definitions(self) -> None:
         # in

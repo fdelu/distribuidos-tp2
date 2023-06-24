@@ -1,6 +1,6 @@
 from typing import Callable
 
-from common.comms_base import ReliableComms, setup_job_queues
+from common.comms_base import ReliableComms, setup_job_queues, HeartbeatSender
 from common.messages.raw import RawRecord
 from common.messages.basic import BasicRecord
 
@@ -10,6 +10,7 @@ from .config import Config
 class SystemCommunication(ReliableComms[RawRecord, BasicRecord]):
     def __init__(self) -> None:
         super().__init__(Config(), duplicate_filter_config=Config())
+        HeartbeatSender(self, Config()).setup_timer()
 
     def _load_definitions(self) -> None:
         # in

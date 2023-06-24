@@ -4,7 +4,6 @@ import logging
 from threading import Event
 import time
 from typing import Callable, Protocol, TypeVar, Generic, Any
-import os
 from functools import partial, cached_property
 from signal import signal, SIGTERM
 
@@ -14,9 +13,9 @@ from pika.adapters.blocking_connection import BlockingChannel
 from shared.serde import deserialize, get_generic_types
 from common.config_base import ConfigProtocol
 from ..protocol import TIMEOUT_SECONDS, CommsProtocol
+from ..util import set_healthy
 
-IN = TypeVar("IN", contravariant=True)
-STATUS_FILE = os.getenv("STATUS_FILE", "status.txt")
+IN = TypeVar("IN")
 T = TypeVar("T")
 
 
@@ -208,8 +207,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Loads the definitions. When done, writes "OK" to the status file.
         """
         self._load_definitions()
-        with open(STATUS_FILE, "w") as f:
-            f.write("OK")
+        set_healthy("OK")
 
     def __handle_record(
         self,

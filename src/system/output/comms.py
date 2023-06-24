@@ -1,4 +1,4 @@
-from common.comms_base import SystemCommunicationBase, ReliableReceive
+from common.comms_base import SystemCommunicationBase, ReliableReceive, HeartbeatSender
 from common.messages.stats import StatsRecord
 from common.persistence import StatePersistor
 
@@ -8,6 +8,7 @@ from .config import Config
 class SystemCommunication(ReliableReceive[StatsRecord], SystemCommunicationBase):
     def __init__(self) -> None:
         super().__init__(Config())
+        HeartbeatSender(self, Config()).setup_timer()
 
     def _load_definitions(self) -> None:
         # in

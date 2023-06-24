@@ -45,10 +45,15 @@ class ConfigBase:
     parser: ConfigParser
     rabbit_host: str
     log_level: str | None
+    system_name: str
+
+    heartbeat_exchange: str
+    heartbeat_frequency: float
+    heartbeat_routing_key: str
 
     section: str = DEFAULTSECT
 
-    def __init__(self, section: str | None = None) -> None:
+    def __init__(self, section: str) -> None:
         if section is not None:
             self.section = section
 
@@ -60,6 +65,10 @@ class ConfigBase:
         self.parser.read(CONFIG_PATH)
         self.log_level = self.get("LogLevel", fallback=None)
         self.rabbit_host = self.get("RabbitHost")
+        self.heartbeat_exchange = self.get("HeartbeatExchange")
+        self.heartbeat_frequency = self.get_float("HeartbeatFrequency")
+        self.heartbeat_routing_key = self.get("HeartbeatRoutingKey")
+        self.system_name = self.get("SystemName")
 
     @staticmethod
     def subsection(section: str, subsection: str) -> str:

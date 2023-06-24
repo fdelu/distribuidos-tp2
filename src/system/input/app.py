@@ -26,7 +26,6 @@ class Runner:
 
     def cleanup(self) -> None:
         self.comms.stop()
-        self.comms.join()
         self.input_server.cleanup()
         self.comms.close()
         self.context.term()

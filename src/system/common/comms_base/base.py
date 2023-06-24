@@ -1,19 +1,19 @@
 import logging
+
 from pika import BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
-
-from common.config_base import ConfigProtocol
 from pika.exceptions import ChannelWrongStateError, ConnectionWrongStateError
 
 from .protocol import CommsProtocol
-from .util import get_host_id
+from common.config_base import ConfigProtocol
+from .util import get_host_data
 
 
 # Base communication class. See protocol.py for more details about the methods.
 class SystemCommunicationBase(CommsProtocol):
     __conn: BlockingConnection
     __ch: BlockingChannel
-    __id: str
+    __data: tuple[str, str] | None = None
 
     @property
     def connection(self) -> BlockingConnection:
@@ -25,11 +25,18 @@ class SystemCommunicationBase(CommsProtocol):
 
     @property
     def id(self) -> str:
-        return self.__id
+        if self.__data is None:
+            self.__data = get_host_data()
+        return self.__data[1]
+
+    @property
+    def name(self) -> str:
+        if self.__data is None:
+            self.__data = get_host_data()
+        return self.__data[0]
 
     def __init__(self, config: ConfigProtocol) -> None:
-        self.__id = get_host_id()
-        logging.info(f"Starting comms. Host ID: {self.id}")
+        logging.info(f"Host ID: {self.id}")
         self.__conn = BlockingConnection(ConnectionParameters(host=config.rabbit_host))
         self.__ch = self.connection.channel()
 

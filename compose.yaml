@@ -189,20 +189,27 @@ services:
         condition: service_healthy
 
   medic:
-    extends:
-      file: src/system/compose-base-service.yaml
-      service: base
     build:
-      args:
-        WORKDIR: medic
+      context: ./src
+      dockerfile: ./system/medic/Dockerfile
+    deploy:
+      mode: replicated
+      replicas: ${MEDIC_SCALE}
     networks:
       - internal_net
     volumes:
       - type: bind
         source: /var/run/docker.sock
         target: /var/run/docker.sock
+      - type: bind
+        source: ./config.ini
+        target: /config.ini
+      - type: bind
+        source: ./compose.yaml
+        target: /app/compose.yaml
+    env_file: ./.env
     depends_on:
-      parsers:
+      rabbitmq:
         condition: service_healthy
 
   client:
@@ -218,9 +225,6 @@ services:
       - type: bind
         source: ./src/client/results
         target: /tmp/results
-    deploy:
-      mode: replicated
-      replicas: ${CLIENTS_SCALE}
     networks:
       - outside_net
 

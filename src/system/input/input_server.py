@@ -17,22 +17,19 @@ TIMEOUT_MILLISECONDS = 200
 
 class InputServer:
     comms: SystemCommunication
-    context: zmq.Context[zmq.Socket[None]]
     socket: SocketStopWrapper
 
     handlers: dict[str, ClientHandler]
     stop_event: Event
     tracker: JobTracker
 
-    def __init__(self) -> None:
-        self.comms = SystemCommunication()
+    def __init__(
+        self, context: zmq.Context[zmq.Socket[None]], comms: SystemCommunication
+    ) -> None:
+        self.comms = comms
         self.stop_event = Event()
         self.handlers = {}
-
-        self.context = zmq.Context[zmq.Socket[None]]()
-        self.context.setsockopt(zmq.LINGER, 0)  # Don't block on close
-
-        socket = self.context.socket(zmq.REP)
+        socket = context.socket(zmq.REP)
         socket.bind(Config().address)
         self.socket = SocketStopWrapper(socket, self.stop_event)
 
@@ -72,7 +69,6 @@ class InputServer:
         signal.signal(signal.SIGTERM, lambda *_: self.stop_event.set())
 
     def run(self) -> None:
-        self.comms.start()
         self.setup_interrupt()
         logging.info("Starting to receive requests")
         try:
@@ -82,7 +78,4 @@ class InputServer:
         logging.info("Finished receiving data")
 
     def cleanup(self) -> None:
-        self.comms.stop()
-        self.comms.close()
         self.socket.close()
-        self.context.term()

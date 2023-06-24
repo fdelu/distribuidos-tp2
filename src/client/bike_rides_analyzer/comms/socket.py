@@ -1,7 +1,6 @@
 from typing import Callable
 import zmq
 from threading import Event
-
 from shared.socket import SocketStopWrapper
 
 RESEND_AFTER_MS = 5000
@@ -30,8 +29,11 @@ class ClientSocket:
                 return self.inner.recv(timeout_ms=RESEND_AFTER_MS)
             except TimeoutError:
                 # Reset socket and retry
-                self.inner.close()
-                self.__new_inner()
+                pass
+            self.inner.close()
+            self.__new_inner()
+            if self.last_sent:
+                self.inner.send(self.last_sent)
 
     def send(self, data: str) -> None:
         self.inner.send(data)

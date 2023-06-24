@@ -11,17 +11,18 @@ from .config import Config
 PENDING_KEY = "_pending"
 
 
-class SystemCommunication(CommsSend[Package[RawRecord]], SystemCommunicationBase):
+class SystemCommunication(
+    CommsSend[Package[RawRecord]], SystemCommunicationBase, Thread
+):
     pending_package: Package[RawRecord] | None = None
-    thread: Thread | None = None
     stop_event: Event
 
     def __init__(self) -> None:
+        Thread.__init__(self)
         super().__init__(Config())
         self.pending_package = StatePersistor().load(
             PENDING_KEY, Package[RawRecord] | None
         )
-        self.__send_pending(maybe_redelivered=True)
         self.stop_event = Event()
 
     def _get_routing_details(self, msg: Package[RawRecord]) -> tuple[str, str]:
@@ -38,22 +39,16 @@ class SystemCommunication(CommsSend[Package[RawRecord]], SystemCommunicationBase
         )
 
     def start(self) -> None:
-        if self.thread is not None:
-            raise ValueError("Comms already running")
+        super().start()
+        self.__send_pending(maybe_redelivered=True)
 
-        def inner() -> None:
-            while not self.stop_event.is_set():
-                self.connection.process_data_events(None)  # type: ignore
-
-        self.thread = Thread(target=inner)
-        self.thread.start()
+    def run(self) -> None:
+        while not self.stop_event.is_set():
+            self.connection.process_data_events(None)  # type: ignore
 
     def stop(self) -> None:
-        if self.thread is not None:
-            self.stop_event.set()
-            self.__wait_until(lambda: None)  # make process_data_events return
-            self.thread.join()
-            self.thread = None
+        self.stop_event.set()
+        self.__wait_until(lambda: None)  # make process_data_events return
 
     def send_msg(
         self, job_id: str, record: RawRecord, msg_id: str | None = None
@@ -75,6 +70,7 @@ class SystemCommunication(CommsSend[Package[RawRecord]], SystemCommunicationBase
         package: Package[RawRecord] = self.pending_package
         package.maybe_redelivered = maybe_redelivered
         self.__wait_until(lambda: self.send(package))
+        self.pending_package = None
         self.__save_state()
 
     def __wait_until(self, callback: Callable[[], None]) -> None:

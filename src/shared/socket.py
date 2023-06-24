@@ -17,20 +17,20 @@ class SocketStopWrapper:
         self.last_sent = None
 
     def send(self, data: str, timeout_ms: float | None = None) -> None:
-        self.__wait_until_ready(zmq.POLLOUT, timeout=timeout_ms)
+        self.__wait_until_ready(zmq.POLLOUT, timeout_ms=timeout_ms)
         self.socket.send_string(data)
         self.last_sent = data
 
     def recv(self, timeout_ms: float | None = None) -> str:
-        self.__wait_until_ready(zmq.POLLIN, timeout=timeout_ms)
+        self.__wait_until_ready(zmq.POLLIN, timeout_ms=timeout_ms)
         return self.socket.recv_string()
 
-    def __wait_until_ready(self, flag: int, timeout: float | None) -> None:
+    def __wait_until_ready(self, flag: int, timeout_ms: float | None) -> None:
         start = time.time()
         self.__check_stop()
         while self.socket.poll(timeout=TIMEOUT_MILLISECONDS, flags=flag) & flag == 0:
             self.__check_stop()
-            if timeout is not None and time.time() - start > timeout:
+            if timeout_ms is not None and (time.time() - start) * 1000 > timeout_ms:
                 raise TimeoutError()
 
     def __check_stop(self) -> None:

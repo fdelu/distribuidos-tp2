@@ -51,6 +51,13 @@
             "durable": false,
             "auto_delete": false,
             "arguments": {}
+        },
+        {
+            "name": "heartbeat",
+            "vhost": "/",
+            "durable": false,
+            "auto_delete": false,
+            "arguments": {}
         }
     ],
     "exchanges": [

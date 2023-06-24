@@ -209,7 +209,15 @@ services:
         target: /app/compose.yaml
     env_file: ./.env
     depends_on:
-      rabbitmq:
+      input:
+        condition: service_started
+      rain-reducer:
+        condition: service_healthy
+      city-reducer:
+        condition: service_healthy
+      year-reducer:
+        condition: service_healthy
+      output:
         condition: service_healthy
 
   client:

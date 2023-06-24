@@ -19,7 +19,7 @@ PENDING_KEY = "_pending"
 class SystemCommunication(CommsSend[Package[RawRecord]], SystemCommunicationBase):
     pending_package: Package[RawRecord] | None = None
     stop_event: Event
-    thread: Thread | None
+    thread: Thread | None = None
 
     def __init__(self) -> None:
         super().__init__(Config())

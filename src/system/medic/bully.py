@@ -89,8 +89,9 @@ class Bully:
         # sends a ElectionMessage to all medic with id > self.id
         self.comms.send(ElectionMessage(self.id))
         # also set timer that waits for a AnswerMessage or declare itself as the leader
-        self.awnser_timer_id = self.comms.set_timer(self.__timer_awnser,
-                                                    self.config.awnser_timeout)
+        self.awnser_timer_id = self.comms.set_timer(
+            self.__timer_awnser, self.config.awnser_timeout
+        )
         # time to wait for a AnswerMessage or declare itself as the leader
         self.received_awnser = False
 
@@ -122,7 +123,8 @@ class Bully:
         self.received_awnser = True
         self.cancel_awnser_timer()
         self.coordination_timer_id = self.comms.set_timer(
-            self.__timer_coordinator, self.config.coordinator_timeout)
+            self.__timer_coordinator, self.config.coordinator_timeout
+        )
         # time that waits for a CoordinatorMessage or restart election
 
     def handle_coordinator(self, message: CoordinatorMessage) -> None:

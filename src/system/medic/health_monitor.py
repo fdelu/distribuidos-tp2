@@ -30,9 +30,9 @@ class HealthMonitor:
     def start_timers(self) -> None:
         # start a timer for each container
         for container_name in self.container_list:
-            self.timer_dict[container_name] = self.comms.set_timer(
-                lambda: self.container_dead(container_name),
-                self.config.first_heartbeat_timeout
+            self.restart_container_timer(
+                container_name,
+                self.config.first_heartbeat_timeout,
             )
             # time to consider a container dead if no previous heartbeats
             # have been received
@@ -41,8 +41,8 @@ class HealthMonitor:
         if not self.is_leader or not self.started:
             self.is_leader = True
             self.started = True
-            self.comms.bind_heartbeat_route()
             self.start_timers()
+            self.comms.bind_heartbeat_route()
 
     def stop_timers(self) -> None:
         for timer in self.timer_dict.values():
@@ -73,12 +73,13 @@ class HealthMonitor:
 
     def handle_heartbeat(self, message: AliveMessage) -> None:
         logging.debug(f"Received heartbeat from {message.container_name}")
-        self.restart_container_timer(message.container_name,
-                                     self.config.heartbeat_timeout)
+        self.restart_container_timer(
+            message.container_name, self.config.heartbeat_timeout
+        )
         # time to consider a container dead
 
     def container_dead(self, container_name: str) -> None:
-        logging.info(f"Container {container_name} dead")
-        subprocess.Popen(["docker", "start", container_name])
+        logging.info(f"Container {container_name} timed out, restarting")
+        subprocess.Popen(["docker", "start", container_name], stdout=subprocess.DEVNULL)
         self.restart_container_timer(container_name, self.config.restart_timeout)
         # time to consider a container dead after restarting it

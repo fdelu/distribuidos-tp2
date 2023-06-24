@@ -98,6 +98,15 @@
             "auto_delete": false,
             "internal": false,
             "arguments": {}
+        },
+        {
+            "name": "medics",
+            "vhost": "/",
+            "type": "topic",
+            "durable": false,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
         }
     ],
     "bindings": []

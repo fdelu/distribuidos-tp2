@@ -8,6 +8,7 @@ from common.comms_base import (
     SystemCommunicationBase,
     ReliableReceive,
     setup_job_queues,
+    HeartbeatSender,
 )
 
 from .config import Config
@@ -26,6 +27,7 @@ class JoinerComms(
     def __init__(self, config: Config) -> None:
         self.config = config
         super().__init__(config)
+        HeartbeatSender(self, config).setup_timer()
 
     def _load_definitions(self) -> None:
         # in

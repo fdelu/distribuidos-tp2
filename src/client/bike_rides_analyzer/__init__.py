@@ -61,6 +61,6 @@ class BikeRidesAnalyzer:
         self.phase.close()
         self.context.term()
 
-    def __get_stat(self, stat: StatType) -> dict[str, Any]:
-        self.phase, stat = self.phase.get_stat(stat)
+    def __get_stat(self, stat_type: StatType) -> dict[str, Any]:
+        self.phase, stat = self.phase.get_stat(stat_type)
         return {x: y for x, y in sorted(stat.items())}

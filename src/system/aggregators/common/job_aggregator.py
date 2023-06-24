@@ -68,6 +68,9 @@ class JobAggregator(
             f"Job {self.job_id} | Joiner {end.host} finished sending trips"
             f" ({len(self.state.ends_received)}/{self.config.joiners_count})"
         )
+        self.check_ends()
+
+    def check_ends(self) -> None:
         if len(self.state.ends_received) < self.config.joiners_count:
             return
         logging.info(f"Job {self.job_id} | Waiting for all trips to be processed")
@@ -92,6 +95,7 @@ class JobAggregator(
     def restore_state(self) -> None:
         self.restore_from(self._control_store_key())
         self.aggregator.restore_from(self._aggregator_store_key())
+        self.check_ends()
 
     def store_state(self) -> None:
         self.store_to(self._control_store_key())

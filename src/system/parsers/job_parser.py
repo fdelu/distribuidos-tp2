@@ -40,6 +40,7 @@ class JobParser(WithState[State]):
     def restore_state(self) -> None:
         self.restore_from(self.job_id)
         if self.state.received_end:
+            logging.info(f"Job {self.job_id} | Waiting for all batchs to be processed")
             self.comms.set_all_batchs_done_callback(self.job_id, self.__finished)
 
     def store_state(self) -> None:

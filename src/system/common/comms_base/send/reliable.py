@@ -75,7 +75,6 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
         self.__save_state()
         super()._post_process(delivery_tag)
         self.__send_messages()
-        self.__save_state()
 
     def __save_state(self) -> None:
         StatePersistor().store(PENDING_MESSAGES_KEY, self.pending_packages)
@@ -106,6 +105,7 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
                 exchange, routing_key, serialize(package).encode()
             )
         self.pending_packages = {}
+        self.__save_state()
 
     def __send_pending(self) -> None:
         out_type = get_generic_types(self, ReliableComms)[1]
@@ -115,7 +115,6 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
         if pending:
             self.pending_packages = pending
             self.__send_messages(maybe_redelivered=True)
-            self.__save_state()
 
     @abstractmethod
     def _get_routing_details(self, record: OUT) -> tuple[str, str]:

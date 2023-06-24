@@ -65,7 +65,7 @@ class DuplicateFilter(Generic[IN], ABC):
         Clears all the messages for the given job_id
         """
         self.received_messages.pop(job_id, None)
-        StatePersistor().remove(self.__key(job_id))
+        # StatePersistor().remove(self.__key(job_id))
 
     def __remove_old(self, ids: dict[datetime, set[str]], current: datetime) -> None:
         for timestamp in list(ids):

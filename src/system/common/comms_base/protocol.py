@@ -47,13 +47,6 @@ class CommsProtocol(Protocol):
         ...
 
     @abstractmethod
-    def process_data_events(self) -> None:
-        """
-        Processes all data events on the connection
-        """
-        ...
-
-    @abstractmethod
     def close(self) -> None:
         """
         Closes the connection

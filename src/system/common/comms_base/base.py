@@ -29,12 +29,9 @@ class SystemCommunicationBase(CommsProtocol):
 
     def __init__(self, config: ConfigProtocol) -> None:
         self.__id = get_host_id()
-        logging.info(f"Starting. Host ID: {self.id}")
+        logging.info(f"Starting comms. Host ID: {self.id}")
         self.__conn = BlockingConnection(ConnectionParameters(host=config.rabbit_host))
         self.__ch = self.connection.channel()
-
-    def process_data_events(self) -> None:
-        self.connection.process_data_events()
 
     def close(self) -> None:
         # Ignore errors if the connection/channel is already closed

@@ -25,6 +25,7 @@ class Runner(Protocol):
 
 def process_loop(factory: Callable[[], Runner]) -> None:
     runner = factory()
+    logging.info("Starting process loop")
     while True:
         try:
             runner.run()

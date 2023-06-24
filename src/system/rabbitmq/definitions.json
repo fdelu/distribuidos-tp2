@@ -100,7 +100,7 @@
             "arguments": {}
         },
         {
-            "name": "parsers_filters",
+            "name": "parser_filters",
             "vhost": "/",
             "type": "topic",
             "durable": false,
@@ -109,7 +109,7 @@
             "arguments": {}
         },
         {
-            "name": "rain_joiners_filters",
+            "name": "rain_joiner_filters",
             "vhost": "/",
             "type": "topic",
             "durable": false,
@@ -118,7 +118,7 @@
             "arguments": {}
         },
         {
-            "name": "city_joiners_filters",
+            "name": "city_joiner_filters",
             "vhost": "/",
             "type": "topic",
             "durable": false,
@@ -127,7 +127,7 @@
             "arguments": {}
         },
         {
-            "name": "year_joiners_filters",
+            "name": "year_joiner_filters",
             "vhost": "/",
             "type": "topic",
             "durable": false,
@@ -136,7 +136,7 @@
             "arguments": {}
         },
         {
-            "name": "rain_aggregators_filters",
+            "name": "rain_aggregator_filters",
             "vhost": "/",
             "type": "topic",
             "durable": false,
@@ -145,7 +145,7 @@
             "arguments": {}
         },
         {
-            "name": "city_aggregators_filters",
+            "name": "city_aggregator_filters",
             "vhost": "/",
             "type": "topic",
             "durable": false,
@@ -154,7 +154,7 @@
             "arguments": {}
         },
         {
-            "name": "year_aggregators_filters",
+            "name": "year_aggregator_filters",
             "vhost": "/",
             "type": "topic",
             "durable": false,

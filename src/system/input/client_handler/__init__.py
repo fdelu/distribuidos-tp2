@@ -1,14 +1,17 @@
 import logging
 from dataclasses import dataclass
 from typing import Callable
+from functools import singledispatchmethod
 
 from shared.messages import (
+    ClientPayloads,
     RecordStart,
-    Ack,
     LinesBatch,
-    RecordType as RecordTypeBase,
+    AllSent,
     ServerMessagesInput,
+    Ack,
     Error,
+    RecordType as RecordTypeBase,
 )
 from shared.socket import SocketStopWrapper
 
@@ -55,6 +58,11 @@ class ClientHandler(WithState[State]):
             self.comms.send_msg(self.job_id, Start())
             self.comms.flush()
 
+    @singledispatchmethod
+    def handle_message(self, msg: ClientPayloads) -> ServerMessagesInput:
+        raise RuntimeError(f"Invalid message type: {type(msg)}")
+
+    @handle_message.register
     def handle_start(self, msg: RecordStart) -> ServerMessagesInput:
         if not self.state.phase.validate_phase(msg):
             return Error("Invalid phase for this RecordStart")
@@ -63,9 +71,10 @@ class ClientHandler(WithState[State]):
         logging.info(
             f"Job {self.job_id} | Receiving {msg.record_type}s from {msg.city}"
         )
-        self.__save()
+        self.store_to(self.job_id)
         return Ack()
 
+    @handle_message.register
     def handle_batch(self, msg: LinesBatch) -> ServerMessagesInput:
         if self.latest_start is None:
             logging.warn(
@@ -84,21 +93,17 @@ class ClientHandler(WithState[State]):
             count += len(msg.lines)
             self.__set_latest_batch(msg.batch_number)
             self.comms.send_msg(self.job_id, raw, msg_id)
-        self.__save()
+        self.store_to(self.job_id)
         return Ack(msg.batch_number)
 
-    def handle_all_sent(self) -> ServerMessagesInput:
+    @handle_message.register
+    def handle_all_sent(self, all_sent: AllSent) -> ServerMessagesInput:
         self.comms.send_msg(self.job_id, End())
         StatePersistor().remove(self.job_id)
         self.state.all_sent = True
-        self.comms.flush()
         self.on_finish(self.job_id)
         logging.info(f"Job {self.job_id} | Finished sending input data")
         return Ack()
-
-    def __save(self) -> None:
-        self.store_to(self.job_id)
-        self.comms.flush()
 
     def __already_processed(self, batch_number: int) -> bool:
         if not self.latest_start:

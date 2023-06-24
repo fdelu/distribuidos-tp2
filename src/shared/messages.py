@@ -41,7 +41,9 @@ class GetStat:
     stat_type: StatType
 
 
-ClientPayloads = RecordStart | LinesBatch | AllSent | GetStat
+ClientPayloadsInput = RecordStart | LinesBatch | AllSent
+ClientPayloadsOutput = GetStat
+ClientPayloads = ClientPayloadsInput | ClientPayloadsOutput
 T = TypeVar("T", bound=ClientPayloads)
 
 

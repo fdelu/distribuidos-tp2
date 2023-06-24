@@ -115,6 +115,7 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
         if pending:
             self.pending_packages = pending
             self.__send_messages(maybe_redelivered=True)
+            self.__save_state()
 
     @abstractmethod
     def _get_routing_details(self, record: OUT) -> tuple[str, str]:

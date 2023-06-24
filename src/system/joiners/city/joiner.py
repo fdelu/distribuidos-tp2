@@ -3,7 +3,7 @@ import logging
 
 from common.messages.basic import BasicStation, BasicTrip, BasicWeather
 from common.messages.joined import JoinedCityTrip
-from common.persistence import WithState
+from common.persistence import WithStateAppended
 
 
 @dataclass
@@ -13,13 +13,11 @@ class StationData:
 
 
 # (city, code, year) -> data
-Stations = dict[tuple[str, str, str], StationData]
+Key = tuple[str, str, str]
+Value = StationData
 
 
-class CityJoiner(WithState[Stations]):
-    def __init__(self) -> None:
-        super().__init__({})
-
+class CityJoiner(WithStateAppended[Key, Value]):
     def handle_station(self, station: BasicStation) -> None:
         if station.latitude is None or station.longitude is None:
             logging.debug(
@@ -27,8 +25,9 @@ class CityJoiner(WithState[Stations]):
                 f" {station.year}"
             )
             return
-        self.state[(station.city, station.code, station.year)] = StationData(
-            station.name, (station.latitude, station.longitude)
+        self.set(
+            (station.city, station.code, station.year),
+            StationData(station.name, (station.latitude, station.longitude)),
         )
 
     def handle_weather(self, weather: BasicWeather) -> None:

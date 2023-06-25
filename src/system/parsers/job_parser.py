@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import logging
 from typing import Callable
 
-from common.messages import End, Start
+from common.messages import End, TripsStart, Start
 from common.messages.basic import BasicRecord
 from common.messages.raw import RawLines, RawRecord
 
@@ -15,6 +15,7 @@ from .comms import SystemCommunication
 @dataclass
 class State:
     count: int = 0
+    received_trips_start: bool = False
     receiving_trips: bool = False
     received_end: bool = False
 
@@ -35,13 +36,32 @@ class JobParser(WithState[State]):
         self.job_id = job_id
         self.on_finish = on_finish
         self.restore_state()
-        self.comms.start_consuming_job(self.job_id)
 
     def restore_state(self) -> None:
         self.restore_from(self.job_id)
+        self.__status_changed()
+
+    def __status_changed(self) -> None:
+        if not self.state.receiving_trips:
+            self.comms.start_consuming_weather_station_lines(self.job_id)
+
+            if self.state.received_trips_start:
+                logging.info(
+                    f"Job {self.job_id} | Received TripsStart, waiting for all weather"
+                    " & station lines to be parsed"
+                )
+                self.comms.set_all_weather_station_lines_done_callback(
+                    self.job_id, self.__receive_trips
+                )
+            return
+
+        self.comms.start_consuming_trip_lines(self.job_id)
         if self.state.received_end:
-            logging.info(f"Job {self.job_id} | Waiting for all batchs to be processed")
-            self.comms.set_all_batchs_done_callback(self.job_id, self.__finished)
+            logging.info(
+                f"Job {self.job_id} | Received End, waiting for all trips to be"
+                " processed"
+            )
+            self.comms.set_all_trip_lines_done_callback(self.job_id, self.__finished)
 
     def store_state(self) -> None:
         self.store_to(self.job_id)
@@ -49,29 +69,44 @@ class JobParser(WithState[State]):
     def handle_start(self, start: Start) -> None:
         pass
 
-    def handle_station_batch(self, batch: RawLines) -> None:
+    def handle_trips_start(self, start: TripsStart) -> None:
+        self.state.received_trips_start = True
+        self.__status_changed()
+
+    def __receive_trips(self) -> None:
+        logging.info(
+            f"Job {self.job_id} | Finished parsing weather & stations. Receiving trips,"
+            " sending TripsStart"
+        )
+        self.comms.stop_consuming_weather_station_lines(self.job_id)
+        self.state.receiving_trips = True
+        self.__status_changed()
+        self.store_state()
+        self.__send_trips_start()
+
+    def handle_station_lines(self, batch: RawLines) -> None:
         self.__send_parsed(batch, parse_station)
 
-    def handle_weather_batch(self, batch: RawLines) -> None:
+    def handle_weather_lines(self, batch: RawLines) -> None:
         self.__send_parsed(batch, parse_weather)
 
-    def handle_trip_batch(self, batch: RawLines) -> None:
+    def handle_trip_lines(self, batch: RawLines) -> None:
         self.__send_parsed(batch, parse_trip)
         self.state.count += len(batch.lines)
 
-        if not self.state.receiving_trips:
-            logging.info(f"Job {self.job_id} | Finished parsing weather & stations")
-            self.state.receiving_trips = True
-            self.store_state()
-            self.__send_start()
-
     def handle_end(self, end: End) -> None:
-        logging.info(
-            f"Job {self.job_id} | Received End, waiting for all batchs to be processed"
-        )
         self.state.received_end = True
-        self.store_state()
-        self.comms.set_all_batchs_done_callback(self.job_id, self.__finished)
+        self.__status_changed()
+
+    def __finished(self) -> None:
+        logging.info(
+            f"Job {self.job_id} | Finished parsing trips. Total trips processed in this"
+            f" node: {self.state.count}. Sending End"
+        )
+        self.comms.stop_consuming_trip_lines(self.job_id)
+        StatePersistor().remove(self.job_id)
+        self.on_finish(self)
+        self.comms.send(self.job_id, End(self.comms.id))
 
     def handle_record(self, raw_record: RawRecord) -> None:
         return raw_record.be_handled_by(self)
@@ -93,15 +128,5 @@ class JobParser(WithState[State]):
             msg = parse_func(row, indexes, batch.city)
             self.comms.send(self.job_id, msg)
 
-    def __finished(self) -> None:
-        logging.info(
-            f"Job {self.job_id} | Finished parsing. Total trips processed in this"
-            f" node: {self.state.count}"
-        )
-        self.comms.stop_consuming_job(self.job_id)
-        StatePersistor().remove(self.job_id)
-        self.on_finish(self)
-        self.comms.send(self.job_id, End(self.comms.id))
-
-    def __send_start(self) -> None:
-        self.comms.send(self.job_id, Start(self.comms.id), force_msg_id=None)
+    def __send_trips_start(self) -> None:
+        self.comms.send(self.job_id, TripsStart(self.comms.id), force_msg_id=None)

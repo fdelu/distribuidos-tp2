@@ -7,7 +7,8 @@ class Config(ConfigBase):
     prefetch_count: int
 
     in_exchange: str
-    in_batchs_queue_format: str
+    in_trip_lines_format: str
+    in_weather_station_lines_format: str
     in_others_queue_format: str
     in_others_queue_routing_keys: list[str]
     out_exchange: str
@@ -22,7 +23,8 @@ class Config(ConfigBase):
         super().__init__("parsers")
         self.prefetch_count = self.get_int("PrefetchCount")
         self.in_exchange = self.get("InExchange")
-        self.in_batchs_queue_format = self.get("InBatchsQueueFormat")
+        self.in_trip_lines_format = self.get("InTripLinesFormat")
+        self.in_weather_station_lines_format = self.get("InWeatherStationLinesFormat")
         self.in_others_queue_format = self.get("InOthersQueueFormat")
         self.in_others_queue_routing_keys = self.get_json("InOthersQueueRoutingKeys")
         self.out_exchange = self.get("OutExchange")

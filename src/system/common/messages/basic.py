@@ -1,7 +1,7 @@
 from typing import Protocol, TypeVar
 from dataclasses import dataclass
 
-from common.messages import End, RecordType, Start
+from common.messages import End, RecordType, TripsStart
 
 T = TypeVar("T", covariant=True)
 
@@ -52,7 +52,7 @@ class BasicWeather:
 
 
 BasicDataRecord = BasicStation | BasicTrip | BasicWeather
-BasicControlRecord = Start | End
+BasicControlRecord = TripsStart | End
 BasicRecord = BasicDataRecord | BasicControlRecord
 
 

@@ -4,7 +4,7 @@
 restart_random_container() {
     container_name=$(docker ps --format "{{.Names}}" | grep -v -e "rabbitmq" -e "client" | shuf -n 1)
     docker kill "$container_name"
-    echo "Killed: $container_name (Waited: $random_wait seconds)"
+    echo "$(date '+%Y-%m-%d %H:%M:%S,%3N') | Killed: $container_name (Waited: $random_wait seconds)"
 }
 
 # Main script

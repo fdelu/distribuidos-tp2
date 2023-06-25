@@ -3,7 +3,7 @@ import logging
 from typing import Generic, Callable, Protocol
 from dataclasses import dataclass
 
-from common.messages import End, Start
+from common.messages import End, TripsStart, Start
 from common.messages.basic import (
     BasicStation,
     BasicTrip,
@@ -73,7 +73,7 @@ class Phase(ABC, Generic[GenericJoinedTrip], WithState[State]):
         raise NotImplementedError()
 
     @abstractmethod
-    def handle_start(self, start: Start) -> "Phase[GenericJoinedTrip]":
+    def handle_trips_start(self, start: TripsStart) -> "Phase[GenericJoinedTrip]":
         raise NotImplementedError()
 
     @abstractmethod

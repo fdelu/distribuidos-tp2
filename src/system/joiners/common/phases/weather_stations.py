@@ -1,7 +1,7 @@
 import logging
 from typing import Generic
 
-from common.messages import End, Start
+from common.messages import End, TripsStart, Start
 from common.messages.basic import (
     BasicStation,
     BasicTrip,
@@ -21,13 +21,13 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip])
         self.joiner.handle_weather(weather)
         return self
 
-    def handle_start(self, start: Start) -> Phase[GenericJoinedTrip]:
+    def handle_trips_start(self, start: TripsStart) -> Phase[GenericJoinedTrip]:
         if start.host is None:
-            logging.warn("Received Start without host id")
+            logging.warn("Received TripsStart without host id")
             return self
-        return self.__handle_start(start.host)
+        return self.__handle_trips_start(start.host)
 
-    def __handle_start(self, host: str) -> Phase[GenericJoinedTrip]:
+    def __handle_trips_start(self, host: str) -> Phase[GenericJoinedTrip]:
         self.state.starts_received.add(host)
         logging.debug(
             f"Job {self.job_id} | Parser {host} finished sending weather &"
@@ -59,7 +59,7 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip])
                 f"Job {self.job_id} | Received End from parser {end.host} before Start,"
                 " considering it as both"
             )
-            return self.__handle_start(end.host)
+            return self.__handle_trips_start(end.host)
         return self
 
     def restore_state(self) -> "Phase[GenericJoinedTrip]":

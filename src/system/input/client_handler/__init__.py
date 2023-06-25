@@ -15,12 +15,12 @@ from shared.messages import (
 )
 from shared.socket import SocketStopWrapper
 
-from common.messages import RecordType, End, Start
+from common.messages import RecordType, End, Start, TripsStart
 from common.messages.raw import RawLines
 from common.persistence import StatePersistor, WithState
 
 from ..comms import SystemCommunication
-from .phase import Phase
+from .phase import PhaseValidator, Phase
 
 TIMEOUT_MILLISECONDS = 1000
 
@@ -28,7 +28,7 @@ TIMEOUT_MILLISECONDS = 1000
 @dataclass
 class State:
     client_identity: str | None
-    phase: Phase
+    phase: PhaseValidator
     # (record_type, city) -> latest batch number
     latest_batchs: dict[tuple[RecordTypeBase, str], int]
     latest_start: RecordStart | None = None
@@ -48,7 +48,7 @@ class ClientHandler(WithState[State]):
         on_finish: Callable[[str], None],
         client_identity: str | None,
     ) -> None:
-        super().__init__(State(client_identity, Phase(job_id), {}))
+        super().__init__(State(client_identity, PhaseValidator(job_id), {}))
         self.job_id = job_id
         self.comms = comms
         self.socket = socket
@@ -68,14 +68,21 @@ class ClientHandler(WithState[State]):
 
     @handle_message.register
     def handle_start(self, msg: RecordStart) -> ServerMessagesInput:
+        previous_phase = self.state.phase.current()
         if not self.state.phase.validate_phase(msg):
             return Error("Invalid phase for this RecordStart")
+
         self.state.latest_start = msg
         self.state.latest_batchs[(msg.record_type, msg.city)] = -1
         logging.info(
             f"Job {self.job_id} | Receiving {msg.record_type}s from {msg.city}"
         )
         self.store_to(self.job_id)
+        if (
+            previous_phase == Phase.STATIONS_WEATHER
+            and self.state.phase.current() == Phase.TRIPS
+        ):
+            self.comms.send_msg(self.job_id, TripsStart())
         return Ack()
 
     @handle_message.register

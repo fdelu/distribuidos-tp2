@@ -11,8 +11,8 @@ class RecordType(StrEnum):
     STATION = BaseRecordType.STATION
     WEATHER = BaseRecordType.WEATHER
     END = "end"
-    RAW_BATCH = "raw_batch"
     START = "start"
+    TRIPS_START = "trips_start"
 
 
 class WithRoutingKey(Protocol):
@@ -54,6 +54,17 @@ class Start:
         return handler.handle_start(self)
 
 
+@dataclass
+class TripsStart:
+    host: str | None = None
+
+    def get_routing_key(self) -> str:
+        return RecordType.TRIPS_START
+
+    def be_handled_by(self, handler: "TripsStartHandler[T]") -> T:
+        return handler.handle_trips_start(self)
+
+
 class EndHandler(Protocol[T]):
     def handle_end(self, end: End) -> T:
         ...
@@ -61,4 +72,9 @@ class EndHandler(Protocol[T]):
 
 class StartHandler(Protocol[T]):
     def handle_start(self, start: Start) -> T:
+        ...
+
+
+class TripsStartHandler(Protocol[T]):
+    def handle_trips_start(self, start: TripsStart) -> T:
         ...

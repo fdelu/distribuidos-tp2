@@ -1,7 +1,7 @@
 import logging
 from typing import Generic
 
-from common.messages import End, Start
+from common.messages import End, TripsStart
 from common.messages.basic import (
     BasicStation,
     BasicTrip,
@@ -21,8 +21,8 @@ class TripsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip]):
         self.__warn("Weather")
         return self
 
-    def handle_start(self, start: Start) -> Phase[GenericJoinedTrip]:
-        self.__warn(f"Start (host id: {start.host})")
+    def handle_trips_start(self, start: TripsStart) -> Phase[GenericJoinedTrip]:
+        self.__warn(f"TripsStart (host id: {start.host})")
         return self
 
     def handle_trip(self, trip: BasicTrip) -> Phase[GenericJoinedTrip]:

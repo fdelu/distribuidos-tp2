@@ -16,7 +16,7 @@ Dicha información se debe obtener de registros de clima, estaciones de biciclet
 
 ## Arquitectura
 
-Para el sistema, se consideraron 5 unidades de desarrollo, cada una la carpeta `src/system`. Todas ellas se connectan por un middleware (RabbitMQ). Estas son:
+Para el sistema, se consideraron 6 unidades de desarrollo, cada una la carpeta `src/system`. Todas ellas se connectan por un middleware (RabbitMQ). Estas son:
 
 1. **input**: se conecta a el cliente, utilizando ZeroMQ. Es el punto de entrada de los registros de clima, estaciones y viajes que el sistema debe procesar.
 2. **parsers**: recibe mensajes del input, en batches csv como los que le envía el cliente. Parsea los registros de clima, estaciones y viajes, y los envía.
@@ -33,18 +33,20 @@ Para el sistema, se consideraron 5 unidades de desarrollo, cada una la carpeta `
    2. **year_reducer**: Recibe la cantidad de viajes por estación para cada año y los unifica. Una vez unificadas todas las cantidades, encuentra las estaciones que duplicaron la cantidad de viajes de un año al otro.
    3. **city_reducer**: Recibe la distancia promedio que se recorre para llegar a cada estación y los unifica. Una vez unificadas todas las distancias promedio, encuentra las estaciones que tienen un promedio mayor a 6km.
 6. **output**: sumidero de la información producida los **reducer**. Se conecta al cliente utilizando ZeroMQ y le envía las estadísticas finales cuando llegan y el cliente se lo solicita.
+7. **medics**: monitorean el estado de los procesos y los reinician en caso de que fallen. El líder recibe los hearbeats de los otros nodos y los reinicia en caso de que que haya un timeout. Los otros _medics_ reciben heartbeats del líder y llaman a una elección utilizando el algoritmo Bully en caso de que este no responda.
 
 ## Objetivos y restricciones de la arquitectura
 
-- No es necesario considerar múltiples ejecuciones del procesamiento en una misma sesión del sistema.
-- No se requiere tolerancia a fallas.
 - El sistema debe estar optimizado para entornos multicomputadoras.
 - El sistema debe soportar el incremento de los elementos de cómputo para escalar los volúmenes de información a procesa.
 - Se debe proveer _graceful quit_ frente a señales `SIGTERM`.
+- El sistema debe mostrar alta disponibilidad hacia los clientes
+- El sistema debe ser tolerante a fallos por caídas de procesos
+- El sistema debe permitir la ejecución de múltiples análisis en paralelo y/o en secuencia sin reiniciarlo.
 
 ## 4+1 vistas
 
-Los diagramas de esta sección se encuentran disponibles para visualizar en [app.diagrams.net](https://app.diagrams.net/?mode=github#Hfdelu%2Fdistribuidos-tp1%2Fmain%2Finforme%2Fdiagramas%2Fdiagramas.xml). El archivo `.xml` utilizado se encuentra en [este repositorio](https://github.com/fdelu/distribuidos-tp1/blob/main/informe/diagramas/diagramas.xml).
+Los diagramas de esta sección se encuentran disponibles para visualizar en [app.diagrams.net](https://app.diagrams.net/?mode=github#Hfdelu%2Fdistribuidos-tp2%2Fmain%2Finforme%2Fdiagramas%2Fdiagramas.xml). El archivo `.xml` utilizado se encuentra en [este repositorio](https://github.com/fdelu/distribuidos-tp1/blob/main/informe/diagramas/diagramas.xml).
 
 ### Escenarios
 
@@ -61,6 +63,14 @@ Para obtener las 3 estadísticas, hay 3 flujos de procesamiento información. Ca
 | ![](diagramas/DAG.png) |
 | :--------------------: |
 |   _Diagrama del DAG_   |
+
+El sistema utiliza un middleware (mediante RabbitMQ) para comunicar los procesos. Las clases que se utilizaron para implementar el middleware se pueden ver en el siguiente diagrama de clases:
+
+| ![](diagramas/Clases.png) |
+| :-----------------------: |
+|   _Diagrama de Clases_    |
+
+Salvo los **medics** (que no necesitan comunicación filtro de duplicados), el **input** y el **output** (que solo reciben o envían), todos los nodos utilizan la clase _ReliableComms_ como middleware. Cada nodo tiene su propio módulo de comunicaciones que hereda de _ReliableComms_ para pasarle algunos parámetros específicos.
 
 ### Vista de procesos
 
@@ -82,6 +92,8 @@ Para la comunicación con el cliente, se implementó un pequeño protocolo que l
 
 > Nota: en este ejemplo el cliente solo solicita un resultado, pero puede solicitar los 3 cuantas veces quiera.
 
+> Nota: si el sistema llego a la máxima cantidad de trabajos en paralelo, o un stat aun no esta disponible, el sistema le responde al cliente con un mensaje de **NotAvailable** para que reintente más tarde.
+
 | ![](diagramas/Secuencia.png) |
 | :--------------------------: |
 |   _Diagramas de Secuencia_   |
@@ -91,8 +103,8 @@ Para la comunicación con el cliente, se implementó un pequeño protocolo que l
 El código del proyecto esta separado en 3 paquetes:
 
 - **BikeRidesAnalyzer**: La librería del cliente que se conecta al sistema y le solicita los resultados.
-- **System**: Contiene los paquetes de cada uno de los nodos del sistema. También hay un paquete `common` que contiene código compartido para la configuración, comunicaciones, definición de mensajes y serialización/deserialización.
-- **Shared**: Paquet de código compartido entre el sistema y la librearía del cliente. Contiene las definiciones de algunas constantes del protocolo, un wrapper sobre el socket de ZeroMQ y un configurador de logs.
+- **System**: Contiene los paquetes de cada uno de los nodos del sistema. También hay un paquete `common` que contiene código compartido para la configuración, comunicaciones, definición de mensajes, persistencia, entre otros.
+- **Shared**: Paquet de código compartido entre el sistema y la librería del cliente. Contiene las definiciones de los mensajes del protocolo, un módulo de serialización/deserialización, un wrapper sobre el socket de ZeroMQ y un configurador de logs.
 
 Las dependencias entre los paquetes se pueden ver en el siguiente diagrama de paquetes:
 

@@ -1,6 +1,7 @@
 from typing import Generic, Protocol
 from dataclasses import dataclass
 from functools import singledispatchmethod
+from uuid import uuid4
 import logging
 
 from shared.serde import deserialize, serialize
@@ -25,6 +26,7 @@ class FilterConfig(Protocol):
 
 @dataclass
 class PendingCheck(Generic[IN]):
+    msg_id: str
     queue: str
     package: Package[IN]
     responses: set[str]
@@ -33,7 +35,7 @@ class PendingCheck(Generic[IN]):
 
 class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
     config: FilterConfig
-    # msg_id -> PendingCheck
+    # uuid -> PendingCheck
     pending_checks: dict[str, PendingCheck[IN]]
 
     def __init__(self, package_handler: PackageComms[IN], config: FilterConfig) -> None:
@@ -120,7 +122,7 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             f" {check.host_id} for {check.msg_id}. Processed locally: {processed}"
         )
         response = CheckProcessedResponse(
-            check.job_id, check.msg_id, processed, self.comms.id
+            check.check_id, check.job_id, check.msg_id, processed, self.comms.id
         )
         self.comms.channel.basic_publish(
             self.config.filters_exchange,
@@ -137,18 +139,18 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
         delivery_tag: int | None,
         redelivered: bool,
     ) -> None:
-        if response.msg_id not in self.pending_checks:
+        if response.check_id not in self.pending_checks:
             self._ack(delivery_tag)
             return
 
-        check = self.pending_checks[response.msg_id]
+        check = self.pending_checks[response.check_id]
         if response.processed:
             logging.info(
                 f"Job {check.package.job_id} | Check finished: Package"
                 f" {check.package.msg_id} had been processed by"
                 f" {response.host_id}, acknowledging"
             )
-            self.pending_checks.pop(response.msg_id)
+            self.pending_checks.pop(response.check_id)
             self._ack(check.delivery_tag)
             self._ack(delivery_tag)
             return
@@ -168,18 +170,23 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             f" {check.package.msg_id} hadn't been processed by"
             " any other node, processing locally"
         )
-        check = self.pending_checks.pop(response.msg_id)
+        check = self.pending_checks.pop(response.check_id)
         self.__process(check.package, check.delivery_tag)
         self._ack(delivery_tag)
 
     def __send_check(
         self, msg: Package[IN], queue: str, delivery_tag: int | None
     ) -> None:
-        if not msg.msg_id or msg.msg_id in self.pending_checks:
+        if not msg.msg_id or any(
+            x.msg_id == msg.msg_id for x in self.pending_checks.values()
+        ):
             return
 
-        self.pending_checks[msg.msg_id] = PendingCheck(queue, msg, set(), delivery_tag)
-        check = CheckProcessed(msg.job_id, msg.msg_id, self.comms.id)
+        check_id = str(uuid4())
+        self.pending_checks[check_id] = PendingCheck(
+            msg.msg_id, queue, msg, set(), delivery_tag
+        )
+        check = CheckProcessed(check_id, msg.job_id, msg.msg_id, self.comms.id)
         self.comms.channel.basic_publish(
             self.config.filters_exchange,
             check.get_routing_key(),

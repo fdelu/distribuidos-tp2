@@ -15,6 +15,7 @@ class Package(Generic[T]):
 
 @dataclass
 class CheckProcessed:
+    check_id: str
     job_id: str
     msg_id: str
     host_id: str
@@ -25,6 +26,7 @@ class CheckProcessed:
 
 @dataclass
 class CheckProcessedResponse:
+    check_id: str
     job_id: str
     msg_id: str
     processed: bool

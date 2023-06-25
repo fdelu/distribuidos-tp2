@@ -6,7 +6,7 @@ class Config(ConfigBase):
     prefetch_count: int
     medic_scale: int
     coordinator_timeout: int
-    awnser_timeout: int
+    answer_timeout: int
     heartbeat_interval: int
     heartbeat_timeout: int
     leader_heartbeat_interval: int
@@ -21,7 +21,7 @@ class Config(ConfigBase):
         self.prefetch_count = self.get_int("PrefetchCount")
 
         self.coordinator_timeout = self.get_int("CoordinatorTimeout")
-        self.awnser_timeout = self.get_int("AwnserTimeout")
+        self.answer_timeout = self.get_int("AnswerTimeout")
         self.heartbeat_interval = self.get_int("HeartbeatInterval")
         self.heartbeat_timeout = self.get_int("HeartbeatTimeout")
         self.leader_heartbeat_interval = self.get_int("LeaderHeartbeatInterval")

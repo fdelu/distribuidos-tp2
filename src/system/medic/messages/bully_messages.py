@@ -29,7 +29,7 @@ class AnswerMessage:
 
 
 class AnswerMessageHandler(Protocol[T]):
-    def handle_answer(self, awnser_message: AnswerMessage) -> T:
+    def handle_answer(self, answer_message: AnswerMessage) -> T:
         ...
 
 

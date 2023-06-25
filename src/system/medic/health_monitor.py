@@ -79,7 +79,7 @@ class HealthMonitor:
         # time to consider a container dead
 
     def container_dead(self, container_name: str) -> None:
-        logging.info(f"Container {container_name} timed out, restarting")
+        logging.info(f"Container {container_name} timed out, starting it")
         subprocess.Popen(["docker", "start", container_name], stdout=subprocess.DEVNULL)
         self.restart_container_timer(container_name, self.config.restart_timeout)
         # time to consider a container dead after restarting it

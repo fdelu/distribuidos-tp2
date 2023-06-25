@@ -1,12 +1,7 @@
 from typing import Callable, Generic
 
-from common.comms_base import (
-    ReliableSend,
-    ReliableReceive,
-    SystemCommunicationBase,
-    HeartbeatSender,
-)
-from common.messages import Message, End, Start
+from common.comms_base import ReliableComms, HeartbeatSender
+from common.messages import End, Start
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
 
@@ -14,28 +9,33 @@ from .config import Config
 
 
 class AggregatorComms(
+    ReliableComms[
+        GenericJoinedTrip | End | Start,
+        GenericAggregatedRecord | End,
+    ],
     Generic[GenericJoinedTrip, GenericAggregatedRecord],
-    ReliableReceive[Message[GenericJoinedTrip | End | Start]],
-    ReliableSend[Message[GenericAggregatedRecord | End]],
-    SystemCommunicationBase,
 ):
     config: Config
 
     def __init__(self, config: Config) -> None:
         self.config = config
-        super().__init__(config)
+        super().__init__(
+            config, duplicate_filter_config=config, add_job_id_to_routing_key=False
+        )
         HeartbeatSender(self, config).setup_timer()
 
     def _load_definitions(self) -> None:
         # in
+        for id in range(1, self.config.host_count + 1):
+            others_queue = self.config.in_others_queue_format.format(host_id=id)
+            self.channel.queue_declare(others_queue)
+            for rk in self.config.in_others_queue_routing_keys:
+                self.channel.queue_bind(others_queue, self.config.in_exchange, rk)
         others_queue = self.config.in_others_queue_format.format(host_id=self.id)
-        self.channel.queue_declare(others_queue)  # end
-        for rk in self.config.in_others_queue_routing_keys:
-            self.channel.queue_bind(others_queue, self.config.in_exchange, rk)
         self._start_consuming_from(others_queue)
 
     def _get_routing_details(
-        self, msg: Message[GenericAggregatedRecord | End]
+        self, msg: GenericAggregatedRecord | End
     ) -> tuple[str, str]:
         return self.config.out_exchange, self.config.out_queue
 

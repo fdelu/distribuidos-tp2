@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 from shared.serde import serialize
-from .system_communication_base import SystemCommunicationBase
+
+from .base import SystemCommunicationBase
 from ..config_base import ConfigBase
 
 
@@ -13,10 +14,12 @@ class AliveMessage:
 class HeartbeatSender:
     comms: SystemCommunicationBase
     config: ConfigBase
+    msg: bytes
 
     def __init__(self, comms: SystemCommunicationBase, config: ConfigBase) -> None:
         self.comms = comms
         self.config = config
+        self.msg = serialize(AliveMessage(self.comms.name)).encode()
 
     def setup_timer(self) -> None:
         self.comms.connection.call_later(
@@ -24,12 +27,12 @@ class HeartbeatSender:
         )
 
     def __heartbeat_timer(self) -> None:
-        self.send_heartbeat()
         self.setup_timer()
+        self.send_heartbeat()
 
     def send_heartbeat(self) -> None:
         self.comms.channel.basic_publish(
             self.config.heartbeat_exchange,
             self.config.heartbeat_routing_key,
-            serialize(AliveMessage(self.comms.name)).encode(),
+            self.msg,
         )

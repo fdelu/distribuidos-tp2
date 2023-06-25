@@ -19,6 +19,11 @@ class RecordType(StrEnum):
 
 
 @dataclass
+class NewJob:
+    identity: str
+
+
+@dataclass
 class RecordStart:
     record_type: RecordType
     city: str
@@ -27,7 +32,7 @@ class RecordStart:
 
 @dataclass
 class LinesBatch:
-    batch_id: int
+    batch_number: int
     lines: list[str]
 
 
@@ -41,7 +46,9 @@ class GetStat:
     stat_type: StatType
 
 
-ClientPayloads = RecordStart | LinesBatch | AllSent | GetStat
+ClientPayloadsInput = RecordStart | LinesBatch | AllSent
+ClientPayloadsOutput = GetStat
+ClientPayloads = ClientPayloadsInput | ClientPayloadsOutput
 T = TypeVar("T", bound=ClientPayloads)
 
 
@@ -56,7 +63,7 @@ class Message(Generic[T]):
 
 @dataclass
 class Ack:
-    batch_id: int | None = None
+    batch_number: int | None = None
 
 
 @dataclass
@@ -84,5 +91,22 @@ class CityAverages:
         return StatType.CITY
 
 
+@dataclass
+class NotAvailable:
+    ...
+
+
+@dataclass
+class ClientJobId:
+    job_id: str
+
+
+@dataclass
+class Error:
+    msg: str
+
+
 Stat = RainAverages | YearCounts | CityAverages
-ServerMessages = Ack | Stat
+ServerMessagesInput = Ack | Error | ClientJobId | NotAvailable
+ServerMessagesOutput = NotAvailable | Stat
+ServerMessages = ServerMessagesInput | ServerMessagesOutput

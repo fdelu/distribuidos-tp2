@@ -51,6 +51,13 @@
             "durable": false,
             "auto_delete": false,
             "arguments": {}
+        },
+        {
+            "name": "heartbeat",
+            "vhost": "/",
+            "durable": false,
+            "auto_delete": false,
+            "arguments": {}
         }
     ],
     "exchanges": [
@@ -92,6 +99,69 @@
         },
         {
             "name": "city_joined_records",
+            "vhost": "/",
+            "type": "topic",
+            "durable": false,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
+        },
+        {
+            "name": "parser_filters",
+            "vhost": "/",
+            "type": "topic",
+            "durable": false,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
+        },
+        {
+            "name": "rain_joiner_filters",
+            "vhost": "/",
+            "type": "topic",
+            "durable": false,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
+        },
+        {
+            "name": "city_joiner_filters",
+            "vhost": "/",
+            "type": "topic",
+            "durable": false,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
+        },
+        {
+            "name": "year_joiner_filters",
+            "vhost": "/",
+            "type": "topic",
+            "durable": false,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
+        },
+        {
+            "name": "rain_aggregator_filters",
+            "vhost": "/",
+            "type": "topic",
+            "durable": false,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
+        },
+        {
+            "name": "city_aggregator_filters",
+            "vhost": "/",
+            "type": "topic",
+            "durable": false,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
+        },
+        {
+            "name": "year_aggregator_filters",
             "vhost": "/",
             "type": "topic",
             "durable": false,

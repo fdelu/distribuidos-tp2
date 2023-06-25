@@ -3,13 +3,12 @@ from dataclasses import dataclass
 import logging
 from threading import Event
 import time
-from typing import Callable, Protocol, TypeVar, Generic, Any, Type
-from functools import partial
+from typing import Callable, Protocol, TypeVar, Generic, Any
+from functools import partial, cached_property
 from signal import signal, SIGTERM
 
 from pika import spec
 from pika.adapters.blocking_connection import BlockingChannel
-from pika.exceptions import ChannelClosedByBroker
 
 from shared.serde import deserialize, get_generic_types
 from common.config_base import ConfigProtocol
@@ -29,7 +28,6 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
     Comms with receive capabilities. See protocol.py for more details about the methods.
     """
 
-    __in_type: Type[Any] | None = None
     interrupted: Event
     stopped: Event
 
@@ -49,25 +47,18 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             self.__setup_interrupt()
         self.__setup()
 
-    @property
-    def in_type(self) -> Type[Any]:
+    @cached_property
+    def in_type(self) -> Any:
         """
         Input type (resolved IN TypeVar from CommsReceive[IN])
         """
-        if self.__in_type is None:
-            self.__in_type = get_generic_types(self, CommsReceive)[0]
-        return self.__in_type
+        return get_generic_types(self, CommsReceive)[0]
 
     def start_consuming(self) -> None:
         """
         Start consuming messages from the queues
         """
-        while not self.is_stopped():
-            try:
-                self.channel.start_consuming()
-                return
-            except ChannelClosedByBroker:
-                pass
+        self.channel.start_consuming()
 
     def stop_consuming(self) -> None:
         """
@@ -115,7 +106,9 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Fails silently if the queue does not exist, logging a warning.
         """
         callback = partial(self.__handle_record, queue)
-        ctag = self.channel.basic_consume(queue=queue, on_message_callback=callback)
+        # Make sure others didn't delete it before I could consume
+        self.channel.queue_declare(queue)
+        ctag = self.channel.basic_consume(queue, on_message_callback=callback)
         self.ctags[queue] = ctag
 
     def _stop_consuming_from(self, queue: str, delete_if_unused: bool = True) -> None:
@@ -123,13 +116,14 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Stops consuming from the given queue.
         Optionally deletes it if it's no longer used (no consumers and no messages).
         """
+        # so that it doesn't fail if it doesn't exist
+        self.channel.queue_declare(queue)
         if queue in self.ctags:
             self.channel.basic_cancel(self.ctags.pop(queue))
         if (
             delete_if_unused
-            # No pongo passive=True porque podria llegar a darse el caso en que
-            # dos cancelen al mismo tiempo, uno borre la cola y el otro intente
-            # el queue_declare que fallaria porque la cola ya no existe
+            # Don't use passive=True in case two nodes cancel it's consumption
+            # at the same time and one deletes before the other one declares it
             and self.channel.queue_declare(queue).method.consumer_count == 0
         ):
             self.channel.queue_delete(queue, if_empty=True)
@@ -164,19 +158,27 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             lambda: self.__check_messages_left(queue, callback, **queue_kwargs),
         )
 
-    def _process_message(self, message: str) -> None:
+    def _process_message(
+        self, message: str, queue: str, delivery_tag: int | None, redelivered: bool
+    ) -> None:
         """
         Processes a message. Can be overridden by subclasses.
+
+        Deserializes the message and calls the callback if it's set.
+        Should acknowledge the message.
         """
-        decoded = self.__deserialize_record(message)
+        decoded = deserialize(self.in_type, message)  # type: ignore
         if self.callback is not None:
             self.callback(decoded)
 
-    def __deserialize_record(self, message: str) -> IN:
+        if delivery_tag is not None:
+            self.channel.basic_ack(delivery_tag)
+
+    def _messages_left(self, queue: str) -> int | None:
         """
-        Deserializes a record from the given message
+        Returns the number of messages left in the given queue
         """
-        return deserialize(self.in_type, message)  # type: ignore
+        return self.channel.queue_declare(queue).method.message_count
 
     def __stop(self) -> None:
         """
@@ -225,14 +227,12 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             return
 
         timeout_info = self.timeout_callbacks.get(queue, None)
-
         if timeout_info is not None:
             timeout_info.last_message_on = time.time()
 
-        self._process_message(body.decode())
-
-        if method.delivery_tag is not None:
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+        self._process_message(
+            body.decode(), queue, method.delivery_tag, method.redelivered
+        )
 
     def __timeout_handler(self, info: "TimeoutInfo") -> None:
         """
@@ -260,22 +260,18 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
                 seconds_remaining, lambda: self.__timeout_handler(info)
             )
 
-    def __check_messages_left(
-        self, queue: str, callback: Callable[[], None], **queue_kwargs: Any
-    ) -> None:
+    def __check_messages_left(self, queue: str, callback: Callable[[], None]) -> None:
         """
         Checks if there are messages left in the given queue. If not, calls the
         callback. If there are, calls _set_empty_queue_callback() again.
         """
-        res = self.channel.queue_declare(queue=queue, passive=True, **queue_kwargs)
-
-        if res.method.message_count == 0:
+        if self._messages_left(queue) == 0:
             callback()
             return
 
         # for some reason the queue is not empty but the timeout expired
         # set the timer again:
-        self._set_empty_queue_callback(queue, callback, **queue_kwargs)
+        self._set_empty_queue_callback(queue, callback)
         return
 
     @dataclass

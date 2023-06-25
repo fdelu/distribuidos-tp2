@@ -1,8 +1,11 @@
+from common.util import singleton
+
 from ..common.config import Config as ConfigBase
 
 NAME = "year"
 
 
+@singleton
 class Config(ConfigBase):
     factor: float
 

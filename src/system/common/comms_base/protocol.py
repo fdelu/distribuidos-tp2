@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Callable, Protocol, TypeVar
+from typing import Protocol, TypeVar
 
 from pika import BlockingConnection
 from pika.adapters.blocking_connection import BlockingChannel
@@ -47,31 +47,8 @@ class CommsProtocol(Protocol):
         ...
 
     @abstractmethod
-    def reset_channel(self) -> None:
-        """
-        Creates a new channel and replaces the old one.
-        Does not close the old channel.
-        """
-        ...
-
-    @abstractmethod
     def close(self) -> None:
         """
         Closes the connection
-        """
-        ...
-
-
-class ReceiveReliableProtocol(Protocol):
-    @abstractmethod
-    def current_message_id(self) -> str | None:
-        """
-        Returns the current message id if any
-        """
-        ...
-
-    def set_batch_done_callback(self, callback: Callable[[], None]) -> None:
-        """
-        Sets a callback to be called when a batch is done
         """
         ...

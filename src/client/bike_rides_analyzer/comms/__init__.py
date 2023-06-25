@@ -1,27 +1,23 @@
 from abc import ABC
 
-from shared.serde import serialize, deserialize
-from shared.messages import Ack, ClientPayloads, ServerMessages, Message
+from shared.serde import serialize
+from shared.messages import ClientPayloads, Message
 
-from shared.socket import SocketStopWrapper
+from .socket import ClientSocket
 
 
 class Comms(ABC):
-    job_id: str
-    socket: SocketStopWrapper
+    job_id: str | None
+    socket: ClientSocket
+
+    def __init__(self, socket: ClientSocket, job_id: str | None = None) -> None:
+        self.socket = socket
+        self.job_id = job_id
 
     def send(self, payload: ClientPayloads) -> None:
+        if self.job_id is None:
+            raise ValueError("Can't send payload without job id")
         self.socket.send(serialize(Message(self.job_id, payload)))
-
-    def recv(self) -> ServerMessages:
-        return deserialize(ServerMessages, self.socket.recv())
 
     def close(self) -> None:
         self.socket.close()
-
-    def recv_ack(self, batch_id: int | None = None) -> None:
-        ack = self.recv()
-        if not isinstance(ack, Ack) or (
-            batch_id is not None and ack.batch_id != batch_id
-        ):
-            raise RuntimeError("Did not receive ACK for this message")

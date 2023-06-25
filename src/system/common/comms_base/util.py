@@ -1,7 +1,8 @@
 import subprocess
 import re
-from .protocol import CommsProtocol
 import os
+
+from .protocol import CommsProtocol
 
 HOST_ID_COMMAND = [
     "/bin/bash",

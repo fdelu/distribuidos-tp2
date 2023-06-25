@@ -2,7 +2,6 @@ import logging
 from uuid import uuid4
 from typing import Any, Generic
 
-from common.messages import Message
 from common.messages.joined import GenericJoinedTrip
 from common.messages.aggregated import GenericAggregatedRecord
 
@@ -14,10 +13,10 @@ from .aggregator import Aggregator
 class TimerSender(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
     job_id: str
     timer: Any
-    last: tuple[str, Message[GenericAggregatedRecord]] | None
     comms: AggregatorComms[GenericJoinedTrip, GenericAggregatedRecord]
     aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord]
     config: Config
+    aggregator_store_key: str
 
     def __init__(
         self,
@@ -25,13 +24,14 @@ class TimerSender(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
         comms: AggregatorComms[GenericJoinedTrip, GenericAggregatedRecord],
         aggregator: Aggregator[GenericJoinedTrip, GenericAggregatedRecord],
         config: Config,
+        aggregator_store_key: str,
     ):
         self.job_id = job_id
         self.comms = comms
         self.aggregator = aggregator
         self.config = config
         self.timer = None
-        self.last = None
+        self.aggregator_store_key = aggregator_store_key
 
     def setup_timer(self) -> None:
         if self.timer is None:
@@ -55,11 +55,11 @@ class TimerSender(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
             return
 
         logging.debug(f"Job {self.job_id} | Sending partial results")
-        msg = Message(self.job_id, data)
         id = str(uuid4())
-        self.last = (id, msg)
         self.aggregator.reset()
-        self.comms.send(msg, force_msg_id=id)
+        self.aggregator.store_to(self.aggregator_store_key)
+
+        self.comms.send(self.job_id, data, force_msg_id=id)
 
     def __set_timer(self) -> None:
         self.timer = self.comms.set_timer(

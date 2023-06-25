@@ -1,5 +1,5 @@
 version: "3"
-name: distribuidos_tp2
+name: distribuidos-tp2
 services:
   rabbitmq:
     build:
@@ -16,177 +16,177 @@ services:
     networks:
       - internal_net
 
-  # input:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: input
-  #   networks:
-  #     - outside_net
-  #     - internal_net
-  #   depends_on:
-  #     parsers:
-  #       condition: service_healthy
+  input:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: input
+    networks:
+      - outside_net
+      - internal_net
+    depends_on:
+      parsers:
+        condition: service_healthy
 
-  # parsers:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: parsers
-  #   deploy:
-  #     mode: replicated
-  #     replicas: ${PARSERS_SCALE}
-  #   depends_on:
-  #     rain-joiners:
-  #       condition: service_healthy
-  #     city-joiners:
-  #       condition: service_healthy
-  #     year-joiners:
-  #       condition: service_healthy
+  parsers:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: parsers
+    deploy:
+      mode: replicated
+      replicas: ${PARSERS_SCALE}
+    depends_on:
+      rain-joiners:
+        condition: service_healthy
+      city-joiners:
+        condition: service_healthy
+      year-joiners:
+        condition: service_healthy
 
-  # rain-joiners:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: joiners/rain
-  #     target: joiners
-  #   deploy:
-  #     mode: replicated
-  #     replicas: ${RAIN_JOINERS_SCALE}
-  #   depends_on:
-  #     rain-aggregators:
-  #       condition: service_healthy
+  rain-joiners:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: joiners/rain
+      target: joiners
+    deploy:
+      mode: replicated
+      replicas: ${RAIN_JOINERS_SCALE}
+    depends_on:
+      rain-aggregators:
+        condition: service_healthy
 
-  # city-joiners:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: joiners/city
-  #     target: joiners
-  #   deploy:
-  #     mode: replicated
-  #     replicas: ${CITY_JOINERS_SCALE}
-  #   depends_on:
-  #     city-aggregators:
-  #       condition: service_healthy
+  city-joiners:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: joiners/city
+      target: joiners
+    deploy:
+      mode: replicated
+      replicas: ${CITY_JOINERS_SCALE}
+    depends_on:
+      city-aggregators:
+        condition: service_healthy
 
-  # year-joiners:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: joiners/year
-  #     target: joiners
-  #   deploy:
-  #     mode: replicated
-  #     replicas: ${YEAR_JOINERS_SCALE}
-  #   depends_on:
-  #     year-aggregators:
-  #       condition: service_healthy
+  year-joiners:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: joiners/year
+      target: joiners
+    deploy:
+      mode: replicated
+      replicas: ${YEAR_JOINERS_SCALE}
+    depends_on:
+      year-aggregators:
+        condition: service_healthy
 
-  # rain-aggregators:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: aggregators/rain
-  #     target: aggregators
-  #   deploy:
-  #     mode: replicated
-  #     replicas: ${RAIN_AGGREGATORS_SCALE}
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
+  rain-aggregators:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: aggregators/rain
+      target: aggregators
+    deploy:
+      mode: replicated
+      replicas: ${RAIN_AGGREGATORS_SCALE}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
-  # city-aggregators:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: aggregators/city
-  #     target: aggregators
-  #   deploy:
-  #     mode: replicated
-  #     replicas: ${CITY_AGGREGATORS_SCALE}
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
+  city-aggregators:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: aggregators/city
+      target: aggregators
+    deploy:
+      mode: replicated
+      replicas: ${CITY_AGGREGATORS_SCALE}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
-  # year-aggregators:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: aggregators/year
-  #     target: aggregators
-  #   deploy:
-  #     mode: replicated
-  #     replicas: ${YEAR_AGGREGATORS_SCALE}
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
+  year-aggregators:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: aggregators/year
+      target: aggregators
+    deploy:
+      mode: replicated
+      replicas: ${YEAR_AGGREGATORS_SCALE}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
-  # rain-reducer:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: reducers/rain
-  #     target: reducers
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
+  rain-reducer:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: reducers/rain
+      target: reducers
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
-  # city-reducer:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: reducers/city
-  #     target: reducers
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
+  city-reducer:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: reducers/city
+      target: reducers
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
-  # year-reducer:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: reducers/year
-  #     target: reducers
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
+  year-reducer:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: reducers/year
+      target: reducers
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
-  # output:
-  #   extends:
-  #     file: src/system/compose-base-service.yaml
-  #     service: base
-  #   build:
-  #     args:
-  #       WORKDIR: output
-  #   networks:
-  #     - outside_net
-  #     - internal_net
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
+  output:
+    extends:
+      file: src/system/compose-base-service.yaml
+      service: base
+    build:
+      args:
+        WORKDIR: output
+    networks:
+      - outside_net
+      - internal_net
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   medic:
     build:
@@ -209,24 +209,35 @@ services:
         target: /app/compose.yaml
     env_file: ./.env
     depends_on:
-      rabbitmq:
+      input:
+        condition: service_started
+      rain-reducer:
+        condition: service_healthy
+      city-reducer:
+        condition: service_healthy
+      year-reducer:
+        condition: service_healthy
+      output:
         condition: service_healthy
 
-  # client:
-  #   build:
-  #     dockerfile: ./src/client/Dockerfile
-  #   volumes:
-  #     - type: bind
-  #       source: ./src/client/data
-  #       target: /tmp/data
-  #     - type: bind
-  #       source: config.ini
-  #       target: /config.ini
-  #     - type: bind
-  #       source: ./src/client/results
-  #       target: /tmp/results
-  #   networks:
-  #     - outside_net
+  client:
+    build:
+      dockerfile: ./src/client/Dockerfile
+    volumes:
+      - type: bind
+        source: ./src/client/data
+        target: /tmp/data
+      - type: bind
+        source: config.ini
+        target: /config.ini
+      - type: bind
+        source: ./src/client/results
+        target: /tmp/results
+    deploy:
+      mode: replicated
+      replicas: ${CLIENTS_SCALE}
+    networks:
+      - outside_net
 
 networks:
   outside_net:

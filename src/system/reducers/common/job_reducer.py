@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Callable, Generic, Protocol
 import logging
 
@@ -5,13 +6,14 @@ from common.messages.aggregated import (
     GenericAggregatedRecordContr as GenericAggregatedRecord,
 )
 from common.messages.stats import StatsRecord
-from common.messages import End, Message
+from common.messages import End
+from common.persistence import WithState, WithStateProtocol, StatePersistor
 
 from .config import Config
 from .comms import ReducerComms
 
 
-class Reducer(Protocol[GenericAggregatedRecord]):
+class Reducer(WithStateProtocol, Protocol[GenericAggregatedRecord]):
     def handle_aggregated(self, aggregated: GenericAggregatedRecord) -> None:
         ...
 
@@ -19,12 +21,16 @@ class Reducer(Protocol[GenericAggregatedRecord]):
         ...
 
 
-class JobReducer(Generic[GenericAggregatedRecord]):
+@dataclass
+class State:
+    ends_received: set[str]
+
+
+class JobReducer(Generic[GenericAggregatedRecord], WithState[State]):
     comms: ReducerComms[GenericAggregatedRecord]
     config: Config
     reducer: Reducer[GenericAggregatedRecord]
     job_id: str
-    ends_received: set[str]
     on_finish: Callable[["JobReducer[GenericAggregatedRecord]"], None]
 
     def __init__(
@@ -35,9 +41,9 @@ class JobReducer(Generic[GenericAggregatedRecord]):
         job_id: str,
         on_finish: Callable[["JobReducer[GenericAggregatedRecord]"], None],
     ):
+        super().__init__(State(set()))
         self.comms = comms
         self.reducer = reducer
-        self.ends_received = set()
         self.config = config
         self.job_id = job_id
         self.on_finish = on_finish
@@ -47,21 +53,31 @@ class JobReducer(Generic[GenericAggregatedRecord]):
 
     def handle_end(self, end: End) -> None:
         if end.host is None:
-            logging.warn("Received End without host id")
+            logging.warn(f"Job {self.job_id} | Received End without host id")
             return
-        self.ends_received.add(end.host)
+        self.state.ends_received.add(end.host)
         logging.debug(
-            f"Aggregator {end.host} finished sending averages"
-            f" ({len(self.ends_received)}/{self.config.aggregators_count})"
+            f"Job {self.job_id} | Aggregator {end.host} finished sending averages"
+            f" ({len(self.state.ends_received)}/{self.config.aggregators_count})"
         )
-        if len(self.ends_received) < self.config.aggregators_count:
+        if len(self.state.ends_received) < self.config.aggregators_count:
             return
 
-        self._send(self.reducer.get_value())
+        StatePersistor().remove(self._control_store_key())
+        StatePersistor().remove(self._joiner_store_key())
         self.on_finish(self)
+        self.comms.send(self.job_id, self.reducer.get_value(), force_msg_id=None)
 
-    def handle_record(self, record: GenericAggregatedRecord | End) -> None:
-        record.be_handled_by(self)
+    def store_state(self) -> None:
+        self.store_to(self._control_store_key())
+        self.reducer.store_to(self._joiner_store_key())
 
-    def _send(self, record: StatsRecord) -> None:
-        self.comms.send(Message(self.job_id, record))
+    def restore_state(self) -> None:
+        self.restore_from(self._control_store_key())
+        self.reducer.restore_from(self._joiner_store_key())
+
+    def _control_store_key(self) -> str:
+        return f"control_{self.job_id}"
+
+    def _joiner_store_key(self) -> str:
+        return f"joiner_{self.job_id}"

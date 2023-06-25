@@ -2,3 +2,4 @@ pika
 zmq
 pika-stubs
 haversine
+types-PyYAML

@@ -1,19 +1,19 @@
 from common.messages.aggregated import PartialCityAverages, StationInfo
 from common.messages.stats import CityAverages, StatsRecord
+from common.persistence import WithState
+
 from .config import Config
 
+Averages = dict[str, StationInfo]  # station name -> info
 
-class CityReducer:
-    averages: dict[str, StationInfo]  # station name -> info
-    config: Config
 
-    def __init__(self, config: Config) -> None:
-        self.averages = {}
-        self.config = config
+class CityReducer(WithState[Averages]):
+    def __init__(self) -> None:
+        super().__init__({})
 
     def handle_aggregated(self, avg: PartialCityAverages) -> None:
         for station, station_average in avg.distance_averages.items():
-            current = self.averages.setdefault(station, StationInfo(0, 0))
+            current = self.state.setdefault(station, StationInfo(0, 0))
 
             total_count = current.count + station_average.count
             current_factor = current.count / total_count
@@ -27,7 +27,7 @@ class CityReducer:
 
     def get_value(self) -> StatsRecord:
         result = {}
-        for name, average in self.averages.items():
-            if average.average_distance >= self.config.min_distance_km:
+        for name, average in self.state.items():
+            if average.average_distance >= Config().min_distance_km:
                 result[name] = average.average_distance
         return CityAverages(result)

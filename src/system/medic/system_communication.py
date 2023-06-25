@@ -34,7 +34,9 @@ class SystemCommunication(
         self._start_consuming_from(self.config.heartbeat_routing_key)
 
     def unbind_heartbeat_route(self) -> None:
-        self._stop_consuming_from(self.config.heartbeat_routing_key)
+        self._stop_consuming_from(
+            self.config.heartbeat_routing_key, delete_if_unused=False
+        )
 
     def create_routing_key(self, start: int, end: int) -> str:
         routing_key = ""

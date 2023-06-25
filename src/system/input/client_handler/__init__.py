@@ -27,6 +27,7 @@ TIMEOUT_MILLISECONDS = 1000
 
 @dataclass
 class State:
+    client_identity: str | None
     phase: Phase
     # (record_type, city) -> latest batch number
     latest_batchs: dict[tuple[RecordTypeBase, str], int]
@@ -45,13 +46,16 @@ class ClientHandler(WithState[State]):
         comms: SystemCommunication,
         socket: SocketStopWrapper,
         on_finish: Callable[[str], None],
+        client_identity: str | None,
     ) -> None:
-        super().__init__(State(Phase(job_id), {}))
+        super().__init__(State(client_identity, Phase(job_id), {}))
         self.job_id = job_id
         self.comms = comms
         self.socket = socket
-        self.restore_from(job_id)
         self.on_finish = on_finish
+        self.restore_from(job_id)
+        if self.state.client_identity is None:
+            raise RuntimeError("Client identity not set")
 
         if self.state.latest_start is None:
             comms.setup_job_queue(job_id)
@@ -101,7 +105,6 @@ class ClientHandler(WithState[State]):
         self.comms.send_msg(self.job_id, End())
         StatePersistor().remove(self.job_id)
         self.on_finish(self.job_id)
-        logging.info(f"Job {self.job_id} | Finished sending input data")
         return Ack()
 
     def __already_processed(self, batch_number: int) -> bool:

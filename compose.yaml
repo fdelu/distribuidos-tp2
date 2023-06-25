@@ -233,6 +233,9 @@ services:
       - type: bind
         source: ./src/client/results
         target: /tmp/results
+    deploy:
+      mode: replicated
+      replicas: ${CLIENTS_SCALE}
     networks:
       - outside_net
 

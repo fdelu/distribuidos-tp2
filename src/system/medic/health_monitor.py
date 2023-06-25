@@ -21,9 +21,9 @@ class HealthMonitor:
         self.comms = comms
         self.is_leader = True
         self.started = False
-        self.id = comms.id
+        self.id = int(comms.id)
         self.timer_dict = {}
-        self.container_list = get_containers(config, comms.id)
+        self.container_list = get_containers(config, self.id)
         self.config = config
         self.alive_message = AliveMessage(self.comms.name)
         # TODO: maybe auto start main medic

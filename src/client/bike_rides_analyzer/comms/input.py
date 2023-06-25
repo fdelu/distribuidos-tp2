@@ -2,6 +2,7 @@ import logging
 from typing import Iterable
 from threading import Event
 import zmq
+import time
 
 from shared.messages import (
     RecordStart,
@@ -9,12 +10,17 @@ from shared.messages import (
     RecordType,
     ServerMessagesInput,
     Ack,
+    NewJob,
+    ClientJobId,
+    NotAvailable,
 )
-from shared.serde import deserialize
+from shared.serde import deserialize, serialize
 
 from . import Comms
 from .socket import ClientSocket
 from ..config import BikeRidesAnalyzerConfig
+
+RETRY_START_JOB_SECONDS = 10
 
 
 class CommsInput(Comms):
@@ -22,14 +28,26 @@ class CommsInput(Comms):
 
     def __init__(
         self,
-        job_id: str,
         context: zmq.Context[zmq.Socket[None]],
         config: BikeRidesAnalyzerConfig,
         interrupt_event: Event,
     ) -> None:
         socket = ClientSocket(context, config.input_address, interrupt_event)
-        super().__init__(socket, job_id)
+        super().__init__(socket, None)
         self.batch_size = config.batch_size
+
+    def start_job(self, identity: str) -> str:
+        self.socket.send(serialize(NewJob(identity)))
+        resp = self.recv()
+        while isinstance(resp, NotAvailable):
+            logging.warning("New job not available, retrying in 10 seconds")
+            time.sleep(RETRY_START_JOB_SECONDS)
+            self.socket.send(serialize(NewJob(identity)))
+            resp = self.recv()
+        if not isinstance(resp, ClientJobId):
+            raise ValueError(f"Expected ClientJobId, got {type(resp)}")
+        self.job_id = resp.job_id
+        return resp.job_id
 
     def recv(self) -> ServerMessagesInput:
         return deserialize(ServerMessagesInput, self.socket.recv())

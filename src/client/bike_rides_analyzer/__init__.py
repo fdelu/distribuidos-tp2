@@ -4,9 +4,7 @@ from threading import Event
 from typing import Any, Iterable
 import zmq
 
-
 from shared.messages import StatType
-
 
 from .config import BikeRidesAnalyzerConfig
 from .comms.input import CommsInput
@@ -21,18 +19,20 @@ class BikeRidesAnalyzer:
     phase: Phase
     interrupted: Event
     context: zmq.Context[zmq.Socket[None]]
+    identity: str
     job_id: str
 
     def __init__(
-        self, config: BikeRidesAnalyzerConfig, job_id: str | None = None
+        self, config: BikeRidesAnalyzerConfig, identity: str | None = None
     ) -> None:
         self.context = zmq.Context()
         self.context.setsockopt(zmq.LINGER, 0)  # Don't block on close
 
         self.interrupted = Event()
-        self.job_id = job_id or uuid4().hex
+        self.identity = str(uuid4())
 
-        comms_input = CommsInput(self.job_id, self.context, config, self.interrupted)
+        comms_input = CommsInput(self.context, config, self.interrupted)
+        self.job_id = comms_input.start_job(self.identity)
         comms_output = CommsOutput(self.job_id, self.context, config, self.interrupted)
         self.phase = WeatherStationsPhase(comms_input, comms_output)
 

@@ -35,3 +35,6 @@ class JobTracker(WithState[Jobs]):
             jobs[job_id] = factory(job_id)
         if len(self.state.in_progress) > 0:
             logging.info(f"Restored {len(self.state.in_progress)} jobs")
+
+    def __contains__(self, job_id: str) -> bool:
+        return job_id in self.state.in_progress or job_id in self.state.completed

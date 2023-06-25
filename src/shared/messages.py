@@ -19,6 +19,11 @@ class RecordType(StrEnum):
 
 
 @dataclass
+class NewJob:
+    identity: str
+
+
+@dataclass
 class RecordStart:
     record_type: RecordType
     city: str
@@ -92,11 +97,16 @@ class NotAvailable:
 
 
 @dataclass
+class ClientJobId:
+    job_id: str
+
+
+@dataclass
 class Error:
     msg: str
 
 
 Stat = RainAverages | YearCounts | CityAverages
-ServerMessagesInput = Ack | Error
+ServerMessagesInput = Ack | Error | ClientJobId | NotAvailable
 ServerMessagesOutput = NotAvailable | Stat
 ServerMessages = ServerMessagesInput | ServerMessagesOutput

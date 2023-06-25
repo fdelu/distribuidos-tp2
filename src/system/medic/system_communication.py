@@ -34,7 +34,9 @@ class SystemCommunication(
         self._start_consuming_from(self.config.heartbeat_routing_key)
 
     def unbind_heartbeat_route(self) -> None:
-        self._stop_consuming_from(self.config.heartbeat_routing_key)
+        self._stop_consuming_from(
+            self.config.heartbeat_routing_key, delete_if_unused=False
+        )
 
     def create_routing_key(self, start: int, end: int) -> str:
         routing_key = ""
@@ -48,15 +50,15 @@ class SystemCommunication(
         routing_key = self.create_routing_key(1, self.medic_scale)
         if isinstance(record, ElectionMessage):
             routing_key = self.create_routing_key(int(self.id) + 1, self.medic_scale)
-            logging.info(f"Election message to route: {routing_key}")
+            logging.debug(f"Election message to route: {routing_key}")
         elif isinstance(record, CoordinatorMessage):
             routing_key = self.create_routing_key(1, self.medic_scale)
-            logging.info(f"Coordinator message to route: {routing_key}")
+            logging.debug(f"Coordinator message to route: {routing_key}")
         elif isinstance(record, AnswerMessage):
             routing_key = self.create_routing_key(
                 record.receiver_id, record.receiver_id
             )
-            logging.info(f"Awnser message to route: {routing_key}")
+            logging.debug(f"Answer message to route: {routing_key}")
         elif isinstance(record, AliveLeaderMessage):
             routing_key = self.create_routing_key(1, self.medic_scale)
             # logging.info(f"Alive leader message to route: {routing_key}")

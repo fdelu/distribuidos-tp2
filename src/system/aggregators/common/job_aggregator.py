@@ -73,7 +73,10 @@ class JobAggregator(
     def check_ends(self) -> None:
         if len(self.state.ends_received) < self.config.joiners_count:
             return
-        logging.info(f"Job {self.job_id} | Waiting for all trips to be processed")
+        logging.info(
+            f"Job {self.job_id} | Received all Ends, waiting for all trips to be"
+            " processed"
+        )
         self.comms.set_all_trips_done_callback(self.job_id, self.finished)
 
     def finished(self) -> None:

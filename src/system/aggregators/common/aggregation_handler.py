@@ -55,6 +55,7 @@ class AggregationHandler(Generic[GenericJoinedTrip, GenericAggregatedRecord]):
 
         if msg.job_id not in self.jobs:
             logging.info(f"Starting job {msg.job_id}")
+            self.job_tracker.start_job(msg.job_id)
             handler = self.__aggregator(msg.job_id)
             self.jobs[msg.job_id] = handler
 

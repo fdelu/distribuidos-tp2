@@ -29,6 +29,7 @@ class Bully:
     leader_heartbeat: LeaderHeartbeat
     health_monitor: HealthMonitor
     config: Config
+    election_message: ElectionMessage
 
     timer: Any | None
 
@@ -41,10 +42,11 @@ class Bully:
         self.current_leader = -1
         self.coordination_timer_id = None
         self.leader_checker = LeaderChecker(self, self.comms, config)
-        self.leader_heartbeat = LeaderHeartbeat(self.comms, self.id, config)
-        self.health_monitor = HealthMonitor(self.comms, self.id, config)
+        self.leader_heartbeat = LeaderHeartbeat(self.comms, config)
+        self.health_monitor = HealthMonitor(self.comms, config)
         self.answer_timer_id = None
         self.config = config
+        self.election_message = ElectionMessage(self.id)
 
     def is_in_election(self) -> bool:
         return self.election_started
@@ -55,8 +57,7 @@ class Bully:
     def run(self) -> None:
         logging.info("Starting bully")
         self.start_election()
-        self.comms.set_callback(self.handle_message)
-        self.comms._start_consuming_from(self.comms.bully_queue)
+        self.comms.start_consuming_clean(self.handle_message)
         set_healthy("HEALTHY")
         self.comms.start_consuming()
 
@@ -87,7 +88,7 @@ class Bully:
     def send_election_message(self) -> None:
         logging.info("Sending election message")
         # sends a ElectionMessage to all medic with id > self.id
-        self.comms.send(ElectionMessage(self.id))
+        self.comms.send(self.election_message)
         # also set timer that waits for a AnswerMessage or declare itself as the leader
         self.answer_timer_id = self.comms.set_timer(
             self.__timer_answer, self.config.answer_timeout

@@ -39,14 +39,14 @@ class LeaderHeartbeat:
     # used by the leader to send heartbeats to the other medics
     send_heartbeat: bool
     comms: SystemCommunication
-    id: int
     config: Config
+    alive_message: AliveLeaderMessage
 
-    def __init__(self, comms: SystemCommunication, id: int, config: Config) -> None:
+    def __init__(self, comms: SystemCommunication, config: Config) -> None:
         self.send_heartbeat = False
         self.comms = comms
-        self.id = id
         self.config = config
+        self.alive_message = AliveLeaderMessage(int(self.comms.id))
 
     def start_hearbeat(self) -> None:
         self.send_heartbeat = True
@@ -54,7 +54,7 @@ class LeaderHeartbeat:
 
     def send_heartbeat_message(self) -> None:
         if self.send_heartbeat:
-            self.comms.send(AliveLeaderMessage(int(self.comms.id)))
+            self.comms.send(self.alive_message)
             self.comms.set_timer(
                 self.send_heartbeat_message, self.config.leader_heartbeat_interval)
             # time between leader heartbeats

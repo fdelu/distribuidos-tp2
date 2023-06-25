@@ -9,6 +9,7 @@ from .messages.bully_messages import (
     AliveMessage,
     AliveLeaderMessage,
 )
+from typing import Any
 
 
 class SystemCommunication(
@@ -30,7 +31,13 @@ class SystemCommunication(
         self.channel.queue_declare(queue=self.bully_queue)
         self.channel.queue_bind(self.bully_queue, self.exchange, f"#.{self.id}.#")
 
+    def start_consuming_clean(self, callback: Any) -> None:
+        self.set_callback(callback)
+        self.channel.queue_purge(self.bully_queue)
+        self._start_consuming_from(self.bully_queue)
+
     def bind_heartbeat_route(self) -> None:
+        self.channel.queue_purge(self.config.heartbeat_routing_key)
         self._start_consuming_from(self.config.heartbeat_routing_key)
 
     def unbind_heartbeat_route(self) -> None:

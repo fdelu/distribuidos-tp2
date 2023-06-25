@@ -15,16 +15,17 @@ class HealthMonitor:
     timer_dict: dict[str, Any]
     container_list: list[str]
     config: Config
+    alive_message: AliveMessage
 
-    def __init__(self, comms: SystemCommunication, id: int, config: Config) -> None:
+    def __init__(self, comms: SystemCommunication, config: Config) -> None:
         self.comms = comms
         self.is_leader = True
         self.started = False
-        self.id = id
+        self.id = comms.id
         self.timer_dict = {}
-        self.container_list = get_containers(config, id)
+        self.container_list = get_containers(config, comms.id)
         self.config = config
-        # logging.info(f"container list: {self.container_list}")
+        self.alive_message = AliveMessage(self.comms.name)
         # TODO: maybe auto start main medic
 
     def start_timers(self) -> None:
@@ -57,7 +58,7 @@ class HealthMonitor:
 
     def send_heartbeat(self) -> None:
         if not self.is_leader:
-            self.comms.send(AliveMessage(self.comms.name))
+            self.comms.send(self.alive_message)
             self.comms.set_timer(self.send_heartbeat, self.config.heartbeat_interval)
             # time between heartbeats
 

@@ -2,6 +2,7 @@ import logging
 
 from pika import BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
+from pika.exceptions import ChannelWrongStateError, ConnectionWrongStateError
 
 from .protocol import CommsProtocol
 from common.config_base import ConfigProtocol
@@ -39,9 +40,13 @@ class SystemCommunicationBase(CommsProtocol):
         self.__conn = BlockingConnection(ConnectionParameters(host=config.rabbit_host))
         self.__ch = self.connection.channel()
 
-    def reset_channel(self) -> None:
-        self.__ch = self.connection.channel()
-
     def close(self) -> None:
-        self.channel.close()
-        self.connection.close()
+        # Ignore errors if the connection/channel is already closed
+        try:
+            self.channel.close()
+        except ChannelWrongStateError:
+            pass
+        try:
+            self.connection.close()
+        except ConnectionWrongStateError:
+            pass

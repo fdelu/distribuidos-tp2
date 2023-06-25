@@ -3,8 +3,7 @@ import logging
 
 from common.messages.basic import BasicStation, BasicTrip, BasicWeather
 from common.messages.joined import JoinedCityTrip
-
-from .config import Config
+from common.persistence import WithStateAppended
 
 
 @dataclass
@@ -13,15 +12,12 @@ class StationData:
     coordinates: tuple[float, float]
 
 
-class CityJoiner:
-    # city -> (code, year) -> data
-    station_names: dict[str, dict[tuple[str, str], StationData]]
-    config: Config
+# (city, code, year) -> data
+Key = tuple[str, str, str]
+Value = StationData
 
-    def __init__(self, config: Config) -> None:
-        self.station_names = {}
-        self.config = config
 
+class CityJoiner(WithStateAppended[Key, Value]):
     def handle_station(self, station: BasicStation) -> None:
         if station.latitude is None or station.longitude is None:
             logging.debug(
@@ -29,32 +25,23 @@ class CityJoiner:
                 f" {station.year}"
             )
             return
-        station_names = self.station_names.setdefault(station.city, {})
-        station_names[(station.code, station.year)] = StationData(
-            station.name, (station.latitude, station.longitude)
+        self.set(
+            (station.city, station.code, station.year),
+            StationData(station.name, (station.latitude, station.longitude)),
         )
 
     def handle_weather(self, weather: BasicWeather) -> None:
         logging.warn("Unexpected Weather received on year joiner")
 
     def handle_trip(self, trip: BasicTrip) -> JoinedCityTrip | None:
-        data = self._get_join_data(trip)
-        if data is None:
+        start = self.__get_station_data(trip.city, trip.start_station_code, trip.year)
+        end = self.__get_station_data(trip.city, trip.end_station_code, trip.year)
+        if start is None or end is None:
             return None
-        start, end = data
         return JoinedCityTrip(end.name, start.coordinates, end.coordinates)
 
-    def _get_join_data(self, trip: BasicTrip) -> tuple[StationData, StationData] | None:
-        start = self.__get_station_data(trip.start_station_code, trip.year, trip.city)
-        if start is None:
-            return None
-        end = self.__get_station_data(trip.end_station_code, trip.year, trip.city)
-        if end is None:
-            return None
-        return start, end
-
-    def __get_station_data(self, code: str, year: str, city: str) -> StationData | None:
-        station = self.station_names[city].get((code, year), None)
+    def __get_station_data(self, city: str, code: str, year: str) -> StationData | None:
+        station = self.state.get((city, code, year), None)
         if station is None:
             logging.debug(f"Missing station data for code {code}, year {year} ({city})")
         return station

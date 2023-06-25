@@ -13,6 +13,7 @@ class Config(ConfigBase):
     leader_heartbeat_timeout: int
     first_heartbeat_timeout: int
     restart_timeout: int
+    medic_exchange: str
 
     def __init__(self) -> None:
         super().__init__("medic")
@@ -27,3 +28,4 @@ class Config(ConfigBase):
         self.leader_heartbeat_timeout = self.get_int("LeaderHeartbeatTimeout")
         self.first_heartbeat_timeout = self.get_int("FirstHeartbeatTimeout")
         self.restart_timeout = self.get_int("RestartTimeout")
+        self.medic_exchange = self.get("MedicExchange")

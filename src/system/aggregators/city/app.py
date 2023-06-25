@@ -3,24 +3,24 @@ from shared.log import setup_logs
 
 from common.messages.joined import JoinedCityTrip
 from common.messages.aggregated import PartialCityAverages
+from common.util import process_loop
 
 from ..common.aggregation_handler import AggregationHandler
 from ..common.comms import AggregatorComms
-from ..common.config import Config
+from .config import Config
 from .aggregator import CityAggregator
-
-NAME = "city"
 
 
 def main() -> None:
-    config = Config(NAME)
-    setup_logs(config.log_level)
+    setup_logs(Config().log_level)
 
-    comms = AggregatorComms[JoinedCityTrip, PartialCityAverages](config)
-    handler = AggregationHandler[JoinedCityTrip, PartialCityAverages](
-        comms, lambda: CityAggregator(), config
+    process_loop(
+        lambda: AggregationHandler[JoinedCityTrip, PartialCityAverages](
+            AggregatorComms[JoinedCityTrip, PartialCityAverages](Config()),
+            lambda: CityAggregator(),
+            Config(),
+        )
     )
-    handler.run()
     logging.info("Exiting gracefully")
 
 

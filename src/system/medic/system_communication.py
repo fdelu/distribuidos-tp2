@@ -14,7 +14,7 @@ from .messages.bully_messages import (
 class SystemCommunication(
     CommsReceive[BullyMessage], CommsSend[BullyMessage], SystemCommunicationBase
 ):
-    EXCHANGE: str
+    exchange: str
     bully_queue: str
     config: Config
     medic_scale: int
@@ -22,21 +22,19 @@ class SystemCommunication(
     def __init__(self, config: Config) -> None:
         self.bully_queue = f"bully_{self.id}"
         self.medic_scale = config.medic_scale
-        self.EXCHANGE = config.heartbeat_exchange
+        self.exchange = config.medic_exchange
         self.config = config
         super().__init__(config)
 
     def _load_definitions(self) -> None:
-        self.channel.queue_declare(queue=self.bully_queue, exclusive=True)
-        self.channel.queue_bind(self.bully_queue, self.EXCHANGE, f"#.{self.id}.#")
+        self.channel.queue_declare(queue=self.bully_queue)
+        self.channel.queue_bind(self.bully_queue, self.exchange, f"#.{self.id}.#")
 
     def bind_heartbeat_route(self) -> None:
-        self.channel.queue_bind(self.bully_queue, self.EXCHANGE,
-                                self.config.heartbeat_routing_key)
+        self._start_consuming_from(self.config.heartbeat_routing_key)
 
     def unbind_heartbeat_route(self) -> None:
-        self.channel.queue_unbind(self.bully_queue, self.EXCHANGE,
-                                  self.config.heartbeat_routing_key)
+        self._stop_consuming_from(self.config.heartbeat_routing_key)
 
     def create_routing_key(self, start: int, end: int) -> str:
         routing_key = ""
@@ -56,12 +54,12 @@ class SystemCommunication(
             logging.info(f"Coordinator message to route: {routing_key}")
         elif isinstance(record, AnswerMessage):
             routing_key = self.create_routing_key(
-                record.receiver_id, record.receiver_id)
+                record.receiver_id, record.receiver_id
+            )
             logging.info(f"Awnser message to route: {routing_key}")
         elif isinstance(record, AliveLeaderMessage):
             routing_key = self.create_routing_key(1, self.medic_scale)
             # logging.info(f"Alive leader message to route: {routing_key}")
         elif isinstance(record, AliveMessage):
-            routing_key = self.config.heartbeat_routing_key
-            logging.debug(f"Alive message to route: {routing_key}")
-        return self.EXCHANGE, routing_key
+            return self.config.heartbeat_exchange, self.config.heartbeat_routing_key
+        return self.exchange, routing_key

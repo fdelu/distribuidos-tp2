@@ -2,22 +2,24 @@ import logging
 from shared.log import setup_logs
 
 from common.messages.aggregated import PartialCityAverages
+from common.util import process_loop
 
 from ..common.reduction_handler import ReductionHandler
 from ..common.comms import ReducerComms
-from .city import CityReducer
 from .config import Config
+from .reducer import CityReducer
 
 
 def main() -> None:
-    config = Config()
-    setup_logs(config.log_level)
+    setup_logs(Config().log_level)
 
-    comms = ReducerComms[PartialCityAverages](config)
-    handler = ReductionHandler[PartialCityAverages](
-        comms, config, lambda: CityReducer(config)
+    process_loop(
+        lambda: ReductionHandler[PartialCityAverages](
+            ReducerComms[PartialCityAverages](Config()),
+            Config(),
+            lambda: CityReducer(),
+        )
     )
-    handler.run()
     logging.info("Exiting gracefully")
 
 

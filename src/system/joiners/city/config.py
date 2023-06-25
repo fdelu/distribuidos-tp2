@@ -1,8 +1,11 @@
+from common.util import singleton
+
 from ..common.config import Config as JoinerConfig
 
 NAME = "city"
 
 
+@singleton
 class Config(JoinerConfig):
     city: str
 

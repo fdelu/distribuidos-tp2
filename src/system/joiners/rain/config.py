@@ -1,8 +1,11 @@
+from common.util import singleton
+
 from ..common.config import Config as JoinerConfig
 
 NAME = "rain"
 
 
+@singleton
 class Config(JoinerConfig):
     precipitation_threshold: float
 

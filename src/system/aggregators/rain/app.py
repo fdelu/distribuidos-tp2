@@ -3,24 +3,24 @@ from shared.log import setup_logs
 
 from common.messages.joined import JoinedRainTrip
 from common.messages.aggregated import PartialRainAverages
+from common.util import process_loop
 
 from ..common.aggregation_handler import AggregationHandler
 from ..common.comms import AggregatorComms
-from ..common.config import Config
+from .config import Config
 from .aggregator import RainAggregator
-
-NAME = "rain"
 
 
 def main() -> None:
-    config = Config(NAME)
-    setup_logs(config.log_level)
+    setup_logs(Config().log_level)
 
-    comms = AggregatorComms[JoinedRainTrip, PartialRainAverages](config)
-    handler = AggregationHandler[JoinedRainTrip, PartialRainAverages](
-        comms, lambda: RainAggregator(), config
+    process_loop(
+        lambda: AggregationHandler[JoinedRainTrip, PartialRainAverages](
+            AggregatorComms[JoinedRainTrip, PartialRainAverages](Config()),
+            lambda: RainAggregator(),
+            Config(),
+        )
     )
-    handler.run()
     logging.info("Exiting gracefully")
 
 

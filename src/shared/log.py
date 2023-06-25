@@ -20,4 +20,4 @@ def setup_logs(log_level: str | None = None) -> None:
             f"Invalid or missing LOG_LEVEL supplied: '{log_level}'. "
             f"Defaulting to '{log_level}'"
         )
-    logging.getLogger("pika").setLevel(logging.WARN)
+    logging.getLogger("pika").setLevel(logging.CRITICAL)

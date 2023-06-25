@@ -20,12 +20,6 @@ class WithRoutingKey(Protocol):
         ...
 
 
-@dataclass
-class Package(Generic[T]):
-    messages: list[T]
-    msg_id: str | None
-
-
 P = TypeVar("P", covariant=True, bound=WithRoutingKey)
 
 

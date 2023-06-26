@@ -90,6 +90,7 @@ class Bully:
         # sends a ElectionMessage to all medic with id > self.id
         self.comms.send(self.election_message)
         # also set timer that waits for a AnswerMessage or declare itself as the leader
+        self.cancel_answer_timer()
         self.answer_timer_id = self.comms.set_timer(
             self.__timer_answer, self.config.answer_timeout
         )
@@ -120,9 +121,15 @@ class Bully:
             self.comms.cancel_timer(self.answer_timer_id)
             self.answer_timer_id = None
 
+    def cancel_coordination_timer(self) -> None:
+        if self.coordination_timer_id is not None:
+            self.comms.cancel_timer(self.coordination_timer_id)
+            self.coordination_timer_id = None
+
     def handle_answer(self, message: AnswerMessage) -> None:
         self.received_answer = True
         self.cancel_answer_timer()
+        self.cancel_coordination_timer()
         self.coordination_timer_id = self.comms.set_timer(
             self.__timer_coordinator, self.config.coordinator_timeout
         )

@@ -141,7 +141,7 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             if check.host_id < self.comms.id:
                 logging.warn(
                     f"Job {check.job_id} | Received CheckProcessed from host"
-                    f" {check.host_id} < {self.comms.id} for {check.msg_id}"
+                    f" {check.host_id} < self ({self.comms.id}) for {check.msg_id}"
                     " already checking locally, answering with RemoveCheck"
                 )
                 response = RemoveCheck(check.check_id, self.comms.id)
@@ -153,7 +153,7 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
                 return False
             logging.warn(
                 f"Job {check.job_id} | Received CheckProcessed from host"
-                f" {check.host_id} > {self.comms.id} for {check.msg_id} already"
+                f" {check.host_id} > self ({self.comms.id}) for {check.msg_id} already"
                 " checking locally, removing local check and nacking message"
             )
             self.pending_checks.pop(id)
@@ -169,16 +169,16 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
         delivery_tag: int | None,
         redelivered: bool,
     ) -> None:
-        if response.check_id not in self.pending_checks:
+        check = self.pending_checks.get(response.check_id, None)
+        if check is None:
             self._ack(delivery_tag)
             return
 
-        check = self.pending_checks[response.check_id]
         if response.processed:
             logging.info(
                 f"Job {check.package.job_id} | Check finished: Package"
                 f" {check.package.msg_id} had been processed by"
-                f" {response.host_id}, acknowledging"
+                f" {response.host_id}, acknowledging message"
             )
             self.pending_checks.pop(response.check_id)
             self._ack(check.delivery_tag)
@@ -191,17 +191,14 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             f" from host {response.host_id} for {check.package.msg_id}"
             f" ({len(check.responses)}/{self.config.host_count - 1})"
         )
-        if len(check.responses) < self.config.host_count - 1:
-            self._ack(delivery_tag)
-            return
-
-        logging.info(
-            f"Job {check.package.job_id} | Check finished: Package"
-            f" {check.package.msg_id} hadn't been processed by"
-            " any other node, processing locally"
-        )
-        check = self.pending_checks.pop(response.check_id)
-        self.__process(check.package, check.delivery_tag)
+        if len(check.responses) >= self.config.host_count - 1:
+            logging.info(
+                f"Job {check.package.job_id} | Check finished: Package"
+                f" {check.package.msg_id} hadn't been processed by"
+                " any other node, processing locally"
+            )
+            check = self.pending_checks.pop(response.check_id)
+            self.__process(check.package, check.delivery_tag)
         self._ack(delivery_tag)
 
     @handle_message.register
@@ -212,14 +209,14 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
         delivery_tag: int | None,
         redelivered: bool,
     ) -> None:
-        local = self.pending_checks.pop(response.check_id, None)
-        if local:
-            logging.warn(
-                f"Job {local.package.job_id} | Received RemoveCheck from host"
-                f" {response.host_id} for {local.package.msg_id}, removing local check"
+        check = self.pending_checks.pop(response.check_id, None)
+        if check:
+            logging.info(
+                f"Job {check.package.job_id} | Received RemoveCheck from host"
+                f" {response.host_id} for {check.package.msg_id}, removing local check"
                 " and nacking message"
             )
-            self._nack(local.delivery_tag)
+            self._nack(check.delivery_tag)
         self._ack(delivery_tag)
 
     def __send_check(

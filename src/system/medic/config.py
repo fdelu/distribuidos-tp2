@@ -1,6 +1,8 @@
 from common.config_base import ConfigBase
+from common.util import singleton
 
 
+@singleton
 class Config(ConfigBase):
     address: str
     prefetch_count: int
@@ -14,6 +16,8 @@ class Config(ConfigBase):
     first_heartbeat_timeout: int
     restart_timeout: int
     medic_exchange: str
+    medic_queue_format: str
+    medic_queue_routing_keys_format: list[str]
 
     def __init__(self) -> None:
         super().__init__("medic")
@@ -29,3 +33,7 @@ class Config(ConfigBase):
         self.first_heartbeat_timeout = self.get_int("FirstHeartbeatTimeout")
         self.restart_timeout = self.get_int("RestartTimeout")
         self.medic_exchange = self.get("MedicExchange")
+        self.medic_queue_format = self.get("MedicQueueFormat")
+        self.medic_queue_routing_keys_format = self.get_json(
+            "MedicQueueRoutingKeysFormat"
+        )

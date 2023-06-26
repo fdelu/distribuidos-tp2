@@ -1,6 +1,5 @@
 import logging
 from typing import Any
-from .config import Config
 from common.comms_base.util import set_healthy
 from .system_communication import SystemCommunication
 from .messages.bully_messages import (
@@ -13,12 +12,12 @@ from .messages.bully_messages import (
 )
 from .leader_heartbeat import LeaderChecker, LeaderHeartbeat
 from .health_monitor import HealthMonitor
+from .config import Config
 
 
 class Bully:
     comms: SystemCommunication
     id: int
-    medic_scale: int
     is_leader: bool
     current_leader: int
     election_started: bool
@@ -28,24 +27,21 @@ class Bully:
     leader_checker: LeaderChecker
     leader_heartbeat: LeaderHeartbeat
     health_monitor: HealthMonitor
-    config: Config
     election_message: ElectionMessage
 
     timer: Any | None
 
-    def __init__(self, config: Config) -> None:
-        self.comms = SystemCommunication(config)
+    def __init__(self) -> None:
+        self.comms = SystemCommunication()
         self.id = int(self.comms.id)
-        self.medic_scale = config.medic_scale
         self.is_leader = False
         self.election_started = False
         self.current_leader = -1
         self.coordination_timer_id = None
-        self.leader_checker = LeaderChecker(self, self.comms, config)
-        self.leader_heartbeat = LeaderHeartbeat(self.comms, config)
-        self.health_monitor = HealthMonitor(self.comms, config)
+        self.leader_checker = LeaderChecker(self, self.comms)
+        self.leader_heartbeat = LeaderHeartbeat(self.comms)
+        self.health_monitor = HealthMonitor(self.comms)
         self.answer_timer_id = None
-        self.config = config
         self.election_message = ElectionMessage(self.id)
 
     def is_in_election(self) -> bool:
@@ -67,7 +63,7 @@ class Bully:
 
     def start_election(self) -> None:
         self.election_started = True
-        if self.id == self.medic_scale:
+        if self.id == Config().medic_scale:
             self.win_election()
         else:
             self.send_election_message()
@@ -92,7 +88,7 @@ class Bully:
         # also set timer that waits for a AnswerMessage or declare itself as the leader
         self.cancel_answer_timer()
         self.answer_timer_id = self.comms.set_timer(
-            self.__timer_answer, self.config.answer_timeout
+            self.__timer_answer, Config().answer_timeout
         )
         # time to wait for a AnswerMessage or declare itself as the leader
         self.received_answer = False
@@ -131,7 +127,7 @@ class Bully:
         self.cancel_answer_timer()
         self.cancel_coordination_timer()
         self.coordination_timer_id = self.comms.set_timer(
-            self.__timer_coordinator, self.config.coordinator_timeout
+            self.__timer_coordinator, Config().coordinator_timeout
         )
         # time that waits for a CoordinatorMessage or restart election
 

@@ -14,17 +14,15 @@ class HealthMonitor:
     id: int
     timer_dict: dict[str, Any]
     container_list: list[str]
-    config: Config
     alive_message: AliveMessage
 
-    def __init__(self, comms: SystemCommunication, config: Config) -> None:
+    def __init__(self, comms: SystemCommunication) -> None:
         self.comms = comms
         self.is_leader = True
         self.started = False
         self.id = int(comms.id)
         self.timer_dict = {}
-        self.container_list = get_containers(config, self.id)
-        self.config = config
+        self.container_list = get_containers(self.id)
         self.alive_message = AliveMessage(self.comms.name)
         # TODO: maybe auto start main medic
 
@@ -33,7 +31,7 @@ class HealthMonitor:
         for container_name in self.container_list:
             self.restart_container_timer(
                 container_name,
-                self.config.first_heartbeat_timeout,
+                Config().first_heartbeat_timeout,
             )
             # time to consider a container dead if no previous heartbeats
             # have been received
@@ -59,7 +57,7 @@ class HealthMonitor:
     def send_heartbeat(self) -> None:
         if not self.is_leader:
             self.comms.send(self.alive_message)
-            self.comms.set_timer(self.send_heartbeat, self.config.heartbeat_interval)
+            self.comms.set_timer(self.send_heartbeat, Config().heartbeat_interval)
             # time between heartbeats
 
     def start_heartbeat(self) -> None:
@@ -73,14 +71,12 @@ class HealthMonitor:
         )
 
     def handle_heartbeat(self, message: AliveMessage) -> None:
-        logging.debug(f"Received heartbeat from {message.container_name}")
-        self.restart_container_timer(
-            message.container_name, self.config.heartbeat_timeout
-        )
+        # logging.debug(f"Received heartbeat from {message.container_name}")
+        self.restart_container_timer(message.container_name, Config().heartbeat_timeout)
         # time to consider a container dead
 
     def container_dead(self, container_name: str) -> None:
         logging.info(f"Container {container_name} timed out, starting it")
         subprocess.Popen(["docker", "start", container_name], stdout=subprocess.DEVNULL)
-        self.restart_container_timer(container_name, self.config.restart_timeout)
+        self.restart_container_timer(container_name, Config().restart_timeout)
         # time to consider a container dead after restarting it

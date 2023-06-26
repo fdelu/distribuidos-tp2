@@ -21,7 +21,7 @@ def make_container_name(proyect_name: str, service_name: str, id: int) -> str:
     return f"{proyect_name}-{service_name}-{id}"
 
 
-def get_replication_factor(service_compose: Any, config: Config) -> int:
+def get_replication_factor(service_compose: Any) -> int:
     # get the replication factor of a service
     # if it is not defined, return 1
     try:
@@ -30,7 +30,7 @@ def get_replication_factor(service_compose: Any, config: Config) -> int:
     except Exception as e:
         logging.debug(f"error getting replica factor: {e}")
         return 1
-    replica_int = config.get_int(replica_strip)
+    replica_int = Config().get_int(replica_strip)
     return replica_int
 
 
@@ -45,7 +45,7 @@ def exclude_container(container_name: str, id: int) -> bool:
     return False
 
 
-def get_containers(config: Config, id: int) -> list[str]:
+def get_containers(id: int) -> list[str]:
     # get the list of containers that need healthchecks
     compose = parse_compose()
     if not compose:
@@ -53,7 +53,7 @@ def get_containers(config: Config, id: int) -> list[str]:
     containers = []
     for service_name in compose["services"].keys():
         service_compose = compose["services"][service_name]
-        replica_factor = get_replication_factor(service_compose, config)
+        replica_factor = get_replication_factor(service_compose)
         for i in range(1, replica_factor + 1):
             container_name = make_container_name(compose["name"], service_name, i)
             if exclude_container(container_name, id):

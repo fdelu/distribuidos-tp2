@@ -14,11 +14,13 @@ class DuplicateFilterSimple(DuplicateFilter[IN], Generic[IN]):
         self, message: str, queue: str, delivery_tag: int | None, redelivered: bool
     ) -> None:
         package = self.__deserialize_package(message)
-        if package.msg_id and (redelivered or package.maybe_redelivered):
-            if self._was_processed(package.job_id, package.msg_id):
+        if package.msg_id:
+            if (redelivered or package.maybe_redelivered) and self._was_processed(
+                package.job_id, package.msg_id
+            ):
                 logging.warn(
-                    f"Already received {package.msg_id} -"
-                    f" {str(package.messages)[:100]}..."
+                    f"Received package {package.msg_id} already processed locally,"
+                    " acknowledging"
                 )
                 self._ack(delivery_tag)
                 return

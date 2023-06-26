@@ -41,9 +41,7 @@ class InputServer:
         socket = context.socket(zmq.REP)
         socket.bind(Config().address)
         self.socket = SocketStopWrapper(socket, self.stop_event)
-
         self.job_tracker = JobTracker()
-        self.job_tracker.restore(self.handlers, self.__handler)
 
     def finished(self, job_id: str) -> None:
         logging.info(f"Finished job {job_id}")
@@ -103,6 +101,7 @@ class InputServer:
         self.setup_interrupt()
         logging.info("Starting to receive requests")
         try:
+            self.job_tracker.restore(self.handlers, self.__handler)
             self.receive_loop()
         except (InterruptedError, KeyboardInterrupt):
             logging.info("Input interrupted by user")

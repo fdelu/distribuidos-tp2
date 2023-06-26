@@ -9,6 +9,8 @@ services:
       - type: bind
         source: ../../config.ini
         target: /config.ini
-    env_file: ../../.env
+    env_file:
+      - ../../.env
+      - ../../self_destruct.env
     networks:
       - internal_net

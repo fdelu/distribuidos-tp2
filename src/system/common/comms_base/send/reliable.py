@@ -6,6 +6,7 @@ from shared.serde import serialize, get_generic_types
 from common.messages import P
 from common.messages.comms import Package
 from common.persistence.persistor import StatePersistor
+from common.util import register_self_destruct
 
 from ..receive import ReceiveConfig
 from ..receive.reliable import ReliableReceive, FilterConfig
@@ -99,11 +100,13 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
         self.routing_count = 0
 
     def __send_messages(self, maybe_redelivered: bool = False) -> None:
+        register_self_destruct("pre_send")
         for (exchange, routing_key), package in self.pending_packages.items():
             package.maybe_redelivered = maybe_redelivered
             self.channel.basic_publish(
                 exchange, routing_key, serialize(package).encode()
             )
+        register_self_destruct("post_send")
         self.pending_packages = {}
         self.__save_state()
 

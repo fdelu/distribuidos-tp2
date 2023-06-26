@@ -49,3 +49,15 @@ Estas extensiones se pueden configurar en el archivo `.vscode/settings.json`. La
   }
 }
 ```
+
+### Autodestrucción
+
+El código tiene registrados en el código varios puntos de control donde, con una cierta probabilidad, el programa se detiene repentinamente. Esto se hace para poder probar el comportamiento del sistema ante fallas durante el desarrollo. Para activar esta funcionalidad, se puede establecer la probabilidad con variables de entorno de la forma `SELF_DESTRUCT_{KEY}` en el archivo [`self_destruct.env`](./self_destruct.env), donde _KEY_ es una de las siguientes:
+
+- `RECEIVED_MESSAGE`: Apenas se recibe un mensaje, en **CommsReceive**.
+- `PRE_SAVE`: Justo antes de guardar el estado en **StatePersistor**
+- `MID_SAVE`: Justo en el medio de guardar el estado en **StatePersistor**
+- `POST_SAVE`: Justo después de guardar el estado en **StatePersistor**
+- `PRE_SEND`: Justo antes de flushear los mensajes, en **ReliableComms** y en las comunicaciones del input.
+- `POST_SEND`: Justo despues de flushear los mensajes, antes de poder guardarlos como enviados, en **ReliableComms** y en las comunicaciones del input.
+- `PRE_ACK`: Justo antes de ackear un mensaje, en **DuplicateFilter**, **ReliableReceive** y **CommsReceive**.

@@ -207,7 +207,9 @@ services:
       - type: bind
         source: ./compose.yaml
         target: /app/compose.yaml
-    env_file: ./.env
+    env_file:
+      - ./.env
+      - ./self_destruct_medics.env
     depends_on:
       input:
         condition: service_started

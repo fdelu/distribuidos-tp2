@@ -4,6 +4,7 @@ from functools import cached_property
 from shared.serde import get_generic_types
 from common.messages import Message, P
 from common.messages.comms import Package
+from common.util import register_self_destruct
 
 from .. import CommsReceive, ReceiveConfig
 from .duplicate_filters.simple import DuplicateFilter, DuplicateFilterSimple
@@ -63,6 +64,7 @@ class ReliableReceive(Generic[P], CommsReceive[Message[P]]):
         Acknowledges the message and restarts the current_msg_id
         """
         if delivery_tag is not None:
+            register_self_destruct("pre_ack")
             self.channel.basic_ack(delivery_tag)
         self.current_msg_id = None
 

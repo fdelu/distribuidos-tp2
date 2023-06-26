@@ -6,6 +6,7 @@ from datetime import datetime
 from common.comms_base.protocol import CommsProtocol
 from common.messages.comms import PackageHandler
 from common.persistence import StatePersistor
+from common.util import register_self_destruct
 
 
 RECEIVED_MESSAGES_KEY = "_received_messages"
@@ -35,6 +36,7 @@ class DuplicateFilter(Generic[IN], ABC):
 
     def _ack(self, delivery_tag: int | None) -> None:
         if delivery_tag is not None:
+            register_self_destruct("pre_ack")
             self.comms.channel.basic_ack(delivery_tag)
 
     def _processed(self, job_id: str, msg_id: str) -> None:

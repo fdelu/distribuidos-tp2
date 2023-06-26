@@ -12,6 +12,8 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from shared.serde import deserialize, get_generic_types
 from common.config_base import ConfigProtocol
+from common.util import register_self_destruct
+
 from ..protocol import TIMEOUT_SECONDS, CommsProtocol
 from ..util import set_healthy
 
@@ -172,6 +174,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             self.callback(decoded)
 
         if delivery_tag is not None:
+            register_self_destruct("pre_ack")
             self.channel.basic_ack(delivery_tag)
 
     def _messages_left(self, queue: str) -> int | None:
@@ -222,6 +225,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         if set and acknowledging the message afterwards.
         This method returns when stop_consuming() is called.
         """
+        register_self_destruct("received_message")
         if self.interrupted.is_set():
             self.__stop()
             return

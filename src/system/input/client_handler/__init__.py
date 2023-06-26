@@ -56,7 +56,7 @@ class ClientHandler(WithState[State]):
         self.restore_from(job_id)
         if self.state.client_identity is None:
             raise RuntimeError("Client identity not set")
-
+        self.store_to(self.job_id)
         if self.state.latest_start is None:
             comms.setup_job_queue(job_id)
             self.comms.send_msg(self.job_id, Start())

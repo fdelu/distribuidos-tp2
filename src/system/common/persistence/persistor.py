@@ -5,7 +5,7 @@ from enum import StrEnum
 from shutil import rmtree, copytree
 
 from shared.serde import serialize, deserialize
-from common.util import singleton
+from common.util import singleton, register_self_destruct
 
 STATUS_FILE = "/state_persistor_status.txt"
 STATUS_FILE_TEMP = "/state_persistor_status_temp.txt"
@@ -105,10 +105,13 @@ class StatePersistor:
         """
         Commits all stored values.
         """
+        register_self_destruct("pre_save")
         self.__save_pending(PATH_BACKUP)
         self.__set_status(Status.Updating)
+        register_self_destruct("mid_save")
         self.__save_pending(PATH_CURRENT)
         self.__set_status(Status.Committed)
+        register_self_destruct("post_save")
 
         self.pending = {}
         self.pending_append = {}

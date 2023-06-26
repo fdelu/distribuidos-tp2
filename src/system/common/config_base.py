@@ -1,4 +1,4 @@
-from typing import Any, Concatenate, Protocol, TypeVar, ParamSpec, Callable
+from typing import Any, Protocol, TypeVar, Callable
 import json
 import os
 from configparser import ConfigParser, ExtendedInterpolation, DEFAULTSECT, NoOptionError
@@ -8,32 +8,32 @@ SECTION_SEP = "."
 
 
 T = TypeVar("T")
-P = ParamSpec("P")
+S = TypeVar("S")
+
+
+class _Unset:
+    pass
 
 
 def check_subsections(
-    func: Callable[Concatenate["ConfigBase", str, str, P], T]
-) -> Callable[Concatenate["ConfigBase", str, P], T]:
-    def get(self: "ConfigBase", key: str, *args: P.args, **kwds: P.kwargs) -> T:
-        s = self.section
-        has_fallback = "fallback" in kwds
-        fallback: T = kwds.pop("fallback", None)  # type: ignore
-        while True:
-            try:
-                return func(self, s, key, *args, **kwds)
-            except (KeyError, NoOptionError):
-                if s == DEFAULTSECT:
-                    if has_fallback:
-                        return fallback
-                    raise
+    section: str,
+    func: Callable[[str], S],
+    fallback: T | _Unset,
+) -> T | S:
+    while True:
+        try:
+            return func(section)
+        except (KeyError, NoOptionError):
+            if section == DEFAULTSECT:
+                if not isinstance(fallback, _Unset):
+                    return fallback
+                raise
 
-                if SECTION_SEP not in s:
-                    s = DEFAULTSECT
-                    continue
+            if SECTION_SEP not in section:
+                section = DEFAULTSECT
+                continue
 
-                s, _ = s.rsplit(SECTION_SEP, 1)
-
-    return get
+            section, _ = section.rsplit(SECTION_SEP, 1)
 
 
 class ConfigProtocol(Protocol):
@@ -74,22 +74,66 @@ class ConfigBase:
     def subsection(section: str, subsection: str) -> str:
         return f"{section}{SECTION_SEP}{subsection}"
 
-    @check_subsections
-    def get(self, section: str, key: str, **kwargs: Any) -> str:
-        return self.parser.get(section, key, vars=os.environ, **kwargs).strip()
+    def get_subsections(self, section: str) -> list[str]:
+        """
+        Returns the names of the subsections of the given section.
+        """
+        prefix = f"{section}{SECTION_SEP}"
+        return [
+            s[len(prefix) :] for s in self.parser.sections() if s.startswith(prefix)
+        ]
 
-    @check_subsections
-    def get_int(self, section: str, key: str, **kwargs: Any) -> int:
-        return self.parser.getint(section, key, vars=os.environ, **kwargs)
+    def get(
+        self,
+        key: str,
+        section: str | None = None,
+        fallback: T | _Unset = _Unset(),
+    ) -> str | T:
+        if section is None:
+            section = self.section
+        return check_subsections(
+            section,
+            lambda s: self.parser.get(s, key, vars=os.environ).strip(),
+            fallback,
+        )
 
-    @check_subsections
-    def get_float(self, section: str, key: str, **kwargs: Any) -> float:
-        return self.parser.getfloat(section, key, vars=os.environ, **kwargs)
+    def get_int(
+        self, key: str, section: str | None = None, fallback: T | _Unset = _Unset()
+    ) -> int | T:
+        if section is None:
+            section = self.section
+        return check_subsections(
+            section,
+            lambda s: self.parser.getint(s, key, vars=os.environ),
+            fallback,
+        )
 
-    @check_subsections
-    def get_bool(self, section: str, key: str, **kwargs: Any) -> bool:
-        return self.parser.getboolean(section, key, vars=os.environ, **kwargs)
+    def get_float(
+        self, key: str, section: str | None = None, fallback: T | _Unset = _Unset()
+    ) -> float | T:
+        if section is None:
+            section = self.section
+        return check_subsections(
+            section,
+            lambda s: self.parser.getfloat(s, key, vars=os.environ),
+            fallback,
+        )
 
-    @check_subsections
-    def get_json(self, section: str, key: str, **kwargs: Any) -> Any:
-        return json.loads(self.parser.get(section, key, vars=os.environ, **kwargs))
+    def get_bool(
+        self, key: str, section: str | None = None, fallback: T | _Unset = _Unset()
+    ) -> bool | T:
+        if section is None:
+            section = self.section
+        return check_subsections(
+            section,
+            lambda s: self.parser.getboolean(s, key, vars=os.environ),
+            fallback,
+        )
+
+    def get_json(
+        self, key: str, section: str | None = None, fallback: T | _Unset = _Unset()
+    ) -> Any | T:
+        result = self.get(key, section=section, fallback=fallback)
+        if result is fallback:
+            return result
+        return json.loads(result)  # type: ignore

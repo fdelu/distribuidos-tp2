@@ -14,6 +14,16 @@ class Config(ConfigBase):
     def __init__(self) -> None:
         super().__init__("input")
         self.address = self.get("Address")
-        self.out_exchange = self.get("OutExchange")
-        self.out_batchs_queues = self.get_json("OutBatchsQueues")
+        self.out_exchange = self.get("InExchange", section="parsers")
         self.max_jobs = self.get_int("MaxJobs")
+
+        self.out_batchs_queues = {
+            self.get(
+                "InWeatherStationLinesQueueFormat", section="parsers"
+            ): self.get_json(
+                "InWeatherStationLinesRoutingKeysFormat", section="parsers"
+            ),
+            self.get("InTripLinesQueueFormat", section="parsers"): self.get_json(
+                "InTripLinesRoutingKeysFormat", section="parsers"
+            ),
+        }

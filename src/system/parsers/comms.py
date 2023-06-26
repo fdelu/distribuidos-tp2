@@ -40,7 +40,9 @@ class SystemCommunication(ReliableComms[RawRecord, BasicRecord]):
     def start_consuming_weather_station_lines(self, job_id: str) -> None:
         queue = self.__weather_station_lines_queue(job_id)
         self._start_consuming_from(queue)
-        setup_job_queues(self, Config().out_exchange, Config().out_queues, job_id)
+        setup_job_queues(
+            self, Config().out_exchange, Config().out_queues_format, job_id
+        )
 
     def start_consuming_trip_lines(self, job_id: str) -> None:
         queue = self.__trip_lines_queue(job_id)

@@ -88,6 +88,8 @@ Estas fases se pueden ver en los siguientes diagramas de actividades:
 | :----------------------------: |
 |   _Diagramas de Actividades_   |
 
+
+
 Para la comunicación con el cliente, se implementó un pequeño protocolo que le permite enviar registros y solicitar los resultados. Hay un módulo $BikeRidesAnalyzer$ que actúa como interfaz del sistema para el cliente. El protocolo se puede ver en el siguiente diagrama de secuencia:
 
 > Nota: en este ejemplo el cliente solo solicita un resultado, pero puede solicitar los 3 cuantas veces quiera.

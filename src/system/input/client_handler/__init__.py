@@ -53,6 +53,7 @@ class ClientHandler(WithState[State]):
         self.comms = comms
         self.socket = socket
         self.on_finish = on_finish
+
         self.restore_from(job_id)
         if self.state.client_identity is None:
             raise RuntimeError("Client identity not set")

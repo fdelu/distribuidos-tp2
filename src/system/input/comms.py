@@ -13,7 +13,7 @@ from common.persistence import StatePersistor
 
 from .config import Config
 
-PENDING_KEY = "_pending"
+PENDING_KEY = "__pending_package"
 
 
 class SystemCommunication(CommsSend[Package[RawRecord]], SystemCommunicationBase):

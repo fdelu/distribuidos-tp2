@@ -10,6 +10,7 @@ from common.messages.comms import (
     CommsMessage,
     CheckProcessed,
     CheckProcessedResponse,
+    RemoveCheck,
 )
 
 from . import DuplicateFilter, IN, PackageComms
@@ -26,7 +27,6 @@ class FilterConfig(Protocol):
 
 @dataclass
 class PendingCheck(Generic[IN]):
-    msg_id: str
     queue: str
     package: Package[IN]
     responses: set[str]
@@ -116,20 +116,50 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             self._ack(delivery_tag)
             return
 
-        processed = self._was_processed(check.job_id, check.msg_id)
-        logging.debug(
-            f"Job {check.job_id} | Received CheckProcessed from host"
-            f" {check.host_id} for {check.msg_id}. Processed locally: {processed}"
-        )
-        response = CheckProcessedResponse(
-            check.check_id, check.job_id, check.msg_id, processed, self.comms.id
-        )
-        self.comms.channel.basic_publish(
-            self.config.filters_exchange,
-            f"{response.get_routing_key()}.{check.host_id}",
-            serialize(response).encode(),
-        )
+        if self.__verify_local_checks_for(check):
+            processed = self._was_processed(check.job_id, check.msg_id)
+            logging.debug(
+                f"Job {check.job_id} | Received CheckProcessed from host"
+                f" {check.host_id} for {check.msg_id}. Processed locally: {processed}"
+            )
+            response = CheckProcessedResponse(check.check_id, processed, self.comms.id)
+            self.comms.channel.basic_publish(
+                self.config.filters_exchange,
+                f"{response.get_routing_key()}.{check.host_id}",
+                serialize(response).encode(),
+            )
         self._ack(delivery_tag)
+
+    def __verify_local_checks_for(self, check: CheckProcessed) -> bool:
+        """
+        Verifies if a received check is for the same package as a local pending check.
+        Returns whether to answer with a CheckProcessedResponse or not.
+        """
+        for id, pc in list(self.pending_checks.items()):
+            if (pc.package.job_id, pc.package.msg_id) != (check.job_id, check.msg_id):
+                continue
+            if check.host_id < self.comms.id:
+                logging.warn(
+                    f"Job {check.job_id} | Received CheckProcessed from host"
+                    f" {check.host_id} < {self.comms.id} for {check.msg_id}"
+                    " already checking locally, answering with RemoveCheck"
+                )
+                response = RemoveCheck(check.check_id, self.comms.id)
+                self.comms.channel.basic_publish(
+                    self.config.filters_exchange,
+                    f"{response.get_routing_key()}.{check.host_id}",
+                    serialize(response).encode(),
+                )
+                return False
+            logging.warn(
+                f"Job {check.job_id} | Received CheckProcessed from host"
+                f" {check.host_id} > {self.comms.id} for {check.msg_id} already"
+                " checking locally, removing local check and nacking message"
+            )
+            self.pending_checks.pop(id)
+            self._nack(pc.delivery_tag)
+            return True
+        return True
 
     @handle_message.register
     def handle_check_processed_response(
@@ -158,8 +188,8 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
         check.responses.add(response.host_id)
         logging.debug(
             f"Job {check.package.job_id} | Received negative CheckProcessedResponse"
-            f" from host {response.host_id} for"
-            f" {response.msg_id} ({len(check.responses)}/{self.config.host_count - 1})"
+            f" from host {response.host_id} for {check.package.msg_id}"
+            f" ({len(check.responses)}/{self.config.host_count - 1})"
         )
         if len(check.responses) < self.config.host_count - 1:
             self._ack(delivery_tag)
@@ -174,18 +204,35 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
         self.__process(check.package, check.delivery_tag)
         self._ack(delivery_tag)
 
+    @handle_message.register
+    def handle_remove_check(
+        self,
+        response: RemoveCheck,
+        queue: str,
+        delivery_tag: int | None,
+        redelivered: bool,
+    ) -> None:
+        local = self.pending_checks.pop(response.check_id, None)
+        if local:
+            logging.warn(
+                f"Job {local.package.job_id} | Received RemoveCheck from host"
+                f" {response.host_id} for {local.package.msg_id}, removing local check"
+                " and nacking message"
+            )
+            self._nack(local.delivery_tag)
+        self._ack(delivery_tag)
+
     def __send_check(
         self, msg: Package[IN], queue: str, delivery_tag: int | None
     ) -> None:
         if not msg.msg_id or any(
-            x.msg_id == msg.msg_id for x in self.pending_checks.values()
+            (pc.package.job_id, pc.package.msg_id) == (msg.job_id, msg.msg_id)
+            for pc in self.pending_checks.values()
         ):
             return
 
         check_id = str(uuid4())
-        self.pending_checks[check_id] = PendingCheck(
-            msg.msg_id, queue, msg, set(), delivery_tag
-        )
+        self.pending_checks[check_id] = PendingCheck(queue, msg, set(), delivery_tag)
         check = CheckProcessed(check_id, msg.job_id, msg.msg_id, self.comms.id)
         self.comms.channel.basic_publish(
             self.config.filters_exchange,

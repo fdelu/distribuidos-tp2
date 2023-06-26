@@ -5,7 +5,7 @@ import logging
 from common.persistence.state import WithState
 
 
-JOB_TRACKER_KEY = "__job_tracker"
+JOB_TRACKER_KEY = "_job_tracker"
 
 T = TypeVar("T")
 

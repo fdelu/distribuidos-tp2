@@ -9,7 +9,7 @@ from common.persistence import StatePersistor
 from common.util import register_self_destruct
 
 
-RECEIVED_MESSAGES_KEY = "_received_messages"
+RECEIVED_PACKAGES_KEY = "_received_packages"
 KEEP_MINUTES = 2
 
 IN = TypeVar("IN", covariant=True)
@@ -38,6 +38,10 @@ class DuplicateFilter(Generic[IN], ABC):
         if delivery_tag is not None:
             register_self_destruct("pre_ack")
             self.comms.channel.basic_ack(delivery_tag)
+
+    def _nack(self, delivery_tag: int | None) -> None:
+        if delivery_tag is not None:
+            self.comms.channel.basic_reject(delivery_tag, requeue=True)
 
     def _processed(self, job_id: str, msg_id: str) -> None:
         """
@@ -76,7 +80,7 @@ class DuplicateFilter(Generic[IN], ABC):
             ids.pop(timestamp, None)
 
     def __key(self, job_id: str) -> str:
-        return f"{RECEIVED_MESSAGES_KEY}_{job_id}"
+        return f"{RECEIVED_PACKAGES_KEY}_{job_id}"
 
     @abstractmethod
     def received_message(

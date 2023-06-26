@@ -36,7 +36,10 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip])
         if len(self.state.starts_received) < self.config.parsers_count:
             return self
 
-        logging.info(f"Job {self.job_id} | Receiving trips")
+        logging.info(
+            f"Job {self.job_id} | All parsers finished sending weather & stations."
+            " Receiving trips"
+        )
         self.state.trips_phase = True
         self.store_state()
         self.comms.send(self.job_id, Start(self.comms.id), force_msg_id=None)

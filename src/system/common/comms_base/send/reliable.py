@@ -14,7 +14,7 @@ from ..base import SystemCommunicationBase
 from ..protocol import OUT
 
 
-PENDING_MESSAGES_KEY = "_pending_messages"
+PENDING_PACKAGES_KEY = "_pending_packages"
 IN = TypeVar("IN", contravariant=True)
 
 
@@ -79,7 +79,7 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
         self.__send_messages()
 
     def __save_state(self) -> None:
-        StatePersistor().store(PENDING_MESSAGES_KEY, self.packages)
+        StatePersistor().store(PENDING_PACKAGES_KEY, self.packages)
         StatePersistor().save()
 
     def __next_message_id(self) -> str | None:
@@ -110,7 +110,7 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
     def __send_pending(self) -> None:
         out_type = get_generic_types(self, ReliableComms)[1]
         self.packages = (
-            StatePersistor().load(PENDING_MESSAGES_KEY, dict[tuple[str, str], Package[out_type]]) or []  # type: ignore # noqa
+            StatePersistor().load(PENDING_PACKAGES_KEY, dict[tuple[str, str], Package[out_type]]) or []  # type: ignore # noqa
         ) or {}
         self.__send_messages(maybe_redelivered=True)
 

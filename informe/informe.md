@@ -126,4 +126,10 @@ En el siguiente diagrama se puede ver como es el flujo de información entre los
 | :-------------------------: |
 |   _Diagrama de Robustez_    |
 
+Además el sistema es monitoreado por nodos llamados medics los cuales se encargan de detectar nodos caidos y volverlos a levantar. Los nodos deben enviar un mensaje al médico líder cada determinado tiempo para que este sepa que siguen vivos y si este mensaje no llega pasada cierta cantidad de tiempo, el médico líder levanta este container caído. Los médicos también pueden fallar, es por esto que hay multiples de ellos y se comunican entre si para generar un concenso y que uno de ellos se convierta en líder. Para generar este consenso se utilizó un algoritmo Bully.
+
+| ![](diagramas/medic_robustez.png) |
+| :-------------------------: |
+|   _Diagrama de Robustez de Médicos_    |
+
 Para más detalles sobre las queues utilizadas en el sistema, recomiendo ver el diagrama _Queues & Exchanges_ en [app.diagrams.net](https://app.diagrams.net/?mode=github#Hfdelu%2Fdistribuidos-tp1%2Fmain%2Finforme%2Fdiagramas%2Fdiagramas.xml). Este diagrama es similar al de robustez pero va en más detalle con los exchanges y queues de RabbitMQ utilizados, los tópicos y tipo de mensajes de cada queue. En ese diagrama, se ejemplificó escalando los nodos de procesamiento a 3 instancias.

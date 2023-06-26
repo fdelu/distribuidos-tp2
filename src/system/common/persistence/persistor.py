@@ -78,7 +78,7 @@ class StatePersistor:
             lines = f.readlines(LINES_BUFFER_SIZE)
             while lines:
                 for line in lines:
-                    yield line
+                    yield line.rstrip("\n")
                 lines = f.readlines(LINES_BUFFER_SIZE)
 
     def remove(self, key: str) -> None:

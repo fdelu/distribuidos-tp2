@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import logging
 from threading import Event
 import time
 from typing import Callable, Protocol, TypeVar, Generic, Any
@@ -79,7 +78,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Calls the callback after timeout seconds.
         Returns an object that can be used to cancel the timer.
         """
-        logging.debug(f"Setting timer for {timeout_seconds} seconds")
+        # logging.debug(f"Setting timer for {timeout_seconds} seconds")
         return self.connection.call_later(timeout_seconds, callback)
 
     def cancel_timer(self, timer: Any) -> None:
@@ -107,11 +106,16 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         This method returns when stop_consuming() is called.
         Fails silently if the queue does not exist, logging a warning.
         """
+        if queue in self.ctags:
+            return
+
         callback = partial(self.__handle_record, queue)
         # Make sure others didn't delete it before I could consume
         self.channel.queue_declare(queue)
-        ctag = self.channel.basic_consume(queue, on_message_callback=callback)
-        self.ctags[queue] = ctag
+
+        self.ctags[queue] = self.channel.basic_consume(
+            queue, on_message_callback=callback
+        )
 
     def _stop_consuming_from(self, queue: str, delete_if_unused: bool = True) -> None:
         """
@@ -122,6 +126,7 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         self.channel.queue_declare(queue)
         if queue in self.ctags:
             self.channel.basic_cancel(self.ctags.pop(queue))
+
         if (
             delete_if_unused
             # Don't use passive=True in case two nodes cancel it's consumption
@@ -182,6 +187,11 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         Returns the number of messages left in the given queue
         """
         return self.channel.queue_declare(queue).method.message_count
+
+    def __delete_queue_callback(self, queue: str) -> None:
+        """
+        Deletes the queue once it's empty
+        """
 
     def __stop(self) -> None:
         """
@@ -247,10 +257,10 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
             return
 
         now = time.time()
-        logging.debug(
-            f"Timeout handler | delay: {info.time_seconds}, last:"
-            f" {info.last_message_on}, now: {now}"
-        )
+        # logging.debug(
+        #     f"Timeout handler | delay: {info.time_seconds}, last:"
+        #     f" {info.last_message_on}, now: {now}"
+        # )
         if info.last_message_on is None:
             info.callback()
             return

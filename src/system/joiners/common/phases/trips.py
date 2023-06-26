@@ -28,7 +28,7 @@ class TripsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip]):
     def handle_trip(self, trip: BasicTrip) -> Phase[GenericJoinedTrip]:
         joined_trip = self.joiner.handle_trip(trip)
         if joined_trip is not None:
-            self._send(joined_trip)
+            self.comms.send(self.job_id, joined_trip)
         self.state.count += 1
         return self
 
@@ -56,7 +56,7 @@ class TripsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip]):
         StatePersistor().remove(self._control_store_key())
         StatePersistor().remove(self._joiner_store_key())
         self.on_finish(self.job_id)
-        self._send(End(self.comms.id))
+        self.comms.send(self.job_id, End(self.comms.id), force_msg_id=None)
 
     def __warn(self, name: str) -> None:
         logging.warn(

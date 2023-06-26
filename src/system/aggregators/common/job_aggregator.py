@@ -90,10 +90,7 @@ class JobAggregator(
         StatePersistor().remove(self._aggregator_store_key())
         StatePersistor().remove(self._control_store_key())
         self.on_finished(self.job_id)
-        self.send(End(self.comms.id))
-
-    def send(self, record: GenericAggregatedRecord | End) -> None:
-        self.comms.send(self.job_id, record)
+        self.comms.send(self.job_id, End(self.comms.id), force_msg_id=None)
 
     def restore_state(self) -> None:
         self.restore_from(self._control_store_key())

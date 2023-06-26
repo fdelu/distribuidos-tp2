@@ -14,6 +14,8 @@ from shared.messages import (
     NotAvailable,
     Error,
     ClientJobId,
+    Ack,
+    AllSent,
 )
 from common.job_tracker import JobTracker
 
@@ -82,7 +84,11 @@ class InputServer:
 
         handler = self.handlers.get(msg.job_id, None)
         if handler is None:
+            if isinstance(msg.payload, AllSent):
+                # We probably went down and already finished the job
+                return Ack()
             return Error(f"Job {msg.job_id} not found")
+
         return handler.handle_message(msg.payload)
 
     def __handler(self, job_id: str, client: str | None = None) -> ClientHandler:

@@ -39,7 +39,7 @@ class WeatherStationsPhase(Phase[GenericJoinedTrip], Generic[GenericJoinedTrip])
         logging.info(f"Job {self.job_id} | Receiving trips")
         self.state.trips_phase = True
         self.store_state()
-        self._send(Start(self.comms.id))
+        self.comms.send(self.job_id, Start(self.comms.id), force_msg_id=None)
         return self.__next_phase()
 
     def handle_trip(self, trip: BasicTrip) -> Phase[GenericJoinedTrip]:

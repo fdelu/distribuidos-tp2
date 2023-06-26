@@ -70,19 +70,21 @@ class JobParser(WithState[State]):
         pass
 
     def handle_trips_start(self, start: TripsStart) -> None:
+        if self.state.received_trips_start:
+            return  # probably a redelivery
         self.state.received_trips_start = True
         self.__status_changed()
 
     def __receive_trips(self) -> None:
         logging.info(
-            f"Job {self.job_id} | Finished parsing weather & stations. Receiving trips,"
-            " sending TripsStart"
+            f"Job {self.job_id} | Finished parsing weather & stations. Receiving trips."
+            " Sending TripsStart"
         )
         self.comms.stop_consuming_weather_station_lines(self.job_id)
         self.state.receiving_trips = True
         self.__status_changed()
         self.store_state()
-        self.__send_trips_start()
+        self.comms.send(self.job_id, TripsStart(self.comms.id), force_msg_id=None)
 
     def handle_station_lines(self, batch: RawLines) -> None:
         self.__send_parsed(batch, parse_station)
@@ -95,6 +97,8 @@ class JobParser(WithState[State]):
         self.state.count += len(batch.lines)
 
     def handle_end(self, end: End) -> None:
+        if self.state.received_end:
+            return  # probably a redelivery
         self.state.received_end = True
         self.__status_changed()
 
@@ -106,7 +110,7 @@ class JobParser(WithState[State]):
         self.comms.stop_consuming_trip_lines(self.job_id)
         StatePersistor().remove(self.job_id)
         self.on_finish(self)
-        self.comms.send(self.job_id, End(self.comms.id))
+        self.comms.send(self.job_id, End(self.comms.id), force_msg_id=None)
 
     def handle_record(self, raw_record: RawRecord) -> None:
         return raw_record.be_handled_by(self)
@@ -127,6 +131,3 @@ class JobParser(WithState[State]):
                 break
             msg = parse_func(row, indexes, batch.city)
             self.comms.send(self.job_id, msg)
-
-    def __send_trips_start(self) -> None:
-        self.comms.send(self.job_id, TripsStart(self.comms.id), force_msg_id=None)

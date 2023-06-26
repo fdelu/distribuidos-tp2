@@ -30,7 +30,6 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
     """
 
     # exchange, routing_key -> batch
-    pending_packages: dict[tuple[str, str], Package[OUT]]
     packages: dict[tuple[str, str], Package[OUT]]
     routing_count: int = 0
     add_job_id_to_routing_key: bool
@@ -43,7 +42,6 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
     ) -> None:
         super().__init__(config, duplicate_filter_config)
         self.packages = {}
-        self.pending_packages = {}
         self.add_job_id_to_routing_key = add_job_id_to_routing_key
 
     def send(
@@ -58,12 +56,15 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
                 [], self.__next_message_id(), job_id
             )
             package.messages.append(record)
+            self.packages[key] = package
         else:
             package = Package([record], force_msg_id, job_id)
-
-        self.packages[key] = package
-        if package.msg_id in (None, force_msg_id):
-            self.__prepare_send()
+            if key in self.packages:
+                raise ValueError(
+                    "Can't force message id for the same routing key"
+                    " as a buffered package"
+                )
+            self.packages[key] = package
             self.__save_state()
             self.__send_messages()
 
@@ -72,13 +73,13 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
         super().start_consuming()
 
     def _post_process(self, delivery_tag: int | None) -> None:
-        self.__prepare_send()
+        self.routing_count = 0
         self.__save_state()
         super()._post_process(delivery_tag)
         self.__send_messages()
 
     def __save_state(self) -> None:
-        StatePersistor().store(PENDING_MESSAGES_KEY, self.pending_packages)
+        StatePersistor().store(PENDING_MESSAGES_KEY, self.packages)
         StatePersistor().save()
 
     def __next_message_id(self) -> str | None:
@@ -88,36 +89,30 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
         id = self.current_message_id()
         if id is None:
             return None
-        ret = id
-        if self.routing_count > 0:
-            ret += f";{self.routing_count}"
+        id += f";{self.routing_count}"
         self.routing_count += 1
-        return ret
-
-    def __prepare_send(self) -> None:
-        self.pending_packages = self.packages
-        self.packages = {}
-        self.routing_count = 0
+        return id
 
     def __send_messages(self, maybe_redelivered: bool = False) -> None:
+        if not self.packages:
+            return
+
         register_self_destruct("pre_send")
-        for (exchange, routing_key), package in self.pending_packages.items():
+        for (exchange, routing_key), package in self.packages.items():
             package.maybe_redelivered = maybe_redelivered
             self.channel.basic_publish(
                 exchange, routing_key, serialize(package).encode()
             )
         register_self_destruct("post_send")
-        self.pending_packages = {}
+        self.packages = {}
         self.__save_state()
 
     def __send_pending(self) -> None:
         out_type = get_generic_types(self, ReliableComms)[1]
-        pending: dict[tuple[str, str], Package[OUT]] | None = (
+        self.packages = (
             StatePersistor().load(PENDING_MESSAGES_KEY, dict[tuple[str, str], Package[out_type]]) or []  # type: ignore # noqa
-        )
-        if pending:
-            self.pending_packages = pending
-            self.__send_messages(maybe_redelivered=True)
+        ) or {}
+        self.__send_messages(maybe_redelivered=True)
 
     @abstractmethod
     def _get_routing_details(self, record: OUT) -> tuple[str, str]:

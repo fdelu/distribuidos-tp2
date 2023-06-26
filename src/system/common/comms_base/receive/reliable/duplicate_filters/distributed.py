@@ -99,8 +99,8 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
 
         logging.warn(
             f"Received package {package.msg_id} that may have already been processed"
-            f" (redelivered: {redelivered}, maybe_redelivered:"
-            f" {package.maybe_redelivered}), sending check to other nodes"
+            f" ({redelivered=}, {package.maybe_redelivered=}), sending check to other"
+            " nodes"
         )
         self.__send_check(package, queue, delivery_tag)
 

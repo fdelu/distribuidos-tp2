@@ -88,6 +88,7 @@ class CommsInput(Comms):
 
     def recv_ack(self, batch_number: int | None = None) -> None:
         response = self.recv()
+
         if not isinstance(response, Ack) or (
             batch_number is not None and response.batch_number != batch_number
         ):

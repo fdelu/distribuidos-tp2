@@ -100,6 +100,20 @@ Para la comunicación con el cliente, se implementó un pequeño protocolo que l
 | :--------------------------: |
 |   _Diagramas de Secuencia_   |
 
+Otro componente muy importante del sistema son los medics, nodos los cuales monitorean el estado de otros nodos mediante heartbeats y los levantan en caso de fallas en alguno de éstos. Los nodos medic también estan replicados para que esta parte del sistema sea tolerante a fallas pero para evitar conflictos se debe elegir a uno de estos nodos como el líder. En el siguiente diagrama se puede ver como los otros nodos monitorean al líder, también mediante heartbeats y en caso de que el líder no responda por un determinado tiempo, los otros medics comienzan una elección para encontrar un nuevo líder y seguir con sus tareas.
+
+|    ![](diagramas/actividades_medic.png)     |
+|       :----------------------------:        |
+| _Diagramas de Actividades Líder Heartbeats_ |
+
+Para elegir al nuevo líder se lleva a cabo un algoritmo bully, en el siguiente diagrama se representa el caso en donde el medic 4 que era el líder, falla por lo que los otros medics tienen que elegir otro líder.
+
+|    ![](diagramas/secuencia-bully.png)    |
+|      :----------------------------:      |
+| _Diagramas de Secuencia Algoritmo Bully_ |
+
+Cuando un medic recibe un coordinator message sabe que el emisor es el nuevo líder.
+
 ### Vista de desarrollo
 
 El código del proyecto esta separado en 3 paquetes:
@@ -128,10 +142,10 @@ En el siguiente diagrama se puede ver como es el flujo de información entre los
 | :-------------------------: |
 |   _Diagrama de Robustez_    |
 
-Además el sistema es monitoreado por nodos llamados medics los cuales se encargan de detectar nodos caidos y volverlos a levantar. Los nodos deben enviar un mensaje al médico líder cada determinado tiempo para que este sepa que siguen vivos y si este mensaje no llega pasada cierta cantidad de tiempo, el médico líder levanta este container caído. Los médicos también pueden fallar, es por esto que hay multiples de ellos y se comunican entre si para generar un concenso y que uno de ellos se convierta en líder. Para generar este consenso se utilizó un algoritmo Bully.
+Además el sistema es monitoreado por nodos medics los cuales mediante heartbeats, detectan cuales nodos fallaron y los restaura. El líder se encarga de monitorear a todo el sistema pero los otros medics también son esenciales ya que éstos monitorean al líder en caso de que este falle y además establecen concenso entre sí para elegír un nuevo líder.
 
 | ![](diagramas/medic_robustez.png) |
-| :-------------------------: |
-|   _Diagrama de Robustez de Médicos_    |
+|   :-------------------------:     |
+| _Diagrama de Robustez de Médicos_ |
 
 Para más detalles sobre las queues utilizadas en el sistema, recomiendo ver el diagrama _Queues & Exchanges_ en [app.diagrams.net](https://app.diagrams.net/?mode=github#Hfdelu%2Fdistribuidos-tp1%2Fmain%2Finforme%2Fdiagramas%2Fdiagramas.xml). Este diagrama es similar al de robustez pero va en más detalle con los exchanges y queues de RabbitMQ utilizados, los tópicos y tipo de mensajes de cada queue. En ese diagrama, se ejemplificó escalando los nodos de procesamiento a 3 instancias.

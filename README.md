@@ -7,6 +7,7 @@ Implementación de un sistema distribuido que calcula estadísticas sobre un dat
 ## Comandos
 
 - `make get-dataset`: Descarga el dataset completo y lo guarda en `src/client/data/full`.
+- `make get-dataset-medium`: Descarga un dataset reducido al $10\%$ y lo guarda en `src/client/data/medium`.
 - `make build`: Crea los contenedores de Docker.
 - `make docker-compose-up`: Inicia el sistema y el cliente.
 - `make docker-compose-stop`: Detiene el sistema.
@@ -52,7 +53,7 @@ Estas extensiones se pueden configurar en el archivo `.vscode/settings.json`. La
 
 ### Autodestrucción
 
-El código tiene registrados en el código varios puntos de control donde, con una cierta probabilidad, el programa se detiene repentinamente. Esto se hace para poder probar el comportamiento del sistema ante fallas durante el desarrollo. Para activar esta funcionalidad, se puede establecer la probabilidad con variables de entorno de la forma `SELF_DESTRUCT_{KEY}` en el archivo [`self_destruct.env`](./self_destruct.env), donde _KEY_ es una de las siguientes:
+El código tiene registrados en el código varios puntos de control donde, con una cierta probabilidad, el programa se detiene repentinamente. Esto se hace para poder probar el comportamiento del sistema ante fallas durante el desarrollo. Para activar esta funcionalidad, se puede establecer la probabilidad con variables de entorno de la forma `SELF_DESTRUCT_{KEY}`, donde _KEY_ es una de las siguientes:
 
 - `RECEIVED_MESSAGE`: Apenas se recibe un mensaje, en **CommsReceive**.
 - `PRE_SAVE`: Justo antes de guardar el estado en **StatePersistor**
@@ -61,3 +62,7 @@ El código tiene registrados en el código varios puntos de control donde, con u
 - `PRE_SEND`: Justo antes de flushear los mensajes, en **ReliableComms** y en las comunicaciones del input.
 - `POST_SEND`: Justo despues de flushear los mensajes, antes de poder guardarlos como enviados, en **ReliableComms** y en las comunicaciones del input.
 - `PRE_ACK`: Justo antes de ackear un mensaje, en **DuplicateFilter**, **ReliableReceive** y **CommsReceive**.
+
+Estas variables de entorno se pueden configurar en el archivo [`self_destruct_medics.env`](./self_destruct_medics.env) para los medics y en [`self_destruct.env`](./self_destruct.env) para el resto de la pipeline.
+
+También esta disponible un script [`kill_random.sh`](./kill_random.sh) que recibe como parámetro un intervalo de tiempo $n$ y un número $k$ entre $0$ y $1$. Al ejecutarlo, cada $n \pm k \cdot n$ segundos se mata a un proceso aleatorio del sistema.

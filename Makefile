@@ -1,11 +1,15 @@
 SHELL := /bin/bash
-DATASET_ID := 190kC3LtexSWKDIYS1IbAoCnrP9oHeE9j
-DATASET__MEDIUM_ID := 1I7WfIo2JMefUMcgCXOc4xhMkbHPjGMPJ
-DATASET_HASH := 8b80b71965721392857021c74bba58c6
-DATASET_MEDIUM_HASH := d6445f5ade52c13a235efa2be5124720
+
 DATASET_FOLDER := src/client/data
+
+DATASET_ID := 1uivCqQV2ZI0lTtkNGwBcZpNw2XMwYfAT
 DATASET_FILE := ${DATASET_FOLDER}/dataset.zip
+DATASET_HASH := 8b80b71965721392857021c74bba58c6
+
+DATASET_MEDIUM_ID := 1gXIMubCTOPXkfBx73-u8lU8225sdheS0
 DATASET_MEDIUM_FILE := ${DATASET_FOLDER}/dataset_medium.zip
+DATASET_MEDIUM_HASH := 5b37db3d9c28f6203b74816b5e8c6a16
+
 SED_EXPR := s/^.*<form[^>]\+\?action=\"\([^\"]\+\?\)\"[^>]*\?>.*\$$/\1/p
 
 .PHONY:
@@ -41,7 +45,7 @@ get-dataset-medium:
 			echo "Dataset hash does not match (actual: '$${HASH}', expected: '${DATASET_MEDIUM_HASH}')"; \
 			echo "Re-downloading dataset..."; \
 		fi; \
-		wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=${DATASET__MEDIUM_ID}' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=${DATASET__MEDIUM_ID}" -O ${DATASET_MEDIUM_FILE} && rm -rf /tmp/cookies.txt; \
+		wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=${DATASET_MEDIUM_ID}' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=${DATASET_MEDIUM_ID}" -O ${DATASET_MEDIUM_FILE} && rm -rf /tmp/cookies.txt; \
 	fi;
 # The wget downloads from Google Drive. Source: https://superuser.com/a/1542118
 

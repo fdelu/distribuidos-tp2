@@ -222,10 +222,17 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
     def __send_check(
         self, msg: Package[IN], queue: str, delivery_tag: int | None
     ) -> None:
-        if not msg.msg_id or any(
-            (pc.package.job_id, pc.package.msg_id) == (msg.job_id, msg.msg_id)
-            for pc in self.pending_checks.values()
-        ):
+        if not msg.msg_id:
+            return
+
+        for ch in self.pending_checks.values():
+            if (ch.package.job_id, ch.package.msg_id) != (msg.job_id, msg.msg_id):
+                continue
+            logging.warn(
+                f"Job {msg.job_id} | Received package {msg.msg_id} already being"
+                " checked, acknowledging duplicate"
+            )
+            self._ack(delivery_tag)
             return
 
         check_id = str(uuid4())

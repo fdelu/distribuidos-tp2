@@ -1,8 +1,11 @@
 SHELL := /bin/bash
 DATASET_ID := 190kC3LtexSWKDIYS1IbAoCnrP9oHeE9j
+DATASET__MEDIUM_ID := 1I7WfIo2JMefUMcgCXOc4xhMkbHPjGMPJ
 DATASET_HASH := 8b80b71965721392857021c74bba58c6
-DATASET_FOLDER := client/data
+DATASET_MEDIUM_HASH := d6445f5ade52c13a235efa2be5124720
+DATASET_FOLDER := src/client/data
 DATASET_FILE := ${DATASET_FOLDER}/dataset.zip
+DATASET_MEDIUM_FILE := ${DATASET_FOLDER}/dataset_medium.zip
 SED_EXPR := s/^.*<form[^>]\+\?action=\"\([^\"]\+\?\)\"[^>]*\?>.*\$$/\1/p
 
 .PHONY:
@@ -26,6 +29,23 @@ get-dataset:
 # The wget downloads from Google Drive. Source: https://superuser.com/a/1542118
 
 	unzip -n ${DATASET_FILE} -d ${DATASET_FOLDER}/full
+
+get-dataset-medium:
+	HASH=$$([ -f ${DATASET_MEDIUM_FILE} ] && (md5sum ${DATASET_MEDIUM_FILE} | head -c 32) || ""); \
+	if [ "$${HASH}" == "${DATASET_MEDIUM_HASH}" ]; then \
+		echo "Dataset already downloaded"; \
+	else \
+		if [ -z "$${HASH}" ]; then \
+			echo "Dataset is not present, downloading..."; \
+		else \
+			echo "Dataset hash does not match (actual: '$${HASH}', expected: '${DATASET_MEDIUM_HASH}')"; \
+			echo "Re-downloading dataset..."; \
+		fi; \
+		wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=${DATASET__MEDIUM_ID}' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=${DATASET__MEDIUM_ID}" -O ${DATASET_MEDIUM_FILE} && rm -rf /tmp/cookies.txt; \
+	fi;
+# The wget downloads from Google Drive. Source: https://superuser.com/a/1542118
+
+	unzip -n ${DATASET_MEDIUM_FILE} -d ${DATASET_FOLDER}/medium
 
 build:
 	docker compose build

@@ -155,14 +155,14 @@ class CommsReceive(CommsProtocol, Generic[IN], ABC):
         info.timer = self.set_timer(lambda: self.__timeout_handler(info), timeout)
 
     def _set_empty_queue_callback(
-        self, queue: str, callback: Callable[[], None], **queue_kwargs: Any
+        self, queue: str, callback: Callable[[], None]
     ) -> None:
         """
         Sets a callback to be called when the given queue is empty.
         """
         self._set_timeout_callback(
             queue,
-            lambda: self.__check_messages_left(queue, callback, **queue_kwargs),
+            lambda: self.__check_messages_left(queue, callback),
         )
 
     def _process_message(

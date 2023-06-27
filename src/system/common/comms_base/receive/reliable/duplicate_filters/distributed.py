@@ -87,8 +87,8 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
 
         if package.msg_id and self._was_processed(package.job_id, package.msg_id):
             logging.warn(
-                f"Received package {package.msg_id} already processed locally,"
-                " acknowledging"
+                f"Job {package.job_id} | Received package {package.msg_id} already"
+                " processed locally, acknowledging"
             )
             self._ack(delivery_tag)
             return
@@ -98,9 +98,9 @@ class DuplicateFilterDistributed(DuplicateFilter[IN], Generic[IN]):
             return
 
         logging.warn(
-            f"Received package {package.msg_id} that may have already been processed"
-            f" ({redelivered=}, {package.maybe_redelivered=}), sending check to other"
-            " nodes"
+            f"Job {package.job_id} | Received package {package.msg_id} that may have"
+            f" already been processed ({redelivered=}, {package.maybe_redelivered=}),"
+            " sending check to other nodes"
         )
         self.__send_check(package, queue, delivery_tag)
 

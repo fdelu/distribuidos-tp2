@@ -19,8 +19,8 @@ class DuplicateFilterSimple(DuplicateFilter[IN], Generic[IN]):
                 package.job_id, package.msg_id
             ):
                 logging.warn(
-                    f"Received package {package.msg_id} already processed locally,"
-                    " acknowledging"
+                    f"Job {package.job_id} | Received package {package.msg_id} already"
+                    " processed locally, acknowledging"
                 )
                 self._ack(delivery_tag)
                 return

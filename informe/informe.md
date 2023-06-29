@@ -130,10 +130,6 @@ Para la comunicación con el cliente, se implementó un pequeño protocolo que l
 
 Otro componente muy importante del sistema son los medics, nodos los cuales monitorean el estado de otros nodos mediante heartbeats y los levantan en caso de fallas en alguno de éstos. Los nodos medic también estan replicados para que esta parte del sistema sea tolerante a fallas pero para evitar conflictos se debe elegir a uno de estos nodos como el líder. En el siguiente diagrama se puede ver como los otros nodos monitorean al líder, también mediante heartbeats y en caso de que el líder no responda por un determinado tiempo, los otros medics comienzan una elección para encontrar un nuevo líder y seguir con sus tareas.
 
-|    ![](diagramas/actividades_medic.png)     |
-| :-----------------------------------------: |
-| _Diagramas de Actividades Líder Heartbeats_ |
-
 Para elegir al nuevo líder se lleva a cabo un algoritmo bully, en el siguiente diagrama se representa el caso en donde el medic 4 que era el líder, falla por lo que los otros medics tienen que elegir otro líder.
 
 |    ![](diagramas/secuencia-bully.png)    |

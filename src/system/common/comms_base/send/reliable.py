@@ -43,6 +43,7 @@ class ReliableComms(ReliableReceive[P], SystemCommunicationBase, Generic[P, OUT]
         super().__init__(config, duplicate_filter_config)
         self.packages = {}
         self.add_job_id_to_routing_key = add_job_id_to_routing_key
+        self.channel.confirm_delivery()
 
     def send(
         self, job_id: str, record: OUT, force_msg_id: str | None | _Unset = _Unset()

@@ -93,18 +93,25 @@ class ClientHandler(WithState[State]):
                 f"Job {self.job_id} | Received a batch of lines without its start"
             )
             return Error("Received a batch of lines without its start")
-        count = 0
-        if not self.__already_processed(msg.batch_number):
-            raw = RawLines(
-                RecordType(self.state.latest_start.record_type),
-                self.state.latest_start.city,
-                self.state.latest_start.headers,
-                msg.lines,
+        latest_batch = self.state.latest_batchs[
+            (self.state.latest_start.record_type, self.state.latest_start.city)
+        ]
+        if latest_batch == msg.batch_number:
+            return Ack(msg.batch_number)
+        if latest_batch + 1 != msg.batch_number:
+            return Error(
+                f"Expected batch {latest_batch + 1}, received {msg.batch_number}"
             )
-            msg_id = self.__get_msg_id(msg.batch_number)
-            count += len(msg.lines)
-            self.__set_latest_batch(msg.batch_number)
-            self.comms.send_msg(self.job_id, raw, msg_id)
+
+        raw = RawLines(
+            RecordType(self.state.latest_start.record_type),
+            self.state.latest_start.city,
+            self.state.latest_start.headers,
+            msg.lines,
+        )
+        msg_id = self.__get_msg_id(msg.batch_number)
+        self.__set_latest_batch(msg.batch_number)
+        self.comms.send_msg(self.job_id, raw, msg_id)
         self.store_to(self.job_id)
         return Ack(msg.batch_number)
 
@@ -114,16 +121,6 @@ class ClientHandler(WithState[State]):
         StatePersistor().remove(self.job_id)
         self.on_finish(self.job_id)
         return Ack()
-
-    def __already_processed(self, batch_number: int) -> bool:
-        if not self.state.latest_start:
-            return False
-        return (
-            batch_number
-            <= self.state.latest_batchs[
-                (self.state.latest_start.record_type, self.state.latest_start.city)
-            ]
-        )
 
     def __set_latest_batch(self, batch_number: int) -> None:
         if not self.state.latest_start:

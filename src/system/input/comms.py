@@ -27,6 +27,7 @@ class SystemCommunication(CommsSend[Package[RawRecord]], SystemCommunicationBase
             PENDING_KEY, Package[RawRecord] | None
         )
         self.stop_event = Event()
+        self.channel.confirm_delivery()
         HeartbeatSender(self, Config()).setup_timer()
 
     def _get_routing_details(self, msg: Package[RawRecord]) -> tuple[str, str]:

@@ -174,4 +174,36 @@ Además el sistema es monitoreado por nodos medics los cuales mediante heartbeat
 | :--------------------------------------------------------: |
 |             _Diagrama de Robustez de Médicos_              |
 
-Para más detalles sobre las queues utilizadas en el sistema, recomiendo ver el diagrama _Queues & Exchanges_ en [app.diagrams.net](https://app.diagrams.net/?mode=github#Hfdelu%2Fdistribuidos-tp1%2Fmain%2Finforme%2Fdiagramas%2Fdiagramas.xml). Este diagrama es similar al de robustez pero va en más detalle con los exchanges y queues de RabbitMQ utilizados, los tópicos y tipo de mensajes de cada queue. En ese diagrama, se ejemplificó escalando los nodos de procesamiento a 3 instancias.
+#### Topología
+
+Por lo general, cada uno de los nodos del diagrama de robustez tiene más de una cola de la cual recibe mensajes del middleware. Hicimos un diagrama de topología para cada uno de los nodos, en el cual se pueden ver todas las colas y exchanges utilizados. El diagrama completo se encuentra en la pestaña _Queues & Exchanges_ en [app.diagrams.net](https://app.diagrams.net/?mode=github#Hfdelu%2Fdistribuidos-tp1%2Fmain%2Finforme%2Fdiagramas%2Fdiagramas.xml).
+
+Este diagrama es similar al de robustez pero va en más detalle con los exchanges y queues de RabbitMQ utilizados, los tópicos y tipo de mensajes de cada queue. En ese diagrama, se ejemplificó escalando los nodos de procesamiento a 3 instancias. Los cuadrados verdes representan exchanges, los cilindros rojos representan queues individuales y los cilindros grises representan queues compartidas (solo en stages con nodos replicados).
+
+Los **parsers**, **joiners** y **aggregators** son los nodos que se pueden replicar. Cada una de esas stages tiene un formato similar al siguiente:
+
+| <img src="diagramas/topologia_replicados.png" ></img> |
+| :---------------------------------------------------: |
+|          _Topología de los nodos replicados_          |
+
+Las queues estan bindeadas con diferentes routing keys al exchange de entrada. Las queues individuales (rojas) tienen las mismas routing keys, es decir, le llegan los mismos mensajes a todos los nodos. Estas queues se utilizan más que nada para mensajes de control y en el caso de los **joiners** también para las estaciones y clima, que deben llegar a todos los nodos. En cambio, las queues compartidas (gris) manejan el stream de mensajes de mayor volumen que solo es necesario que procese uno de todos los nodos (cualquiera de ellos):
+
+- Para los **parsers**, un batch de líneas de clima, estaciones o viajes.
+- Para los **joiners**, un batch de viajes parseados.
+- Para los **aggregators**, un batch de viajes _joineado_, es decir, con información de clima o estaciones de inicio/fin.
+
+Los nodos replicados también tienen el filtro de duplicados que se encarga de descartar los viajes que ya fueron procesados por otro nodo. Este filtro utiliza conjunto de queues y exchanges diferente al anterior, ilustrado por separado:
+
+| <img src="diagramas/topologia_duplicados.png" ></img> |
+| :---------------------------------------------------: |
+|         _Topología del filtro de duplicados_          |
+
+En este caso, la topología es más sencilla: Un exchange por tipo de nodo (**parsers**, **rain-joiners**, **city-aggregators**, etc) y una queue por nodo. Los nodos solo se comunican con el exchange de su tipo para envíar checkeos a los otros nodos cuando sea necesario.
+
+Por último, los medics tienen casi la misma topología que el diagrama anterior, salvo que en este caso uno de los medics va a ser el líder elegido. Este medic va a recibir heartbeats de todos los nodos del sistema, incluyendo a los otros medics, por una queue separada:
+
+| <img src="diagramas/topologia_medics.png" ></img> |
+| :-----------------------------------------------: |
+|             _Topología de los medics_             |
+
+Si el medic líder cambia, el medic elegido como líder purga la cola de heartbeats y comienza a consumir sus mensajes.
